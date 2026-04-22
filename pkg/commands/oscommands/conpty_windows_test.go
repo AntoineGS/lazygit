@@ -12,14 +12,8 @@ import (
 	"time"
 )
 
-// TestConPty_EchoRoundTrip spawns `cmd.exe /c echo hello` under a ConPTY,
-// reads its output through the ConPTY's stdout pipe, and asserts we see
-// "hello" in the output.
-//
-// Sequencing note: the pseudoconsole's output pipe writer stays open until
-// ClosePseudoConsole is called. So the test MUST cmd.Wait() first (to let
-// the child exit), then Close the conPty (which closes the pipe writer),
-// after which the drain goroutine sees EOF and returns.
+// Spawns `cmd.exe /c echo hello` under a ConPTY, reads its output through
+// the ConPTY's stdout pipe, and asserts we see "hello" in the output.
 func TestConPty_EchoRoundTrip(t *testing.T) {
 	p, err := newConPty(80, 24)
 	if err != nil {

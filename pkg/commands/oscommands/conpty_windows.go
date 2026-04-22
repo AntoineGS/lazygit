@@ -16,9 +16,6 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-// errConPtyUnavailable is returned by newConPty when ConPTY is not available
-// on the running Windows version (pre-1809) or has been disabled.
-// Callers should fall back to the non-PTY handler.
 var errConPtyUnavailable = errors.New("ConPTY not available")
 
 // conPty owns a Windows pseudoconsole and the child process attached to it.

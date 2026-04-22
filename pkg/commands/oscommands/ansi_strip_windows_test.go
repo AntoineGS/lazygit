@@ -97,8 +97,7 @@ func TestAnsiStripReader(t *testing.T) {
 }
 
 func TestAnsiStripReader_ByteByByte(t *testing.T) {
-	// Feed the reader one byte at a time — sequences must not get stuck
-	// across Read boundaries.
+	// Ensures it works across Read() boundaries
 	in := "\x1b[32mEnter passphrase for key 'x': \x1b[0m"
 	want := "Enter passphrase for key 'x': "
 
@@ -147,7 +146,7 @@ func TestAnsiStripReader_ByteByByte_OSC(t *testing.T) {
 	}
 }
 
-// oneByteAtATime returns bytes one at a time from a string, then io.EOF.
+// Test helper that returns bytes one at a time from a string, then io.EOF.
 type oneByteAtATime struct {
 	s string
 	i int
