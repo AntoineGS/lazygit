@@ -111,7 +111,7 @@ func (self *AppStatusHelper) renderAppStatus() {
 
 func (self *AppStatusHelper) renderAppStatusSync(stop chan struct{}) {
 	go func() {
-		ticker := time.NewTicker(time.Millisecond * 50)
+		ticker := time.NewTicker(time.Millisecond * time.Duration(self.c.UserConfig().Gui.Spinner.Rate))
 		defer ticker.Stop()
 
 		// Forcing a re-layout and redraw after we added the waiting status;
