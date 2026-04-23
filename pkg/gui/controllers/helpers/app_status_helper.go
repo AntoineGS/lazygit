@@ -96,7 +96,7 @@ func (self *AppStatusHelper) renderAppStatus() {
 		for range ticker.C {
 			appStatus, color := self.statusMgr().GetStatusString(self.c.UserConfig())
 			self.c.Views().AppStatus.FgColor = color
-			self.c.OnUIThread(func() error {
+			self.c.OnUIThreadContentOnly(func() error {
 				self.c.SetViewContent(self.c.Views().AppStatus, appStatus)
 				return nil
 			})
