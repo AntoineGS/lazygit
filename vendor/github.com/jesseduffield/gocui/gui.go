@@ -687,6 +687,10 @@ func getKey(key any) (Key, rune, error) {
 type userEvent struct {
 	f    func(*Gui) error
 	task Task
+	// Signals that this event only modifies view content (e.g. SetContent).
+	// When all events in a batch are contentOnly, processEvent
+	// can skip the expensive layout() call in flush().
+	contentOnly bool
 }
 
 // Update executes the passed function. This method can be called safely from a
@@ -711,6 +715,12 @@ func (g *Gui) UpdateAsync(f func(*Gui) error) {
 
 func (g *Gui) updateAsyncAux(f func(*Gui) error, task Task) {
 	g.userEvents <- userEvent{f: f, task: task}
+}
+
+// Like Update, but signals that the callback only modifies content.
+func (g *Gui) UpdateContentOnly(f func(*Gui) error) {
+	task := g.NewTask()
+	g.userEvents <- userEvent{f: f, task: task, contentOnly: true}
 }
 
 // Calls a function in a goroutine. Handles panics gracefully and tracks
@@ -826,6 +836,8 @@ func (g *Gui) handleError(err error) error {
 }
 
 func (g *Gui) processEvent() error {
+	contentOnly := false
+
 	select {
 	case ev := <-g.gEvents:
 		task := g.NewTask()
@@ -835,6 +847,7 @@ func (g *Gui) processEvent() error {
 			return err
 		}
 	case ev := <-g.userEvents:
+		contentOnly = ev.contentOnly
 		defer func() { ev.task.Done() }()
 
 		if err := g.handleError(ev.f(g)); err != nil {
@@ -842,32 +855,38 @@ func (g *Gui) processEvent() error {
 		}
 	}
 
-	if err := g.processRemainingEvents(); err != nil {
+	remainingContentOnly, err := g.processRemainingEvents()
+	if err != nil {
 		return err
 	}
-	if err := g.flush(); err != nil {
-		return err
-	}
+	contentOnly = contentOnly && remainingContentOnly
 
-	return nil
+	if contentOnly {
+		return g.flushContentOnly()
+	}
+	return g.flush()
 }
 
 // processRemainingEvents handles the remaining events in the events pool.
-func (g *Gui) processRemainingEvents() error {
+// Returns true if all processed events were content-only.
+func (g *Gui) processRemainingEvents() (bool, error) {
+	contentOnly := true
 	for {
 		select {
 		case ev := <-g.gEvents:
+			contentOnly = false
 			if err := g.handleError(g.handleEvent(&ev)); err != nil {
-				return err
+				return false, err
 			}
 		case ev := <-g.userEvents:
+			contentOnly = ev.contentOnly && contentOnly
 			err := g.handleError(ev.f(g))
 			ev.task.Done()
 			if err != nil {
-				return err
+				return false, err
 			}
 		default:
-			return nil
+			return contentOnly, nil
 		}
 	}
 }
@@ -1222,6 +1241,23 @@ func (g *Gui) flush() error {
 		}
 	}
 	for _, v := range g.views {
+		if err := g.draw(v); err != nil {
+			return err
+		}
+	}
+
+	Screen.Show()
+	return nil
+}
+
+// Redraws only tainted views and skips the layout pass.
+// tcell's cell-level dirty tracking ensures only
+// actually-changed cells are emitted to the terminal.
+func (g *Gui) flushContentOnly() error {
+	for _, v := range g.views {
+		if !v.tainted {
+			continue
+		}
 		if err := g.draw(v); err != nil {
 			return err
 		}
