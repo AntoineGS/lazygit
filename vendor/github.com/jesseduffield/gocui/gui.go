@@ -1251,8 +1251,6 @@ func (g *Gui) flush() error {
 }
 
 // Redraws only tainted views and skips the layout pass.
-// tcell's cell-level dirty tracking ensures only
-// actually-changed cells are emitted to the terminal.
 func (g *Gui) flushContentOnly() error {
 	for _, v := range g.views {
 		if !v.tainted {

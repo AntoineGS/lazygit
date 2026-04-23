@@ -322,7 +322,7 @@ gui:
       - \
 
     # The "speed" of the spinner in milliseconds.
-    rate: 50
+    rate: 200
 
   # Status panel view.
   # One of 'dashboard' (default) | 'allBranchesLog'

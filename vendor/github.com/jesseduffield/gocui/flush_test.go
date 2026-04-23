@@ -19,7 +19,7 @@ func newTestGui(t *testing.T) *Gui {
 	return g
 }
 
-// setupViews creates a few views and does an initial full flush so all views
+// Creates a few views and does an initial full flush so all views
 // start in a clean (non-tainted) state.
 func setupViews(t *testing.T, g *Gui) (*View, *View) {
 	t.Helper()
@@ -40,13 +40,13 @@ func setupViews(t *testing.T, g *Gui) (*View, *View) {
 	return status, main
 }
 
-// pushContentOnly pushes a content-only event directly to the channel
+// Pushes a content-only event directly to the channel
 // (synchronous, deterministic — unlike Update which spawns a goroutine).
 func pushContentOnly(g *Gui, f func(*Gui) error) {
 	g.userEvents <- userEvent{f: f, task: g.NewTask(), contentOnly: true}
 }
 
-// pushRegular pushes a regular event directly to the channel.
+// Pushes a regular event directly to the channel.
 func pushRegular(g *Gui, f func(*Gui) error) {
 	g.userEvents <- userEvent{f: f, task: g.NewTask(), contentOnly: false}
 }
@@ -115,13 +115,12 @@ func TestProcessEvent_ContentOnlyEvent_SkipsTaintedCheck(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// status was modified and drawn → tainted cleared
 	if status.IsTainted() {
 		t.Fatal("status should not be tainted after processEvent with contentOnly")
 	}
-	// main was NOT modified → should still be untainted
+
 	if main.IsTainted() {
-		t.Fatal("main should not be tainted after processEvent with contentOnly")
+		t.Fatal("main should not be tainted since it was not modified")
 	}
 }
 
@@ -144,13 +143,13 @@ func TestProcessEvent_RegularEvent_UsesFullFlush(t *testing.T) {
 	}
 }
 
+// Queue a content-only event followed by a regular event.
+// processEvent picks up the first; processRemainingEvents picks up
+// the second. Since the second is not contentOnly, full flush runs.
 func TestProcessEvent_MixedBatch_UsesFullFlush(t *testing.T) {
 	g := newTestGui(t)
 	status, main := setupViews(t, g)
 
-	// Queue a content-only event followed by a regular event.
-	// processEvent picks up the first; processRemainingEvents picks up
-	// the second. Since the second is not contentOnly, full flush runs.
 	pushContentOnly(g, func(gui *Gui) error {
 		status.SetContent("Fetching -")
 		return nil
@@ -173,12 +172,12 @@ func TestProcessEvent_MixedBatch_UsesFullFlush(t *testing.T) {
 	}
 }
 
+// Even if a regular event comes first and the remaining are contentOnly,
+// the batch must use full flush.
 func TestProcessEvent_RegularThenContentOnly_UsesFullFlush(t *testing.T) {
 	g := newTestGui(t)
 	status, main := setupViews(t, g)
 
-	// Even if a regular event comes first and the remaining are contentOnly,
-	// the batch must use full flush.
 	pushRegular(g, func(gui *Gui) error {
 		main.SetContent("new main content")
 		return nil

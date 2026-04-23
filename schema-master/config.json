@@ -1796,7 +1796,7 @@
           "type": "integer",
           "minimum": 1,
           "description": "The \"speed\" of the spinner in milliseconds.",
-          "default": 50
+          "default": 200
         }
       },
       "additionalProperties": false,
