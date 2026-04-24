@@ -1,16 +1,20 @@
 #!/usr/bin/env bash
-# Reproduces the pager-process leak reported in
-# https://github.com/jesseduffield/lazygit/issues/2460
+# Interactive reproducer for the pager-process leak
+# (https://github.com/jesseduffield/lazygit/issues/2460).
 #
-# Requirements: go, git, tmux, bash.
+# Requirements: go, git, bash.
 #
-# Usage:
-#   ./leak-repro/reproduce.sh
+# What you'll see:
+#   - lazygit launches in this terminal against a throwaway repo with 5
+#     modified files.
+#   - Every diff you open spawns a pager that ignores SIGTERM. Flicking
+#     up/down the file list spawns new ones without reaping the old, so
+#     RSS climbs with every switch.
+#   - When you quit lazygit (press `q`), this script resumes and shows
+#     all the orphan pagers that survived, with their RSS.
 #
-# Exit codes:
-#   0  no orphan pager processes (bug not reproduced / fixed)
-#   1  environmental problem (missing binary, build failure, etc.)
-#   2  orphan pager survived lazygit exit (bug reproduced)
+# Tip: open another terminal and run `watch -n1 free -m` (or `htop`) so
+# you can see total memory change as you navigate.
 
 set -eu
 
@@ -19,40 +23,40 @@ LG_SRC="$(cd "$HERE/.." && pwd)"
 TMP="$(mktemp -d -t lg-leak-repro-XXXX)"
 
 cleanup() {
-    # Stash a copy of any logs the user might want to inspect, then clean up.
-    if [ -f "$TMP/lazygit.out" ]; then
-        cp "$TMP/lazygit.out" "${TMPDIR:-/tmp}/lazygit-leak-repro.out" 2>/dev/null || true
+    if [ "${ORPHANS_FOUND:-0}" = "1" ] && [ "${AUTO_CLEANUP:-1}" = "1" ]; then
+        pkill -9 -f "$TMP/bad-pager.sh" 2>/dev/null || true
+        # The orphan chain is `git -> bash(bad-pager) -> sleep`. Killing
+        # bad-pager also reaps its sleep child; reap dangling gits too.
+        pgrep -f "$TMP/" 2>/dev/null | xargs -r kill -9 2>/dev/null || true
     fi
-    tmux -S "$TMP/tmux.sock" kill-server 2>/dev/null || true
-    # Reap any orphans we created so the host isn't left with zombies
-    # after the repro runs.
-    pkill -9 -f "$TMP/bad-pager.sh" 2>/dev/null || true
-    pgrep -f "$TMP/" -a 2>/dev/null | awk '{print $1}' | xargs -r kill -9 2>/dev/null || true
     rm -rf "$TMP"
 }
 trap cleanup EXIT
 
-echo "=> workspace: $TMP"
+if ! [ -t 0 ] || ! [ -t 1 ]; then
+    echo "error: this reproducer needs an interactive terminal" >&2
+    exit 1
+fi
 
-# ---- 1. prerequisites --------------------------------------------------
-for bin in go git tmux bash awk sed pgrep; do
-    if ! command -v "$bin" >/dev/null 2>&1; then
+# ---- prerequisites -----------------------------------------------------
+for bin in go git bash sed awk pgrep ps; do
+    command -v "$bin" >/dev/null 2>&1 || {
         echo "error: '$bin' is required but not found in PATH" >&2
         exit 1
-    fi
+    }
 done
 
-# ---- 2. build lazygit from this checkout ------------------------------
+# ---- build lazygit from this checkout ---------------------------------
 echo "=> building lazygit from $LG_SRC"
 ( cd "$LG_SRC" && go build -o "$TMP/lazygit" . ) || {
     echo "error: build failed" >&2
     exit 1
 }
 
-# ---- 3. install a SIGTERM-ignoring pager ------------------------------
+# ---- install the misbehaving pager ------------------------------------
 install -m 0755 "$HERE/bad-pager.sh" "$TMP/bad-pager.sh"
 
-# ---- 4. isolated lazygit config ---------------------------------------
+# ---- isolated lazygit config that points at our pager -----------------
 mkdir -p "$TMP/lg-config"
 cat > "$TMP/lg-config/config.yml" <<CONFIG
 git:
@@ -61,82 +65,101 @@ git:
       pager: $TMP/bad-pager.sh
 CONFIG
 
-# ---- 5. throwaway repo with a diff for lazygit to render --------------
+# ---- throwaway repo with 5 modified files -----------------------------
 REPO="$TMP/repo"
 mkdir -p "$REPO"
 git -C "$REPO" init -q -b main
-git -C "$REPO" -c user.email=test@test -c user.name=test commit -q --allow-empty -m bootstrap
-seq 1 100 > "$REPO/file.txt"
-git -C "$REPO" add file.txt
-git -C "$REPO" -c user.email=test@test -c user.name=test commit -q -m initial
-sed -i 's/$/-changed/' "$REPO/file.txt"
+git -C "$REPO" -c user.email=test@test -c user.name=test \
+    commit -q --allow-empty -m bootstrap
+for name in a b c d e; do
+    seq 1 100 > "$REPO/$name.txt"
+done
+git -C "$REPO" add .
+git -C "$REPO" -c user.email=test@test -c user.name=test \
+    commit -q -m initial
+for name in a b c d e; do
+    sed -i "s/\$/-$name/" "$REPO/$name.txt"
+done
 
-# ---- 6. drive lazygit headlessly in tmux ------------------------------
-SOCK="$TMP/tmux.sock"
-tmux -S "$SOCK" new-session -d -s s -x 200 -y 50 \
-    "cd '$REPO' && '$TMP/lazygit' \
-        --use-config-dir='$TMP/lg-config' \
-        --use-config-file='$TMP/lg-config/config.yml' \
-        > '$TMP/lazygit.out' 2>&1"
+# ---- record RSS baseline so we can compare after quitting -------------
+RSS_BEFORE_KB=$(awk '/^MemAvailable:/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)
 
-echo "=> lazygit launched; waiting 2s for pager to spawn"
-sleep 2
+# ---- instructions -------------------------------------------------------
+cat <<INFO
 
-# pgrep -f also matches the tmux server (its argv contains the full
-# command we passed it); use -x to match the lazygit binary exactly.
-# We copied lazygit into $TMP, so the basename is just "lazygit".
-LG_PID="$(pgrep -x lazygit | while read -r p; do
-    [ "$(readlink -f /proc/$p/exe 2>/dev/null)" = "$TMP/lazygit" ] && echo "$p" && break
-done)"
-if [ -z "$LG_PID" ]; then
-    echo "error: lazygit did not start; its output was:" >&2
-    sed 's/^/   /' "$TMP/lazygit.out" >&2
-    exit 1
+============================================================
+Ready to launch lazygit against $REPO
+============================================================
+
+  - 5 files (a..e.txt) are uncommitted. Use j/k or arrows in the
+    Files panel to move between them. Each selection spawns a
+    new pager.
+  - The pager holds ~50 MiB of RSS and ignores SIGTERM/HUP/PIPE,
+    so switching files leaks memory.
+  - When you're done, quit lazygit normally (press q).
+
+Optional: open another terminal and run
+
+    watch -n1 'free -m; echo; pgrep -af "$TMP/bad-pager" | wc -l'
+
+to watch free memory drop and orphan count climb.
+
+Press ENTER to launch lazygit.
+INFO
+# shellcheck disable=SC2034
+read -r _
+
+"$TMP/lazygit" \
+    --use-config-dir="$TMP/lg-config" \
+    --use-config-file="$TMP/lg-config/config.yml" \
+    -p "$REPO" \
+    || true
+
+# ---- inspect orphans --------------------------------------------------
+echo
+echo "=> lazygit exited; inspecting orphan pagers..."
+sleep 1
+
+mapfile -t ORPHANS < <(pgrep -f "$TMP/bad-pager.sh" || true)
+ORPHAN_COUNT=${#ORPHANS[@]}
+
+RSS_AFTER_KB=$(awk '/^MemAvailable:/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)
+
+if [ "$ORPHAN_COUNT" -eq 0 ]; then
+    echo "   no orphan pagers — either the leak is fixed or no diffs opened"
+    exit 0
 fi
 
-echo "=> process tree while lazygit is running:"
-if command -v pstree >/dev/null 2>&1; then
-    pstree -ps "$LG_PID" | sed 's/^/   /'
-else
-    ps -eo pid,ppid,pgid,sid,stat,cmd --no-headers | \
-        awk -v root="$LG_PID" '
-            BEGIN { p[root]=1 }
-            { pid=$1; ppid=$2; if (ppid in p) p[pid]=1; if (pid in p) print "   " $0 }'
-fi
-
-echo "=> sending quit ('q', then 'y' in case a confirm prompt appears)"
-tmux -S "$SOCK" send-keys -t s 'q' || true
-sleep 0.3
-# The tmux session usually dies on the first 'q' because lazygit closes
-# its window; send the confirmation only if the session is still up.
-if tmux -S "$SOCK" has-session -t s 2>/dev/null; then
-    tmux -S "$SOCK" send-keys -t s 'y' || true
-fi
-
-# lazygit's ViewBufferManager.Close has a 3-second deadline; wait longer
-# so we can distinguish "still shutting down" from "truly leaked".
-sleep 6
+ORPHANS_FOUND=1
+TOTAL_RSS_KB=0
+printf '\n   %-7s %-8s %-10s %s\n' "PID" "RSS(MB)" "ELAPSED" "CMD"
+printf '   %s\n' "-----------------------------------------------------------"
+for p in "${ORPHANS[@]}"; do
+    read -r rss etime cmd < <(ps -o rss=,etime=,cmd= -p "$p" 2>/dev/null) || continue
+    TOTAL_RSS_KB=$(( TOTAL_RSS_KB + rss ))
+    printf '   %-7s %-8s %-10s %s\n' "$p" "$(( rss / 1024 ))" "$etime" "$cmd"
+done
 
 echo
-echo "=> after lazygit exited:"
-if kill -0 "$LG_PID" 2>/dev/null; then
-    echo "   (unexpected: lazygit is still running as PID $LG_PID)"
-    exit 1
-else
-    echo "   lazygit: gone"
+echo "   orphan count : $ORPHAN_COUNT"
+echo "   orphan RSS   : $(( TOTAL_RSS_KB / 1024 )) MB"
+if [ "$RSS_BEFORE_KB" -gt 0 ] && [ "$RSS_AFTER_KB" -gt 0 ]; then
+    DELTA_KB=$(( RSS_BEFORE_KB - RSS_AFTER_KB ))
+    echo "   MemAvailable : before=$(( RSS_BEFORE_KB / 1024 )) MB, after=$(( RSS_AFTER_KB / 1024 )) MB (delta=$(( DELTA_KB / 1024 )) MB)"
 fi
 
-orphans="$(pgrep -f "$TMP/bad-pager.sh" || true)"
-if [ -n "$orphans" ]; then
-    echo "   *** ORPHAN PAGER SURVIVED ***"
-    for p in $orphans; do
-        ps -o pid,ppid,pgid,sid,stat,etime,cmd -p "$p" | tail -n +2 | sed 's/^/     /'
-    done
-    if command -v pstree >/dev/null 2>&1; then
-        echo "     tree:"
-        pstree -ps "$(echo "$orphans" | head -1)" | sed 's/^/     /'
-    fi
-    exit 2
-fi
+echo
+echo "These processes will keep running (and holding RSS) until killed."
+printf "Clean them up now? [Y/n] "
+read -r answer
+case "${answer:-Y}" in
+    [nN]*)
+        echo "Leaving orphans alive. PIDs: ${ORPHANS[*]}"
+        AUTO_CLEANUP=0
+        ;;
+    *)
+        echo "Killing orphans..."
+        ;;
+esac
 
-echo "   no orphan pager processes"
+exit 2
