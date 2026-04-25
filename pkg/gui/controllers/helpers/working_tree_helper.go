@@ -196,9 +196,9 @@ func (self *WorkingTreeHelper) HandleWIPCommitPress() error {
 }
 
 func (self *WorkingTreeHelper) HandleCommitPress() error {
-	message := self.c.Contexts().CommitMessage.GetPreservedMessageAndLogError()
-
-	if message == "" {
+	var initialMessage string
+	preservedMessage := self.c.Contexts().CommitMessage.GetPreservedMessageAndLogError()
+	if preservedMessage == "" {
 		commitPrefixConfigs := self.commitPrefixConfigsForRepo()
 		for _, commitPrefixConfig := range commitPrefixConfigs {
 			prefixPattern := commitPrefixConfig.Pattern
@@ -213,14 +213,13 @@ func (self *WorkingTreeHelper) HandleCommitPress() error {
 			}
 
 			if rgx.MatchString(branchName) {
-				prefix := rgx.ReplaceAllString(branchName, prefixReplace)
-				message = prefix
+				initialMessage = rgx.ReplaceAllString(branchName, prefixReplace)
 				break
 			}
 		}
 	}
 
-	return self.HandleCommitPressWithMessage(message, false)
+	return self.HandleCommitPressWithMessage(initialMessage, false)
 }
 
 func (self *WorkingTreeHelper) WithEnsureCommittableFiles(handler func() error) error {
