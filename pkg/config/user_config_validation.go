@@ -46,6 +46,9 @@ func (config *UserConfig) Validate() error {
 	if err := validateKeybindings(config.Keybinding); err != nil {
 		return err
 	}
+	if err := validateKeybindingGroups(config.KeybindingGroups); err != nil {
+		return err
+	}
 	if err := validateCustomCommands(config.CustomCommands); err != nil {
 		return err
 	}
@@ -163,5 +166,16 @@ func validateCustomCommandPrompt(prompt CustomCommandPrompt) error {
 		}
 	}
 
+	return nil
+}
+
+func validateKeybindingGroups(groups map[string]KeybindingGroupConfig) error {
+	for prefix, group := range groups {
+		if _, ok := KeyFromLabel(prefix); !ok {
+			return fmt.Errorf("Unrecognized chord prefix '%s' in keybindingGroups. For permitted values see %s",
+				prefix, constants.Links.Docs.CustomKeybindings)
+		}
+		_ = group
+	}
 	return nil
 }
