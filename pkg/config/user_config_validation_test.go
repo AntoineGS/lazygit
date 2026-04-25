@@ -121,7 +121,9 @@ func TestUserConfigValidate_enums(t *testing.T) {
 				{value: "<disabled>", valid: true},
 				{value: "q", valid: true},
 				{value: "<c-c>", valid: true},
-				{value: "invalid_value", valid: false},
+				// Multi-rune strings are now valid as chord sequences;
+				// use an unterminated bracket to assert a rejected key.
+				{value: "<bogus", valid: false},
 			},
 		},
 		{
@@ -133,7 +135,7 @@ func TestUserConfigValidate_enums(t *testing.T) {
 				{value: "", valid: false},
 				{value: "1,2,3", valid: false},
 				{value: "1,2,3,4,5", valid: true},
-				{value: "1,2,3,4,invalid", valid: false},
+				{value: "1,2,3,4,<bogus", valid: false},
 				{value: "1,2,3,4,5,6", valid: false},
 			},
 		},
@@ -152,7 +154,7 @@ func TestUserConfigValidate_enums(t *testing.T) {
 				{value: "<disabled>", valid: true},
 				{value: "q", valid: true},
 				{value: "<c-c>", valid: true},
-				{value: "invalid_value", valid: false},
+				{value: "<bogus", valid: false},
 			},
 		},
 		{
@@ -173,7 +175,7 @@ func TestUserConfigValidate_enums(t *testing.T) {
 				{value: "<disabled>", valid: true},
 				{value: "q", valid: true},
 				{value: "<c-c>", valid: true},
-				{value: "invalid_value", valid: false},
+				{value: "<bogus", valid: false},
 			},
 		},
 		{
@@ -198,7 +200,7 @@ func TestUserConfigValidate_enums(t *testing.T) {
 				{value: "<disabled>", valid: true},
 				{value: "q", valid: true},
 				{value: "<c-c>", valid: true},
-				{value: "invalid_value", valid: false},
+				{value: "<bogus", valid: false},
 			},
 		},
 		{
