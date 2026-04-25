@@ -153,14 +153,36 @@ type bindingInfo struct {
 	style       style.TextStyle
 }
 
-// chordContinuationBindings returns the footer entries to show while the
-// given chord prefix is pending: every binding whose key sequence starts
-// with prefix and has at least one more key, plus a final <esc>: cancel
-// entry. Disabled bindings are skipped, but otherwise we don't filter on
-// DisplayOnScreen — chord continuations are always relevant when their
-// prefix is pending.
-func (self *OptionsMapMgr) chordContinuationBindings(allBindings []*types.Binding, prefix []gocui.Key) []bindingInfo {
+// buildChordContinuations is the pure logic behind chordContinuationBindings:
+// given the pending prefix, all currently-eligible bindings, and the configured
+// groups, return the rows to show in the footer.
+//
+// Behavior:
+//   - For each binding under the prefix, examine prefix+nextKey.
+//   - If prefix+nextKey is a configured group, emit one row using group.Name
+//     (deduplicated across all bindings that share the same group).
+//   - Otherwise, emit one row per binding using its short description.
+//   - Always append the <esc>: cancel row last.
+func buildChordContinuations(
+	allBindings []*types.Binding,
+	prefix []gocui.Key,
+	groups map[string]config.KeybindingGroupConfig,
+) []bindingInfo {
+	// Normalize group keys to canonical form so that "<b><t>" and "bt" both
+	// resolve to the same entry (LabelForKeySequence always produces the
+	// canonical form without redundant angle brackets for single chars).
+	normalizedGroups := make(map[string]config.KeybindingGroupConfig, len(groups))
+	for label, g := range groups {
+		if k, ok := config.KeyFromLabel(label); ok {
+			normalizedGroups[config.LabelForKeySequence(k.Sequence())] = g
+		} else {
+			normalizedGroups[label] = g
+		}
+	}
+
 	result := []bindingInfo{}
+	seenGroupKeys := map[string]struct{}{}
+
 	for _, binding := range allBindings {
 		if binding.IsDisabled() {
 			continue
@@ -179,20 +201,50 @@ func (self *OptionsMapMgr) chordContinuationBindings(allBindings []*types.Bindin
 		if !matches {
 			continue
 		}
+
+		nextKey := seq[len(prefix)]
+		groupPrefix := config.LabelForKeySequence(append(append([]gocui.Key{}, prefix...), nextKey))
+
 		displayStyle := theme.OptionsFgColor
 		if binding.DisplayStyle != nil {
 			displayStyle = *binding.DisplayStyle
 		}
+
+		if g, ok := normalizedGroups[groupPrefix]; ok {
+			if _, already := seenGroupKeys[groupPrefix]; already {
+				continue
+			}
+			seenGroupKeys[groupPrefix] = struct{}{}
+			result = append(result, bindingInfo{
+				key:         config.LabelForKey(nextKey),
+				description: g.Name,
+				style:       displayStyle,
+			})
+			continue
+		}
+
 		result = append(result, bindingInfo{
-			key:         config.LabelForKey(seq[len(prefix)]),
+			key:         config.LabelForKey(nextKey),
 			description: binding.GetShortDescription(),
 			style:       displayStyle,
 		})
 	}
+
 	result = append(result, bindingInfo{
 		key:         "<esc>",
 		description: "cancel",
 		style:       theme.OptionsFgColor,
 	})
 	return result
+}
+
+// chordContinuationBindings returns the footer entries to show while the
+// given chord prefix is pending: every binding whose key sequence starts
+// with prefix and has at least one more key, plus a final <esc>: cancel
+// entry. Disabled bindings are skipped, but otherwise we don't filter on
+// DisplayOnScreen — chord continuations are always relevant when their
+// prefix is pending.
+func (self *OptionsMapMgr) chordContinuationBindings(allBindings []*types.Binding, prefix []gocui.Key) []bindingInfo {
+	groups := self.c.UserConfig().KeybindingGroups
+	return buildChordContinuations(allBindings, prefix, groups)
 }
