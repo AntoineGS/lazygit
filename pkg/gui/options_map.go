@@ -49,6 +49,13 @@ func (self *OptionsMapMgr) renderContextOptionsMap() {
 		return !currentContextKeys.Includes(b.Key)
 	})...)
 
+	// While a chord prefix is pending, the footer is dedicated to showing
+	// the available continuations rather than the regular keybindings.
+	if prefix := self.c.State().GetRepoState().GetPendingChord(); len(prefix) > 0 {
+		self.renderOptions(self.formatBindingInfos(self.chordContinuationBindings(allBindings, prefix)))
+		return
+	}
+
 	bindingsToDisplay := lo.Filter(allBindings, func(binding *types.Binding, _ int) bool {
 		return binding.DisplayOnScreen && !binding.IsDisabled()
 	})
@@ -144,4 +151,48 @@ type bindingInfo struct {
 	key         string
 	description string
 	style       style.TextStyle
+}
+
+// chordContinuationBindings returns the footer entries to show while the
+// given chord prefix is pending: every binding whose key sequence starts
+// with prefix and has at least one more key, plus a final <esc>: cancel
+// entry. Disabled bindings are skipped, but otherwise we don't filter on
+// DisplayOnScreen — chord continuations are always relevant when their
+// prefix is pending.
+func (self *OptionsMapMgr) chordContinuationBindings(allBindings []*types.Binding, prefix []gocui.Key) []bindingInfo {
+	result := []bindingInfo{}
+	for _, binding := range allBindings {
+		if binding.IsDisabled() {
+			continue
+		}
+		seq := binding.Key.Sequence()
+		if len(seq) <= len(prefix) {
+			continue
+		}
+		matches := true
+		for i, k := range prefix {
+			if !seq[i].Equals(k) {
+				matches = false
+				break
+			}
+		}
+		if !matches {
+			continue
+		}
+		displayStyle := theme.OptionsFgColor
+		if binding.DisplayStyle != nil {
+			displayStyle = *binding.DisplayStyle
+		}
+		result = append(result, bindingInfo{
+			key:         config.LabelForKey(seq[len(prefix)]),
+			description: binding.GetShortDescription(),
+			style:       displayStyle,
+		})
+	}
+	result = append(result, bindingInfo{
+		key:         "<esc>",
+		description: "cancel",
+		style:       theme.OptionsFgColor,
+	})
+	return result
 }

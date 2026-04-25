@@ -311,6 +311,10 @@ func (self *GuiRepoState) GetSplitMainPanel() bool {
 	return self.SplitMainPanel
 }
 
+func (self *GuiRepoState) GetPendingChord() []gocui.Key {
+	return self.PendingChord
+}
+
 func (gui *Gui) onSwitchToNewRepo(startArgs appTypes.StartArgs, contextKey types.ContextKey) error {
 	err := gui.onNewRepo(startArgs, contextKey)
 	if err == nil && gui.UserConfig().Git.AutoFetch && gui.UserConfig().Refresher.FetchInterval > 0 {
