@@ -478,6 +478,10 @@ func (gui *Gui) SetKeybinding(binding *types.Binding) error {
 		return gui.callKeybindingHandler(binding)
 	}
 
+	if binding.Key.HasRest() {
+		return gui.g.SetKeybindingKeys(binding.ViewName, binding.Key.Sequence(), handler)
+	}
+
 	return gui.g.SetKeybinding(binding.ViewName, binding.Key, binding.Modifier, handler)
 }
 
