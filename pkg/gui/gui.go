@@ -931,6 +931,11 @@ func (gui *Gui) Run(startArgs appTypes.StartArgs) error {
 		if gui.State != nil {
 			gui.State.PendingChord = prefix
 		}
+
+		if len(prefix) > 0 {
+			gui.maybeAutoSwitchForChordPrefix(prefix)
+		}
+
 		// Schedule a redraw so the options footer repaints.
 		gui.onUIThread(func() error { return nil })
 	})
@@ -963,6 +968,43 @@ func (gui *Gui) Run(startArgs appTypes.StartArgs) error {
 		gui.c.Context().Current().HandleQuit()
 	}
 	return err
+}
+
+// maybeAutoSwitchForChordPrefix consults keybindingGroups for the given
+// pending chord prefix and, if a group with switchTo is configured, performs
+// the context switch with chord-clear suppressed. Order matters:
+//  1. SuppressChordClear(true)
+//  2. Push (which would normally call ClearPendingChord and erase chord state)
+//  3. Update pendingChordView so view-scoped sub-bindings match
+//  4. SuppressChordClear(false)
+//
+// pendingChordView must be updated before the next onChordStateChange fires
+// (i.e., before this function returns) so the footer reads the right scope.
+func (gui *Gui) maybeAutoSwitchForChordPrefix(prefix []gocui.Key) {
+	cfg := gui.c.UserConfig().KeybindingGroups
+	if len(cfg) == 0 {
+		return
+	}
+
+	prefixLabel := config.LabelForKeySequence(prefix)
+	group, ok := cfg[prefixLabel]
+	if !ok || group.SwitchTo == "" {
+		return
+	}
+
+	target := gui.helpers.KeybindingGroups.ContextByName(group.SwitchTo)
+	if target == nil || !target.IsFocusable() {
+		return
+	}
+
+	gui.g.SuppressChordClear(true)
+	defer gui.g.SuppressChordClear(false)
+
+	gui.c.Context().Push(target, types.OnFocusOpts{})
+
+	if v := target.GetView(); v != nil {
+		gui.g.SetPendingChordView(v.Name())
+	}
 }
 
 func (gui *Gui) RunAndHandleError(startArgs appTypes.StartArgs) error {

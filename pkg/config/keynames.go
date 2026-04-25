@@ -224,6 +224,17 @@ func singleKeyFromLabel(label string) (gocui.Key, bool) {
 	return gocui.NewKeyStrMod(label, mod), true
 }
 
+// LabelForKeySequence reverses tokenizeSequence: produces a canonical chord
+// label like "<b><p>" from a key slice. Used to look up keybindingGroups
+// entries by the same string the user wrote in YAML.
+func LabelForKeySequence(keys []gocui.Key) string {
+	var b strings.Builder
+	for _, k := range keys {
+		b.WriteString(LabelForKey(k))
+	}
+	return b.String()
+}
+
 func isValidKeybindingKey(key string) bool {
 	_, ok := KeyFromLabel(key)
 	return ok
