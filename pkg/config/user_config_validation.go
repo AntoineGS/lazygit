@@ -175,7 +175,16 @@ func validateKeybindingGroups(groups map[string]KeybindingGroupConfig) error {
 			return fmt.Errorf("Unrecognized chord prefix '%s' in keybindingGroups. For permitted values see %s",
 				prefix, constants.Links.Docs.CustomKeybindings)
 		}
-		_ = group
+		allowedSwitchTo := []string{
+			"status", "files",
+			"localBranches", "remotes", "tags",
+			"localCommits", "subCommits", "reflog",
+			"stash", "submodules", "worktrees", "commitFiles",
+		}
+		if group.SwitchTo != "" && !slices.Contains(allowedSwitchTo, group.SwitchTo) {
+			return fmt.Errorf("Unknown switchTo value '%s' in keybindingGroups[%s]. Allowed values: %s",
+				group.SwitchTo, prefix, strings.Join(allowedSwitchTo, ", "))
+		}
 	}
 	return nil
 }

@@ -305,3 +305,26 @@ func TestKeybindingGroup_PrefixMustParse(t *testing.T) {
 		t.Fatalf("error should cite the offending prefix, got: %v", err)
 	}
 }
+
+func TestKeybindingGroup_SwitchToMustBeKnown(t *testing.T) {
+	cfg := GetDefaultConfig()
+	cfg.Keybinding.Universal.Pull = "<b><p>" // give the prefix a binding so rule 4 doesn't fire first
+	cfg.KeybindingGroups = map[string]KeybindingGroupConfig{
+		"<b>": {Name: "Branch", SwitchTo: "notARealView"},
+	}
+	err := cfg.Validate()
+	if err == nil || !strings.Contains(err.Error(), "notARealView") {
+		t.Fatalf("expected validation error citing notARealView, got: %v", err)
+	}
+}
+
+func TestKeybindingGroup_SwitchToValidValuesAccepted(t *testing.T) {
+	cfg := GetDefaultConfig()
+	cfg.Keybinding.Universal.Pull = "<b><p>"
+	cfg.KeybindingGroups = map[string]KeybindingGroupConfig{
+		"<b>": {Name: "Branch", SwitchTo: "localBranches"},
+	}
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("expected validation to succeed, got: %v", err)
+	}
+}
