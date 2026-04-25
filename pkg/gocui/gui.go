@@ -1555,6 +1555,79 @@ func (g *Gui) execKeybindings(v *View, ev *GocuiEvent) error {
 		}
 	}
 
+	// --- chord dispatch ---
+	if len(g.pendingChord) > 0 {
+		// Esc cancels the chord unconditionally.
+		if ev.Key.KeyName() == KeyName(tcell.KeyEscape) {
+			g.ClearPendingChord()
+			return nil
+		}
+
+		candidate := append([]Key(nil), g.pendingChord...)
+		candidate = append(candidate, ev.Key)
+
+		// 1) Exact match in the chord-start view scope -> fire.
+		for _, kb := range g.keybindings {
+			if !kb.isChord() {
+				continue
+			}
+			if !chordViewMatches(g.pendingChordView, kb.viewName) {
+				continue
+			}
+			if keysEqual(kb.keys, candidate) {
+				g.ClearPendingChord()
+				return g.execKeybinding(g.viewByName(g.pendingChordView), kb)
+			}
+		}
+
+		// 2) Candidate is a proper prefix of some binding -> extend and wait.
+		for _, kb := range g.keybindings {
+			if !kb.isChord() {
+				continue
+			}
+			if !chordViewMatches(g.pendingChordView, kb.viewName) {
+				continue
+			}
+			if keysHasPrefix(kb.keys, candidate) {
+				g.pendingChord = candidate
+				if g.onChordStateChange != nil {
+					g.onChordStateChange(g.pendingChord)
+				}
+				return nil
+			}
+		}
+
+		// 3) No match: silent cancel (per design Q4 answer A).
+		g.ClearPendingChord()
+		return nil
+	}
+
+	// No chord pending: check whether ev.Key starts any chord binding in
+	// the current view scope. If so, enter chord-pending mode and stop
+	// before the single-key dispatch (per design Rule C: chord wins).
+	for _, kb := range g.keybindings {
+		if !kb.isChord() {
+			continue
+		}
+		if !kb.keys[0].Equals(ev.Key) {
+			continue
+		}
+		currentViewName := ""
+		if v != nil {
+			currentViewName = v.Name()
+		}
+		if !chordViewMatches(currentViewName, kb.viewName) {
+			continue
+		}
+		g.pendingChord = []Key{ev.Key}
+		g.pendingChordView = currentViewName
+		if g.onChordStateChange != nil {
+			g.onChordStateChange(g.pendingChord)
+		}
+		return nil
+	}
+	// --- end chord dispatch ---
+
 	var err error
 
 	for _, kb := range g.keybindings {
@@ -1689,4 +1762,54 @@ func (g *Gui) SetEditKeybindings(moveWordLeft, moveWordRight, backspaceWord, for
 	moveWordRightKeybinding = moveWordRight
 	backspaceWordKeybinding = backspaceWord
 	forwardDeleteWordKeybinding = forwardDeleteWord
+}
+
+// chordViewMatches reports whether a binding registered for bindingView
+// should apply when chord state is scoped to chordView. Empty binding
+// view name means "global" and always matches.
+func chordViewMatches(chordView string, bindingView string) bool {
+	if bindingView == "" {
+		return true
+	}
+	return bindingView == chordView
+}
+
+// keysEqual reports whether two key sequences are identical.
+func keysEqual(a, b []Key) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !a[i].Equals(b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+// keysHasPrefix reports whether prefix is a strict or equal prefix of seq.
+func keysHasPrefix(seq, prefix []Key) bool {
+	if len(prefix) > len(seq) {
+		return false
+	}
+	for i := range prefix {
+		if !seq[i].Equals(prefix[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+// viewByName returns the named view, or nil if not found. Used when
+// firing a chord handler whose scope was captured when the chord began.
+func (g *Gui) viewByName(name string) *View {
+	if name == "" {
+		return g.currentView
+	}
+	for _, v := range g.views {
+		if v.Name() == name {
+			return v
+		}
+	}
+	return g.currentView
 }
