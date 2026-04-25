@@ -51,8 +51,9 @@ type Helpers struct {
 	InlineStatus      *InlineStatusHelper
 	WindowArrangement *WindowArrangementHelper
 	Search            *SearchHelper
-	Worktree          *WorktreeHelper
-	SubCommits        *SubCommitsHelper
+	Worktree            *WorktreeHelper
+	SubCommits          *SubCommitsHelper
+	KeybindingGroups    *KeybindingGroupsHelper
 }
 
 func NewStubHelpers() *Helpers {
@@ -90,5 +91,6 @@ func NewStubHelpers() *Helpers {
 		Search:            &SearchHelper{},
 		Worktree:          &WorktreeHelper{},
 		SubCommits:        &SubCommitsHelper{},
+		KeybindingGroups:  &KeybindingGroupsHelper{},
 	}
 }
