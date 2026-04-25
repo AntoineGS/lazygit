@@ -38,6 +38,8 @@ type UserConfig struct {
 	PromptToReturnFromSubprocess bool `yaml:"promptToReturnFromSubprocess"`
 	// Keybindings
 	Keybinding KeybindingConfig `yaml:"keybinding"`
+	// Keybinding groups
+	KeybindingGroups map[string]KeybindingGroupConfig `yaml:"keybindingGroups,omitempty"`
 }
 
 type RefresherConfig struct {
@@ -418,6 +420,11 @@ type KeybindingConfig struct {
 	Main           KeybindingMainConfig           `yaml:"main"`
 	Submodules     KeybindingSubmodulesConfig     `yaml:"submodules"`
 	CommitMessage  KeybindingCommitMessageConfig  `yaml:"commitMessage"`
+}
+
+type KeybindingGroupConfig struct {
+	Name     string `yaml:"name"`
+	SwitchTo string `yaml:"switchTo,omitempty"`
 }
 
 // damn looks like we have some inconsistencies here with -alt and -alt1
