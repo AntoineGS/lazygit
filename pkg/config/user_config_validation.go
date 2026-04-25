@@ -46,7 +46,7 @@ func (config *UserConfig) Validate() error {
 	if err := validateKeybindings(config.Keybinding); err != nil {
 		return err
 	}
-	if err := validateKeybindingGroups(config.KeybindingGroups); err != nil {
+	if err := validateKeybindingGroups(config.KeybindingGroups, config.Keybinding); err != nil {
 		return err
 	}
 	if err := validateCustomCommands(config.CustomCommands); err != nil {
@@ -169,13 +169,65 @@ func validateCustomCommandPrompt(prompt CustomCommandPrompt) error {
 	return nil
 }
 
-func validateKeybindingGroups(groups map[string]KeybindingGroupConfig) error {
-	for prefix, group := range groups {
+func collectAllKeybindingStrings(node any) []string {
+	var out []string
+	value := reflect.ValueOf(node)
+	switch value.Kind() {
+	case reflect.Struct:
+		for _, f := range reflect.VisibleFields(reflect.TypeOf(node)) {
+			out = append(out, collectAllKeybindingStrings(value.FieldByName(f.Name).Interface())...)
+		}
+	case reflect.Slice:
+		for i := range value.Len() {
+			out = append(out, collectAllKeybindingStrings(value.Index(i).Interface())...)
+		}
+	case reflect.String:
+		s := node.(string)
+		if s != "" && s != "<disabled>" {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+func validateKeybindingGroups(groups map[string]KeybindingGroupConfig, keybindings KeybindingConfig) error {
+	for prefix := range groups {
 		if _, ok := KeyFromLabel(prefix); !ok {
 			return fmt.Errorf("Unrecognized chord prefix '%s' in keybindingGroups. For permitted values see %s",
 				prefix, constants.Links.Docs.CustomKeybindings)
 		}
-		_ = group
+
+		// Validate that the group has at least one binding under it
+		prefixKey, _ := KeyFromLabel(prefix) // already validated parseable above
+		prefixSeq := prefixKey.Sequence()
+
+		allBindings := collectAllKeybindingStrings(keybindings)
+		hasChild := false
+		for _, b := range allBindings {
+			bk, ok := KeyFromLabel(b)
+			if !ok {
+				continue
+			}
+			bseq := bk.Sequence()
+			if len(bseq) <= len(prefixSeq) {
+				continue
+			}
+			match := true
+			for i, k := range prefixSeq {
+				if !bseq[i].Equals(k) {
+					match = false
+					break
+				}
+			}
+			if match {
+				hasChild = true
+				break
+			}
+		}
+		if !hasChild {
+			return fmt.Errorf("keybindingGroups[%s] has no bindings under it; either add a chord binding starting with %s or remove the group entry",
+				prefix, prefix)
+		}
 	}
 	return nil
 }

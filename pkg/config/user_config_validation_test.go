@@ -305,3 +305,15 @@ func TestKeybindingGroup_PrefixMustParse(t *testing.T) {
 		t.Fatalf("error should cite the offending prefix, got: %v", err)
 	}
 }
+
+func TestKeybindingGroup_MustHaveAtLeastOneBinding(t *testing.T) {
+	cfg := GetDefaultConfig()
+	// Note: no chord binding starts with <z>.
+	cfg.KeybindingGroups = map[string]KeybindingGroupConfig{
+		"<z>": {Name: "Empty"},
+	}
+	err := cfg.Validate()
+	if err == nil || !strings.Contains(err.Error(), "<z>") {
+		t.Fatalf("expected error citing empty group <z>, got: %v", err)
+	}
+}
