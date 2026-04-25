@@ -80,7 +80,9 @@ func (k Key) HasRest() bool {
 
 // Sequence returns the full chord sequence starting with k itself.
 // For single-key bindings it returns a one-element slice containing k
-// with its rest cleared.
+// with its rest cleared. Note: returned elements always have empty
+// rest — callers must not rely on Sequence()[i].HasRest() to recover
+// the original chord shape; iterate the slice instead.
 func (k Key) Sequence() []Key {
 	head := k
 	head.rest = nil
