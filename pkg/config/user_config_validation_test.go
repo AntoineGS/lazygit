@@ -320,9 +320,9 @@ func TestKeybindingGroup_SwitchToMustBeKnown(t *testing.T) {
 
 func TestKeybindingGroup_SwitchToValidValuesAccepted(t *testing.T) {
 	cfg := GetDefaultConfig()
-	cfg.Keybinding.Universal.Pull = "<b><p>"
+	cfg.Keybinding.Universal.Pull = "<U><p>"
 	cfg.KeybindingGroups = map[string]KeybindingGroupConfig{
-		"<b>": {Name: "Branch", SwitchTo: "localBranches"},
+		"<U>": {Name: "Custom", SwitchTo: "localBranches"},
 	}
 	if err := cfg.Validate(); err != nil {
 		t.Fatalf("expected validation to succeed, got: %v", err)
@@ -338,5 +338,20 @@ func TestKeybindingGroup_MustHaveAtLeastOneBinding(t *testing.T) {
 	err := cfg.Validate()
 	if err == nil || !strings.Contains(err.Error(), "<z>") {
 		t.Fatalf("expected error citing empty group <z>, got: %v", err)
+	}
+}
+
+func TestKeybindingGroup_LeafCollisionRejected(t *testing.T) {
+	cfg := GetDefaultConfig()
+	// Bind exactly <b> as a leaf (single-key chord-equivalent).
+	cfg.Keybinding.Universal.Pull = "<b>"
+	// AND declare <b> as a group with at least one child binding.
+	cfg.Keybinding.Universal.Push = "<b><p>"
+	cfg.KeybindingGroups = map[string]KeybindingGroupConfig{
+		"<b>": {Name: "Branch"},
+	}
+	err := cfg.Validate()
+	if err == nil || !strings.Contains(err.Error(), "<b>") {
+		t.Fatalf("expected leaf/group collision error for <b>, got: %v", err)
 	}
 }
