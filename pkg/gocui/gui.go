@@ -555,6 +555,19 @@ func (g *Gui) SetKeybinding(viewname string, key Key, mod Modifier, handler func
 	return nil
 }
 
+// SetKeybindingKeys creates a new chord keybinding. The sequence must
+// contain at least two keys. Dispatch treats the sequence as "press key0,
+// then key1, then ..., then keyN-1 to trigger". If sequence has length
+// less than 2 this is treated as a programmer error.
+func (g *Gui) SetKeybindingKeys(viewname string, keys []Key, handler func(*Gui, *View) error) error {
+	if len(keys) < 2 {
+		return errors.New("SetKeybindingKeys requires a sequence of length >= 2")
+	}
+	kb := newChordKeybinding(viewname, keys, ModNone, handler)
+	g.keybindings = append(g.keybindings, kb)
+	return nil
+}
+
 // DeleteKeybinding deletes a keybinding.
 func (g *Gui) DeleteKeybinding(viewname string, key Key, mod Modifier) error {
 	for i, kb := range g.keybindings {
