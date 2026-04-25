@@ -336,6 +336,7 @@ var tests = []*components.IntegrationTest{
 	keybindings.ChordEscCancels,
 	keybindings.ChordFooterShowsContinuations,
 	keybindings.ChordGroupAutoswitch,
+	keybindings.ChordGroupCollapsesFooter,
 	keybindings.ChordGroupNested,
 	keybindings.ChordGroupNoSwitch,
 	keybindings.ChordShadowsSingleKey,

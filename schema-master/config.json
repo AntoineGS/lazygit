@@ -1199,6 +1199,18 @@
       "additionalProperties": false,
       "type": "object"
     },
+    "KeybindingGroupConfig": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "switchTo": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
     "KeybindingMainConfig": {
       "properties": {
         "toggleSelectHunk": {
@@ -1817,7 +1829,7 @@
           "type": "integer",
           "minimum": 1,
           "description": "The \"speed\" of the spinner in milliseconds.",
-          "default": 50
+          "default": 200
         }
       },
       "additionalProperties": false,
@@ -2067,6 +2079,13 @@
         "keybinding": {
           "$ref": "#/$defs/KeybindingConfig",
           "description": "Keybindings"
+        },
+        "keybindingGroups": {
+          "additionalProperties": {
+            "$ref": "#/$defs/KeybindingGroupConfig"
+          },
+          "type": "object",
+          "description": "Keybinding groups"
         }
       },
       "additionalProperties": false,
