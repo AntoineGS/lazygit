@@ -41,6 +41,12 @@ func (self *ContextMgr) Replace(c types.Context) {
 		return
 	}
 
+	// Replacing the focused context cancels any pending chord; the prefix
+	// was scoped to the previous view and must not bleed into the new one.
+	// (Idempotent if the chord dispatcher already cleared state before
+	// firing a handler that triggers this Replace.)
+	self.gui.g.ClearPendingChord()
+
 	self.Lock()
 
 	if len(self.ContextStack) == 0 {
@@ -59,6 +65,13 @@ func (self *ContextMgr) Push(c types.Context, opts types.OnFocusOpts) {
 	if !c.IsFocusable() {
 		return
 	}
+
+	// Pushing a new context (panel switch, menu open, popup, etc.) cancels
+	// any pending chord; the prefix was scoped to the prior view and must
+	// not reinterpret subsequent input in the new context. Idempotent if
+	// the chord dispatcher already cleared state before firing a handler
+	// that triggers this Push.
+	self.gui.g.ClearPendingChord()
 
 	contextsToDeactivate, contextToActivate := self.pushToContextStack(c)
 
