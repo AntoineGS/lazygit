@@ -306,6 +306,18 @@ func TestKeybindingGroup_PrefixMustParse(t *testing.T) {
 	}
 }
 
+func TestKeybindingGroup_NameMustNotBeEmpty(t *testing.T) {
+	cfg := GetDefaultConfig()
+	cfg.Keybinding.Universal.Pull = "<X><p>"
+	cfg.KeybindingGroups = map[string]KeybindingGroupConfig{
+		"<X>": {Name: ""},
+	}
+	err := cfg.Validate()
+	if err == nil || !strings.Contains(err.Error(), "non-empty name") {
+		t.Fatalf("expected validation error for empty name, got: %v", err)
+	}
+}
+
 func TestKeybindingGroup_LeafCollisionRejected(t *testing.T) {
 	cfg := GetDefaultConfig()
 	// Bind exactly <b> as a leaf (single-key chord-equivalent).

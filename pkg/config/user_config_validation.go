@@ -191,10 +191,13 @@ func collectAllKeybindingStrings(node any) []string {
 }
 
 func validateKeybindingGroups(groups map[string]KeybindingGroupConfig, keybindings KeybindingConfig) error {
-	for prefix := range groups {
+	for prefix, group := range groups {
 		if _, ok := KeyFromLabel(prefix); !ok {
 			return fmt.Errorf("Unrecognized chord prefix '%s' in keybindingGroups. For permitted values see %s",
 				prefix, constants.Links.Docs.CustomKeybindings)
+		}
+		if strings.TrimSpace(group.Name) == "" {
+			return fmt.Errorf("keybindingGroups[%s] must have a non-empty name", prefix)
 		}
 
 		// Validate that the group has at least one binding under it
