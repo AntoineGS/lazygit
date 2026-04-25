@@ -986,9 +986,23 @@ func (gui *Gui) maybeAutoSwitchForChordPrefix(prefix []gocui.Key) {
 		return
 	}
 
+	// Normalize YAML keys to canonical form (LabelForKeySequence omits angle
+	// brackets for single chars, so "<b>" and "b" must resolve identically).
 	prefixLabel := config.LabelForKeySequence(prefix)
-	group, ok := cfg[prefixLabel]
-	if !ok || group.SwitchTo == "" {
+	var group config.KeybindingGroupConfig
+	found := false
+	for label, g := range cfg {
+		k, ok := config.KeyFromLabel(label)
+		if !ok {
+			continue
+		}
+		if config.LabelForKeySequence(k.Sequence()) == prefixLabel {
+			group = g
+			found = true
+			break
+		}
+	}
+	if !found || group.SwitchTo == "" {
 		return
 	}
 
