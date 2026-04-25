@@ -202,6 +202,29 @@ func validateKeybindingGroups(groups map[string]KeybindingGroupConfig, keybindin
 		prefixSeq := prefixKey.Sequence()
 
 		allBindings := collectAllKeybindingStrings(keybindings)
+
+		// Check for leaf/group collision: prefix cannot equal an existing leaf binding
+		for _, b := range allBindings {
+			bk, ok := KeyFromLabel(b)
+			if !ok {
+				continue
+			}
+			bseq := bk.Sequence()
+			if len(bseq) != len(prefixSeq) {
+				continue
+			}
+			collision := true
+			for i, k := range prefixSeq {
+				if !bseq[i].Equals(k) {
+					collision = false
+					break
+				}
+			}
+			if collision {
+				return fmt.Errorf("keybindingGroups[%s] collides with a leaf binding using the same key sequence; a key cannot be both an action and a sub-menu", prefix)
+			}
+		}
+
 		hasChild := false
 		for _, b := range allBindings {
 			bk, ok := KeyFromLabel(b)

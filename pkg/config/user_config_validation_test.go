@@ -306,6 +306,21 @@ func TestKeybindingGroup_PrefixMustParse(t *testing.T) {
 	}
 }
 
+func TestKeybindingGroup_LeafCollisionRejected(t *testing.T) {
+	cfg := GetDefaultConfig()
+	// Bind exactly <b> as a leaf (single-key chord-equivalent).
+	cfg.Keybinding.Universal.Pull = "<b>"
+	// AND declare <b> as a group with at least one child binding.
+	cfg.Keybinding.Universal.Push = "<b><p>"
+	cfg.KeybindingGroups = map[string]KeybindingGroupConfig{
+		"<b>": {Name: "Branch"},
+	}
+	err := cfg.Validate()
+	if err == nil || !strings.Contains(err.Error(), "<b>") {
+		t.Fatalf("expected leaf/group collision error for <b>, got: %v", err)
+	}
+}
+
 func TestKeybindingGroup_MustHaveAtLeastOneBinding(t *testing.T) {
 	cfg := GetDefaultConfig()
 	// Note: no chord binding starts with <z>.
