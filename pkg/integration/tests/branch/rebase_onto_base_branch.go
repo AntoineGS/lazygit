@@ -35,11 +35,11 @@ var RebaseOntoBaseBranch = NewIntegrationTest(NewIntegrationTestArgs{
 				MatchesRegexp(`feature\s+↓1`).IsSelected(),
 				Contains("master"),
 			).
-			Press(keys.Branches.RebaseBranch)
+			Press(keys.ChordPrefix.LocalBranches.RebaseOptions)
 
 		t.ExpectPopup().Menu().
-			Title(Equals("Rebase 'feature'")).
-			Select(Contains("Rebase onto base branch (master)")).
+			Title(Equals("Rebase options")).
+			Select(Contains("Rebase onto base branch")).
 			Confirm()
 
 		t.Views().Commits().Lines(

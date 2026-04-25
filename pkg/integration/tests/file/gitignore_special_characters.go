@@ -25,10 +25,10 @@ var GitignoreSpecialCharacters = NewIntegrationTest(NewIntegrationTestArgs{
 		excludeFile := func(fileName string) {
 			t.Views().Files().
 				NavigateToLine(Contains(fileName)).
-				Press(keys.Files.IgnoreFile)
+				Press(keys.ChordPrefix.Files.IgnoreOptions)
 
 			t.ExpectPopup().Menu().
-				Title(Equals("Ignore or exclude file")).
+				Title(Equals("Ignore options")).
 				Select(Contains("Add to .gitignore")).
 				Confirm()
 		}

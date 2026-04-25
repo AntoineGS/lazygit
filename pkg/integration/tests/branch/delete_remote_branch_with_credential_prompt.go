@@ -29,11 +29,10 @@ var DeleteRemoteBranchWithCredentialPrompt = NewIntegrationTest(NewIntegrationTe
 		deleteBranch := func() {
 			t.Views().Branches().
 				Focus().
-				Press(keys.Universal.Remove)
+				Press(keys.ChordPrefix.LocalBranches.DeleteBranch)
 
-			t.ExpectPopup().
-				Menu().
-				Title(Equals("Delete branch 'mybranch'?")).
+			t.ExpectPopup().Menu().
+				Title(Equals("Delete branch")).
 				Select(Contains("Delete remote branch")).
 				Confirm()
 

@@ -20,14 +20,14 @@ var Skip = NewIntegrationTest(NewIntegrationTestArgs{
 		t.Views().Commits().
 			Focus().
 			SelectedLine(Contains("commit 10")).
-			Press(keys.Commits.ViewBisectOptions).
+			Press(keys.ChordPrefix.Commits.BisectOptions).
 			Tap(func() {
-				t.ExpectPopup().Menu().Title(Equals("Bisect")).Select(MatchesRegexp(`Mark .* as bad`)).Confirm()
+				t.ExpectPopup().Menu().Title(Equals("Bisect options")).Select(MatchesRegexp(`Mark .* as bad`)).Confirm()
 			}).
 			NavigateToLine(Contains("commit 01")).
-			Press(keys.Commits.ViewBisectOptions).
+			Press(keys.ChordPrefix.Commits.BisectOptions).
 			Tap(func() {
-				t.ExpectPopup().Menu().Title(Equals("Bisect")).Select(MatchesRegexp(`Mark .* as good`)).Confirm()
+				t.ExpectPopup().Menu().Title(Equals("Bisect options")).Select(MatchesRegexp(`Mark .* as good`)).Confirm()
 				t.Views().Information().Content(Contains("Bisecting"))
 			}).
 			Lines(
@@ -42,15 +42,15 @@ var Skip = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("CI commit 02").DoesNotContain("<--"),
 				Contains("CI commit 01").Contains("<-- good"),
 			).
-			Press(keys.Commits.ViewBisectOptions).
+			Press(keys.ChordPrefix.Commits.BisectOptions).
 			Tap(func() {
-				t.ExpectPopup().Menu().Title(Equals("Bisect")).
-					// Does not show a "Skip selected commit" entry:
+				t.ExpectPopup().Menu().Title(Equals("Bisect options")).
 					Lines(
-						Contains("b Mark current commit").Contains("as bad"),
-						Contains("g Mark current commit").Contains("as good"),
-						Contains("s Skip current commit"),
-						Contains("r Reset bisect"),
+						Contains("Mark").Contains("as bad"),
+						Contains("Mark").Contains("as good"),
+						Contains("Skip current commit"),
+						Contains("Skip selected commit"),
+						Contains("Reset bisect"),
 						Contains("Cancel"),
 					).
 					Select(Contains("Skip current commit")).Confirm()
@@ -69,16 +69,15 @@ var Skip = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("CI commit 01").Contains("<-- good"),
 			).
 			NavigateToLine(Contains("commit 07")).
-			Press(keys.Commits.ViewBisectOptions).
+			Press(keys.ChordPrefix.Commits.BisectOptions).
 			Tap(func() {
-				t.ExpectPopup().Menu().Title(Equals("Bisect")).
-					// Does show a "Skip selected commit" entry:
+				t.ExpectPopup().Menu().Title(Equals("Bisect options")).
 					Lines(
-						Contains("b Mark current commit").Contains("as bad"),
-						Contains("g Mark current commit").Contains("as good"),
-						Contains("s Skip current commit"),
-						Contains("S Skip selected commit"),
-						Contains("r Reset bisect"),
+						Contains("Mark").Contains("as bad"),
+						Contains("Mark").Contains("as good"),
+						Contains("Skip current commit"),
+						Contains("Skip selected commit"),
+						Contains("Reset bisect"),
 						Contains("Cancel"),
 					).
 					Select(Contains("Skip selected commit")).Confirm()

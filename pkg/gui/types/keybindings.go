@@ -41,6 +41,11 @@ type Binding struct {
 	// to be displayed if the keybinding is highlighted from within a menu
 	Tooltip string
 
+	// Replaces Tooltip in the chord popup. Use this for previews that
+	// need ANSI styling or that depend on runtime state unsafe to
+	// evaluate during cheatsheet generation (which reads Tooltip only).
+	ChordPopupExtra string
+
 	// Function to decide whether the command is enabled, and why. If this
 	// returns an empty string, it is; if it returns a non-empty string, it is
 	// disabled and we show the given text in an error message when trying to

@@ -33,12 +33,7 @@ var InteractiveRebaseWithConflictForEditCommand = NewIntegrationTest(NewIntegrat
 		t.Views().Branches().
 			Focus().
 			NavigateToLine(Contains("master")).
-			Press(keys.Branches.RebaseBranch)
-
-		t.ExpectPopup().Menu().
-			Title(Equals("Rebase 'branch'")).
-			Select(Contains("Interactive rebase")).
-			Confirm()
+			Press(keys.Branches.RebaseBranchInteractive)
 
 		t.Views().Commits().
 			IsFocused().

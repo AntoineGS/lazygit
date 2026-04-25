@@ -478,6 +478,15 @@ func (gui *Gui) SetKeybinding(binding *types.Binding) error {
 		return gui.callKeybindingHandler(binding)
 	}
 
+	if binding.Key.HasRest() {
+		// Chord modifiers live per-token inside the Key sequence; a
+		// non-zero Binding.Modifier here is a programmer error.
+		if binding.Modifier != gocui.ModNone {
+			log.Fatalf("chord binding %q must not set Binding.Modifier; modifiers belong on the per-token keys", binding.GetDescription())
+		}
+		return gui.g.SetKeybindingKeys(binding.ViewName, binding.Key.Sequence(), handler)
+	}
+
 	return gui.g.SetKeybinding(binding.ViewName, binding.Key, binding.Modifier, handler)
 }
 

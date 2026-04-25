@@ -9,7 +9,7 @@ var DeleteRemoteTagWhenBranchWithSameNameExists = NewIntegrationTest(NewIntegrat
 	Description:  "Delete a remote tag when a remote branch with the same name exists",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig:  func(config *config.AppConfig) {},
+	SetupConfig: func(cfg *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		shell.EmptyCommit("initial commit")
 		shell.CloneIntoRemote("origin")
@@ -23,11 +23,10 @@ var DeleteRemoteTagWhenBranchWithSameNameExists = NewIntegrationTest(NewIntegrat
 			Lines(
 				Contains("xyz").IsSelected(),
 			).
-			Press(keys.Universal.Remove)
+			Press(keys.ChordPrefix.Tags.DeleteTag)
 
-		t.ExpectPopup().
-			Menu().
-			Title(Equals("Delete tag 'xyz'?")).
+		t.ExpectPopup().Menu().
+			Title(Equals("Delete tag")).
 			Select(Contains("Delete remote tag")).
 			Confirm()
 

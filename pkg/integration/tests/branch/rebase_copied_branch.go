@@ -39,10 +39,10 @@ var RebaseCopiedBranch = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("master"),
 			).
 			NavigateToLine(Contains("master")).
-			Press(keys.Branches.RebaseBranch).
+			Press(keys.ChordPrefix.LocalBranches.RebaseOptions).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Equals("Rebase 'branch2'")).
+					Title(Equals("Rebase options")).
 					Select(Contains("Simple rebase")).
 					Confirm()
 			})

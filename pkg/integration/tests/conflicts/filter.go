@@ -10,7 +10,7 @@ var Filter = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Ensures that when there are merge conflicts, the files panel only shows conflicted files",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig:  func(config *config.AppConfig) {},
+	SetupConfig: func(cfg *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		shared.CreateMergeConflictFiles(shell)
 	},
@@ -22,10 +22,10 @@ var Filter = NewIntegrationTest(NewIntegrationTestArgs{
 				Equals("  UU file1"),
 				Equals("  UU file2"),
 			).
-			Press(keys.Files.OpenStatusFilter).
+			Press(keys.ChordPrefix.Files.FilterFiles).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Equals("Filtering")).
+					Title(Equals("Filter files")).
 					Select(Contains("No filter")).
 					Confirm()
 			}).

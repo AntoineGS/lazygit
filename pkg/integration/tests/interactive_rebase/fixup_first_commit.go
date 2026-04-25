@@ -22,9 +22,13 @@ var FixupFirstCommit = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("commit 01"),
 			).
 			NavigateToLine(Contains("commit 01")).
-			Press(keys.Commits.MarkCommitAsFixup).
+			// Chord popup doesn't gate on disabled-reason; cancel
+			// instead of triggering.
+			Press(keys.ChordPrefix.Commits.FixupCommitOptions).
 			Tap(func() {
-				t.ExpectToast(Equals("Disabled: There's no commit below to squash into"))
+				t.ExpectPopup().Menu().
+					Title(Equals("Fixup commit options")).
+					Cancel()
 			}).
 			Lines(
 				Contains("commit 02"),

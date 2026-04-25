@@ -88,10 +88,28 @@ func (self *SubmodulesController) GetKeybindings(opts types.KeybindingsOpts) []*
 			Tooltip:           self.c.Tr.InitSubmoduleTooltip,
 		},
 		{
-			Key:         opts.GetKey(opts.Config.Submodules.BulkMenu),
-			Handler:     self.openBulkActionsMenu,
-			Description: self.c.Tr.ViewBulkSubmoduleOptions,
-			OpensMenu:   true,
+			Key:             opts.GetKey(opts.Config.Submodules.BulkInit),
+			Handler:         self.bulkInit,
+			Description:     self.c.Tr.BulkInitSubmodules,
+			ChordPopupExtra: self.bulkPreview(style.FgGreen, func() string { return self.c.Git().Submodule.BulkInitCmdObj().ToString() }),
+		},
+		{
+			Key:             opts.GetKey(opts.Config.Submodules.BulkUpdate),
+			Handler:         self.bulkUpdate,
+			Description:     self.c.Tr.BulkUpdateSubmodules,
+			ChordPopupExtra: self.bulkPreview(style.FgYellow, func() string { return self.c.Git().Submodule.BulkUpdateCmdObj().ToString() }),
+		},
+		{
+			Key:             opts.GetKey(opts.Config.Submodules.BulkUpdateRecursive),
+			Handler:         self.bulkUpdateRecursive,
+			Description:     self.c.Tr.BulkUpdateRecursiveSubmodules,
+			ChordPopupExtra: self.bulkPreview(style.FgYellow, func() string { return self.c.Git().Submodule.BulkUpdateRecursivelyCmdObj().ToString() }),
+		},
+		{
+			Key:             opts.GetKey(opts.Config.Submodules.BulkDeinit),
+			Handler:         self.bulkDeinit,
+			Description:     self.c.Tr.BulkDeinitSubmodules,
+			ChordPopupExtra: self.bulkPreview(style.FgRed, func() string { return self.c.Git().Submodule.BulkDeinitCmdObj().ToString() }),
 		},
 		{
 			Handler:     self.easterEgg,
@@ -102,6 +120,13 @@ func (self *SubmodulesController) GetKeybindings(opts types.KeybindingsOpts) []*
 
 func (self *SubmodulesController) GetOnDoubleClick() func() error {
 	return self.withItemGraceful(self.enter)
+}
+
+func (self *SubmodulesController) bulkPreview(s style.TextStyle, cmd func() string) string {
+	if self.c.Git() == nil {
+		return ""
+	}
+	return s.Sprint(cmd())
 }
 
 func (self *SubmodulesController) GetOnRenderToMain() func() {
@@ -215,72 +240,47 @@ func (self *SubmodulesController) init(submodule *models.SubmoduleConfig) error 
 	})
 }
 
-func (self *SubmodulesController) openBulkActionsMenu() error {
-	return self.c.Menu(types.CreateMenuOptions{
-		Title: self.c.Tr.BulkSubmoduleOptions,
-		Items: []*types.MenuItem{
-			{
-				LabelColumns: []string{self.c.Tr.BulkInitSubmodules, style.FgGreen.Sprint(self.c.Git().Submodule.BulkInitCmdObj().ToString())},
-				OnPress: func() error {
-					return self.c.WithWaitingStatus(self.c.Tr.RunningCommand, func(gocui.Task) error {
-						self.c.LogAction(self.c.Tr.Actions.BulkInitialiseSubmodules)
-						err := self.c.Git().Submodule.BulkInitCmdObj().Run()
-						if err != nil {
-							return err
-						}
+func (self *SubmodulesController) bulkInit() error {
+	return self.c.WithWaitingStatus(self.c.Tr.RunningCommand, func(gocui.Task) error {
+		self.c.LogAction(self.c.Tr.Actions.BulkInitialiseSubmodules)
+		if err := self.c.Git().Submodule.BulkInitCmdObj().Run(); err != nil {
+			return err
+		}
+		self.c.Refresh(types.RefreshOptions{Scope: []types.RefreshableView{types.SUBMODULES}})
+		return nil
+	})
+}
 
-						self.c.Refresh(types.RefreshOptions{Scope: []types.RefreshableView{types.SUBMODULES}})
-						return nil
-					})
-				},
-				Key: gocui.NewKeyRune('i'),
-			},
-			{
-				LabelColumns: []string{self.c.Tr.BulkUpdateSubmodules, style.FgYellow.Sprint(self.c.Git().Submodule.BulkUpdateCmdObj().ToString())},
-				OnPress: func() error {
-					return self.c.WithWaitingStatus(self.c.Tr.RunningCommand, func(gocui.Task) error {
-						self.c.LogAction(self.c.Tr.Actions.BulkUpdateSubmodules)
-						if err := self.c.Git().Submodule.BulkUpdateCmdObj().Run(); err != nil {
-							return err
-						}
+func (self *SubmodulesController) bulkUpdate() error {
+	return self.c.WithWaitingStatus(self.c.Tr.RunningCommand, func(gocui.Task) error {
+		self.c.LogAction(self.c.Tr.Actions.BulkUpdateSubmodules)
+		if err := self.c.Git().Submodule.BulkUpdateCmdObj().Run(); err != nil {
+			return err
+		}
+		self.c.Refresh(types.RefreshOptions{Scope: []types.RefreshableView{types.SUBMODULES}})
+		return nil
+	})
+}
 
-						self.c.Refresh(types.RefreshOptions{Scope: []types.RefreshableView{types.SUBMODULES}})
-						return nil
-					})
-				},
-				Key: gocui.NewKeyRune('u'),
-			},
-			{
-				LabelColumns: []string{self.c.Tr.BulkUpdateRecursiveSubmodules, style.FgYellow.Sprint(self.c.Git().Submodule.BulkUpdateRecursivelyCmdObj().ToString())},
-				OnPress: func() error {
-					return self.c.WithWaitingStatus(self.c.Tr.RunningCommand, func(gocui.Task) error {
-						self.c.LogAction(self.c.Tr.Actions.BulkUpdateRecursiveSubmodules)
-						if err := self.c.Git().Submodule.BulkUpdateRecursivelyCmdObj().Run(); err != nil {
-							return err
-						}
+func (self *SubmodulesController) bulkUpdateRecursive() error {
+	return self.c.WithWaitingStatus(self.c.Tr.RunningCommand, func(gocui.Task) error {
+		self.c.LogAction(self.c.Tr.Actions.BulkUpdateRecursiveSubmodules)
+		if err := self.c.Git().Submodule.BulkUpdateRecursivelyCmdObj().Run(); err != nil {
+			return err
+		}
+		self.c.Refresh(types.RefreshOptions{Scope: []types.RefreshableView{types.SUBMODULES}})
+		return nil
+	})
+}
 
-						self.c.Refresh(types.RefreshOptions{Scope: []types.RefreshableView{types.SUBMODULES}})
-						return nil
-					})
-				},
-				Key: gocui.NewKeyRune('r'),
-			},
-			{
-				LabelColumns: []string{self.c.Tr.BulkDeinitSubmodules, style.FgRed.Sprint(self.c.Git().Submodule.BulkDeinitCmdObj().ToString())},
-				OnPress: func() error {
-					return self.c.WithWaitingStatus(self.c.Tr.RunningCommand, func(gocui.Task) error {
-						self.c.LogAction(self.c.Tr.Actions.BulkDeinitialiseSubmodules)
-						if err := self.c.Git().Submodule.BulkDeinitCmdObj().Run(); err != nil {
-							return err
-						}
-
-						self.c.Refresh(types.RefreshOptions{Scope: []types.RefreshableView{types.SUBMODULES}})
-						return nil
-					})
-				},
-				Key: gocui.NewKeyRune('d'),
-			},
-		},
+func (self *SubmodulesController) bulkDeinit() error {
+	return self.c.WithWaitingStatus(self.c.Tr.RunningCommand, func(gocui.Task) error {
+		self.c.LogAction(self.c.Tr.Actions.BulkDeinitialiseSubmodules)
+		if err := self.c.Git().Submodule.BulkDeinitCmdObj().Run(); err != nil {
+			return err
+		}
+		self.c.Refresh(types.RefreshOptions{Scope: []types.RefreshableView{types.SUBMODULES}})
+		return nil
 	})
 }
 

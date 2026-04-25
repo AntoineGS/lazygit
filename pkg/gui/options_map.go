@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/jesseduffield/generics/set"
@@ -25,8 +26,7 @@ func (gui *Gui) renderContextOptionsMap() {
 	if gui.integrationTest != nil && gui.integrationTest.IsDemo() {
 		return
 	}
-	mgr := OptionsMapMgr{c: gui.c}
-	mgr.renderContextOptionsMap()
+	gui.optionsMapMgr.renderContextOptionsMap()
 }
 
 // Render the options available for the current context at the bottom of the screen
@@ -60,11 +60,15 @@ func (self *OptionsMapMgr) renderContextOptionsMap() {
 		}
 
 		return bindingInfo{
-			key:         config.LabelForKey(binding.Key),
+			key:         config.LabelForBindingKey(binding.Key),
 			description: binding.GetShortDescription(),
 			style:       displayStyle,
 		}
 	})
+
+	// Chord-group prefixes have no underlying *types.Binding, so they
+	// come from KeybindingGroups (entries with DisplayOnScreen set).
+	optionsMap = append(optionsMap, self.chordGroupOptions(string(currentContext.GetKey()))...)
 
 	// Mode-specific local keybindings
 	if currentContext.GetKey() == context.LOCAL_COMMITS_CONTEXT_KEY {
@@ -78,7 +82,7 @@ func (self *OptionsMapMgr) renderContextOptionsMap() {
 
 		if self.c.Model().BisectInfo.Started() {
 			optionsMap = utils.Prepend(optionsMap, bindingInfo{
-				key:         self.c.KeybindingsOpts().Config.Commits.ViewBisectOptions,
+				key:         "b",
 				description: self.c.Tr.ViewBisectOptions,
 				style:       style.FgGreen,
 			})
@@ -88,7 +92,7 @@ func (self *OptionsMapMgr) renderContextOptionsMap() {
 	// Mode-specific global keybindings
 	if state := self.c.Model().WorkingTreeStateAtLastCommitRefresh; state.Any() {
 		optionsMap = utils.Prepend(optionsMap, bindingInfo{
-			key:         self.c.KeybindingsOpts().Config.Universal.CreateRebaseOptionsMenu,
+			key:         "m",
 			description: state.OptionsMapTitle(self.c.Tr),
 			style:       style.FgYellow,
 		})
@@ -103,6 +107,60 @@ func (self *OptionsMapMgr) renderContextOptionsMap() {
 	}
 
 	self.renderOptions(self.formatBindingInfos(optionsMap))
+}
+
+// Iterates current context first, then "global", deduplicating by
+// canonical prefix label so a context override shadows the global entry.
+// Inner iteration is sorted to keep bar order stable across renders.
+func (self *OptionsMapMgr) chordGroupOptions(currentContextName string) []bindingInfo {
+	groups := self.c.UserConfig().KeybindingGroups
+	if len(groups) == 0 {
+		return nil
+	}
+
+	canonicalize := func(label string) string {
+		k, ok := config.KeyFromLabel(label)
+		if !ok {
+			return label
+		}
+		return config.LabelForKeySequence(k.Sequence())
+	}
+
+	seen := map[string]struct{}{}
+	var result []bindingInfo
+
+	collect := func(contextGroups map[string]config.KeybindingGroupConfig) {
+		labels := make([]string, 0, len(contextGroups))
+		for label := range contextGroups {
+			labels = append(labels, label)
+		}
+		sort.Strings(labels)
+		for _, label := range labels {
+			group := contextGroups[label]
+			if !group.DisplayOnScreen {
+				continue
+			}
+			canonical := canonicalize(label)
+			if _, dup := seen[canonical]; dup {
+				continue
+			}
+			seen[canonical] = struct{}{}
+
+			description := group.ShortName
+			if description == "" {
+				description = group.Name
+			}
+			result = append(result, bindingInfo{
+				key:         canonical,
+				description: description,
+				style:       theme.OptionsFgColor,
+			})
+		}
+	}
+
+	collect(groups[currentContextName])
+	collect(groups["global"])
+	return result
 }
 
 func (self *OptionsMapMgr) formatBindingInfos(bindingInfos []bindingInfo) string {

@@ -19,6 +19,9 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` : `` | Execute shell command | Bring up a prompt where you can enter a shell command to execute. |
 | `` <ctrl+p> `` | Просмотреть пользовательские параметры патча |  |
 | `` m `` | Просмотреть параметры слияния/перебазирования | View options to abort/continue/skip the current merge/rebase. |
+| `` mc `` | Continue rebase / merge | View options to abort/continue/skip the current merge/rebase. |
+| `` ma `` | Abort rebase / merge | View options to abort/continue/skip the current merge/rebase. |
+| `` ms `` | Skip current rebase commit | View options to abort/continue/skip the current merge/rebase. |
 | `` R `` | Обновить | Refresh the git state (i.e. run `git status`, `git branch`, etc in background to update the contents of panels). This does not run `git fetch`. |
 | `` + `` | Следующий режим экрана (нормальный/полуэкранный/полноэкранный) |  |
 | `` _ `` | Предыдущий режим экрана |  |
@@ -150,7 +153,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` o `` | Открыть коммит в браузере |  |
 | `` n `` | Создать новую ветку с этого коммита |  |
 | `` N `` | Move commits to new branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
-| `` g `` | Просмотреть параметры сброса | View reset options (soft/mixed/hard) for resetting onto selected item. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | Мягкий сброс | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | Жёсткий сброс | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` C `` | Скопировать отобранные коммит (cherry-pick) | Mark commit as copied. Then, within the local commits view, you can press `V` to paste (cherry-pick) the copied commit(s) into your checked out branch. At any time you can press `<esc>` to cancel the selection. |
 | `` <ctrl+r> `` | Сбросить отобранную (скопированную \| cherry-picked) выборку коммитов |  |
 | `` <ctrl+t> `` | Open external diff tool (git difftool) |  |
@@ -167,8 +173,18 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | Copy abbreviated commit hash to clipboard |  |
 | `` <ctrl+r> `` | Сбросить отобранную (скопированную \| cherry-picked) выборку коммитов |  |
 | `` b `` | Просмотреть параметры бинарного поиска |  |
+| `` bb `` | Mark commit as bad |  |
+| `` bg `` | Mark commit as good |  |
+| `` bs `` | Skip current bisect commit |  |
+| `` bS `` | Skip selected commit |  |
+| `` br `` | Сбросить бинарный поиск |  |
+| `` bb `` | Mark commit as bad (start bisect) |  |
+| `` bg `` | Mark commit as good (start bisect) |  |
+| `` bt `` | Choose bisect terms |  |
 | `` s `` | Объединить коммиты (Squash) | Squash the selected commit into the commit below it. The selected commit's message will be appended to the commit below it. |
 | `` f `` | Объединить несколько коммитов в один отбросив сообщение коммита (Fixup)  | Meld the selected commit into the commit below it. Similar to squash, but the selected commit's message will be discarded. |
+| `` ff `` | Объединить несколько коммитов в один отбросив сообщение коммита (Fixup)  | Meld the selected commit into the commit below it. Similar to squash, but the selected commit's message will be discarded. |
+| `` fc `` | Fixup and use this commit's message | Squash the selected commit into the commit below, using this commit's message, discarding the message of the commit below. |
 | `` c `` | Set fixup message | Set the message option for the fixup commit. The -C option means to use this commit's message instead of the target commit's message. |
 | `` r `` | Перефразировать коммит | Reword the selected commit's message. |
 | `` R `` | Переписать коммит с помощью редактора |  |
@@ -194,6 +210,9 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` n `` | Создать новую ветку с этого коммита |  |
 | `` N `` | Move commits to new branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
 | `` g `` | Просмотреть параметры сброса | View reset options (soft/mixed/hard) for resetting onto selected item. |
+| `` gm `` | Mixed reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | Мягкий сброс | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | Жёсткий сброс | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` C `` | Скопировать отобранные коммит (cherry-pick) | Mark commit as copied. Then, within the local commits view, you can press `V` to paste (cherry-pick) the copied commit(s) into your checked out branch. At any time you can press `<esc>` to cancel the selection. |
 | `` <ctrl+t> `` | Open external diff tool (git difftool) |  |
 | `` * `` | Select commits of current branch |  |
@@ -208,6 +227,11 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 |-----|--------|-------------|
 | `` <ctrl+o> `` | Скопировать название ветки в буфер обмена |  |
 | `` i `` | Показать параметры git-flow |  |
+| `` iF `` | Finish git-flow branch |  |
+| `` if `` | Start git-flow feature |  |
+| `` ih `` | Start git-flow hotfix |  |
+| `` ib `` | Start git-flow bugfix |  |
+| `` ir `` | Start git-flow release |  |
 | `` <space> `` | Переключить | Checkout selected item. |
 | `` n `` | Новая ветка |  |
 | `` N `` | Move commits to new branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
@@ -219,14 +243,38 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` - `` | Checkout previous branch |  |
 | `` F `` | Принудительное переключение | Force checkout selected branch. This will discard all local changes in your working directory before checking out the selected branch. |
 | `` d `` | Delete | View delete options for local/remote branch. |
+| `` dc `` | Delete local branch | View delete options for local/remote branch. |
+| `` dr `` | Удалить Удалённую Ветку | Delete the remote branch from the remote. |
+| `` db `` | Delete local and remote branch | View delete options for local/remote branch. |
 | `` r `` | Перебазировать переключённую ветку на эту ветку | Rebase the checked-out branch onto the selected branch. |
+| `` rs `` | Simple rebase | Rebase the checked-out branch onto the selected branch. |
+| `` ri `` | Interactive rebase | Начать интерактивную перебазировку с перерыва в начале, чтобы можно было обновить TODO коммиты, прежде чем продолжить. |
+| `` rb `` | Rebase onto base branch | Rebase the checked out branch onto its base branch (i.e. the closest main branch). |
 | `` M `` | Слияние с текущей переключённой веткой | View options for merging the selected item into the current branch (regular merge, squash merge) |
+| `` Mm `` | Слияние с текущей переключённой веткой | View options for merging the selected item into the current branch (regular merge, squash merge) |
+| `` Mn `` | Regular merge (with merge commit) | Merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}', creating a merge commit. |
+| `` Mf `` | Regular merge (fast-forward) | Fast-forward '{{.checkedOutBranch}}' to '{{.selectedBranch}}' without creating a merge commit. |
+| `` Ms `` | Squash merge (uncommitted) | Squash merge '{{.selectedBranch}}' into the working tree. |
+| `` MS `` | Squash merge (committed) | Squash merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}' as a single commit. |
 | `` f `` | Перемотать эту ветку вперёд из её upstream-ветки | Fast-forward selected branch from its upstream. |
 | `` T `` | Создать тег |  |
 | `` s `` | Порядок сортировки |  |
-| `` g `` | Просмотреть параметры сброса |  |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | Мягкий сброс | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | Жёсткий сброс | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` R `` | Переименовать ветку |  |
 | `` u `` | View upstream options | View options relating to the branch's upstream e.g. setting/unsetting the upstream and resetting to the upstream. |
+| `` ud `` | View divergence from upstream | View options relating to the branch's upstream e.g. setting/unsetting the upstream and resetting to the upstream. |
+| `` uD `` | View divergence from base branch |  |
+| `` us `` | Установить upstream-ветку из выбранной ветки |  |
+| `` uu `` | Убрать upstream-ветку из выбранной ветки |  |
+| `` ugm `` | Mixed reset to upstream | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` ugs `` | Soft reset to upstream | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` ugh `` | Hard reset to upstream | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
+| `` urs `` | Simple rebase onto upstream |  |
+| `` uri `` | Interactive rebase onto upstream | Начать интерактивную перебазировку с перерыва в начале, чтобы можно было обновить TODO коммиты, прежде чем продолжить. |
+| `` urb `` | Rebase onto base branch | Rebase the checked out branch onto its base branch (i.e. the closest main branch). |
 | `` <ctrl+t> `` | Open external diff tool (git difftool) |  |
 | `` 0 `` | Focus main view |  |
 | `` <enter> `` | Просмотреть коммиты |  |
@@ -259,7 +307,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` o `` | Открыть коммит в браузере |  |
 | `` n `` | Создать новую ветку с этого коммита |  |
 | `` N `` | Move commits to new branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
-| `` g `` | Просмотреть параметры сброса | View reset options (soft/mixed/hard) for resetting onto selected item. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | Мягкий сброс | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | Жёсткий сброс | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` C `` | Скопировать отобранные коммит (cherry-pick) | Mark commit as copied. Then, within the local commits view, you can press `V` to paste (cherry-pick) the copied commit(s) into your checked out branch. At any time you can press `<esc>` to cancel the selection. |
 | `` <ctrl+r> `` | Сбросить отобранную (скопированную \| cherry-picked) выборку коммитов |  |
 | `` <ctrl+t> `` | Open external diff tool (git difftool) |  |
@@ -281,6 +332,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` e `` | Обновить URL подмодуля |  |
 | `` i `` | Initialize | Инициализировать подмодуль |
 | `` b `` | Просмотреть параметры массового подмодуля |  |
+| `` bi `` | Массовая инициализация подмодулей |  |
+| `` bu `` | Массовое обновление подмодулей |  |
+| `` br `` | Bulk init and update submodules recursively |  |
+| `` bd `` | Массовая деинициализация подмодулей |  |
 | `` / `` | Filter the current view by text |  |
 
 ## Сводка коммита
@@ -296,6 +351,12 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 |-----|--------|-------------|
 | `` <ctrl+o> `` | Скопировать название файла в буфер обмена |  |
 | `` y `` | Copy to clipboard |  |
+| `` yn `` | File name |  |
+| `` yp `` | Relative path |  |
+| `` yP `` | Absolute path |  |
+| `` ys `` | Diff of selected file |  |
+| `` ya `` | Diff of all files |  |
+| `` yc `` | Content of selected file |  |
 | `` c `` | Переключить | Переключить файл |
 | `` d `` | Просмотреть параметры «отмены изменении» | Отменить изменения коммита в этом файле |
 | `` o `` | Открыть файл | Open file in default application. |
@@ -329,9 +390,15 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | Copy tag to clipboard |  |
 | `` <space> `` | Переключить | Checkout the selected tag as a detached HEAD. |
 | `` n `` | Создать тег | Create new tag from current commit. You'll be prompted to enter a tag name and optional description. |
-| `` d `` | Delete | View delete options for local/remote tag. |
+| `` d `` | Delete |  |
+| `` dc `` | Delete local tag | View delete options for local/remote tag. |
+| `` dr `` | Delete remote tag | View delete options for local/remote tag. |
+| `` db `` | Delete local and remote tag | View delete options for local/remote tag. |
 | `` P `` | Отправить тег | Push the selected tag to a remote. You'll be prompted to select a remote. |
-| `` g `` | Reset | View reset options (soft/mixed/hard) for resetting onto selected item. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | Мягкий сброс | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | Жёсткий сброс | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` <ctrl+t> `` | Open external diff tool (git difftool) |  |
 | `` 0 `` | Focus main view |  |
 | `` <enter> `` | Просмотреть коммиты |  |
@@ -345,12 +412,23 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | Скопировать название ветки в буфер обмена |  |
 | `` <space> `` | Переключить | Checkout a new local branch based on the selected remote branch, or the remote branch as a detached head. |
 | `` n `` | Новая ветка |  |
-| `` M `` | Слияние с текущей переключённой веткой | View options for merging the selected item into the current branch (regular merge, squash merge) |
-| `` r `` | Перебазировать переключённую ветку на эту ветку | Rebase the checked-out branch onto the selected branch. |
+| `` M `` | Merge |  |
+| `` Mm `` | Слияние с текущей переключённой веткой | View options for merging the selected item into the current branch (regular merge, squash merge) |
+| `` Mn `` | Non-fast-forward merge | Merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}', creating a merge commit. |
+| `` Mf `` | Fast-forward only merge | Fast-forward '{{.checkedOutBranch}}' to '{{.selectedBranch}}' without creating a merge commit. |
+| `` Ms `` | Squash merge (uncommitted) | Squash merge '{{.selectedBranch}}' into the working tree. |
+| `` MS `` | Squash merge (committed) | Squash merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}' as a single commit. |
+| `` r `` | Rebase options |  |
+| `` rs `` | Перебазировать переключённую ветку на эту ветку | Rebase the checked-out branch onto the selected branch. |
+| `` ri `` | Interactive rebase | Начать интерактивную перебазировку с перерыва в начале, чтобы можно было обновить TODO коммиты, прежде чем продолжить. |
+| `` rb `` | Rebase onto base branch | Rebase the checked out branch onto its base branch (i.e. the closest main branch). |
 | `` d `` | Delete | Delete the remote branch from the remote. |
-| `` u `` | Set as upstream | Установить как upstream-ветку переключённую ветку |
+| `` us `` | Set as upstream | Установить как upstream-ветку переключённую ветку |
 | `` s `` | Порядок сортировки |  |
-| `` g `` | Просмотреть параметры сброса | View reset options (soft/mixed/hard) for resetting onto selected item. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | Мягкий сброс | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | Жёсткий сброс | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` <ctrl+t> `` | Open external diff tool (git difftool) |  |
 | `` 0 `` | Focus main view |  |
 | `` <enter> `` | Просмотреть коммиты |  |
@@ -376,7 +454,17 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | Скопировать название файла в буфер обмена |  |
 | `` <space> `` | Переключить индекс | Toggle staged for selected file. |
 | `` <ctrl+b> `` | Фильтровать файлы (проиндексированные/непроиндексированные) |  |
+| `` <ctrl+b>s `` | Показывать только проиндексированные файлы |  |
+| `` <ctrl+b>u `` | Показывать только непроиндексированные файлы |  |
+| `` <ctrl+b>t `` | Show only tracked files |  |
+| `` <ctrl+b>T `` | Show only untracked files |  |
+| `` <ctrl+b>r `` | No filter |  |
 | `` y `` | Copy to clipboard |  |
+| `` yn `` | File name |  |
+| `` yp `` | Relative path |  |
+| `` yP `` | Absolute path |  |
+| `` ys `` | Diff of selected file | If there are staged items, this command considers only them. Otherwise, it considers all the unstaged ones. |
+| `` ya `` | Diff of all files | If there are staged items, this command considers only them. Otherwise, it considers all the unstaged ones. |
 | `` c `` | Сохранить изменения | Commit staged changes. |
 | `` w `` | Закоммитить изменения без предварительного хука коммита |  |
 | `` A `` | Правка последнего коммита |  |
@@ -385,14 +473,32 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` e `` | Edit | Open file in external editor. |
 | `` o `` | Открыть файл | Open file in default application. |
 | `` i `` | Игнорировать или исключить файл |  |
+| `` ii `` | Добавить в .gitignore |  |
+| `` ie `` | Добавить в .git/info/exclude |  |
 | `` r `` | Обновить файлы |  |
-| `` s `` | Stash | Stash all changes. For other variations of stashing, use the view stash options keybinding. |
+| `` s `` | Stash | Stash all changes. Press capital S for variations (keep index, include untracked, staged only, unstaged only). |
 | `` S `` | Просмотреть параметры хранилища | View stash options (e.g. stash all, stash staged, stash unstaged). |
+| `` Si `` | Припрятать все изменения и сохранить индекс |  |
+| `` SU `` | Припрятать все изменения, включая неотслеживаемые файлы |  |
+| `` Ss `` | Припрятать проиндексированные изменения |  |
+| `` Su `` | Припрятать непроиндексированные изменения |  |
 | `` a `` | Все проиндексированные/непроиндексированные | Toggle staged/unstaged for all files in working tree. |
 | `` <enter> `` | Проиндексировать отдельные части/строки для файла или свернуть/развернуть для каталога | If the selected item is a file, focus the staging view so you can stage individual hunks/lines. If the selected item is a directory, collapse/expand it. |
-| `` d `` | Просмотреть параметры «отмены изменении» | View options for discarding changes to the selected file. |
-| `` g `` | Просмотреть параметры сброса upstream-ветки |  |
+| `` d `` | Discard changes |  |
+| `` dc `` | Просмотреть параметры «отмены изменении» | View options for discarding changes to the selected file. |
+| `` du `` | Отменить непроиндексированные изменения |  |
+| `` g `` | Reset to upstream |  |
+| `` gm `` | Mixed reset to upstream | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | Soft reset to upstream | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | Hard reset to upstream | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` D `` | Reset | View reset options for working tree (e.g. nuking the working tree). |
+| `` Dx `` | Разбомбить рабочее дерево? | Если вы хотите, чтобы все изменения в рабочем дереве исчезли, это способ сделать это. Если есть какие-либо изменения подмодуля, эти изменения будут припрятаны в подмодуле(-ях). |
+| `` Du `` | Отменить непроиндексированные изменения |  |
+| `` Dc `` | Удалить неотслеживаемые файлы |  |
+| `` DS `` | Отменить проиндексированные изменения | Это создаст новую запись в хранилище, содержащую только проиндексированные файлы, а затем удалит её, так что в рабочем дереве останутся только непроиндексированные изменения. |
+| `` Ds `` | Мягкий сброс |  |
+| `` Dm `` | mixed reset |  |
+| `` Dh `` | Жёсткий сброс |  |
 | `` ` `` | Переключить вид дерева файлов | Toggle file view between flat and tree layout. Flat layout shows all file paths in a single list, tree layout groups files by directory.<br><br>The default can be changed in the config file with the key 'gui.showFileTree'. |
 | `` <ctrl+t> `` | Open external diff tool (git difftool) |  |
 | `` M `` | View merge conflict options | View options for resolving merge conflicts. |

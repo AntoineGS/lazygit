@@ -61,10 +61,10 @@ var RebaseOnto = NewIntegrationTest(NewIntegrationTestArgs{
 			Wait(500).
 			NavigateToLine(Contains("master")).
 			Wait(500).
-			Press(keys.Branches.RebaseBranch).
+			Press(keys.ChordPrefix.LocalBranches.RebaseOptions).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Contains("Rebase 'feature/demo' from marked base")).
+					Title(Equals("Rebase options")).
 					Select(Contains("Simple rebase")).
 					Confirm()
 			}).

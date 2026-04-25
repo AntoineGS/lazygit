@@ -116,7 +116,9 @@ func (self *StatusController) onClick(opts gocui.ViewMouseBindingOpts) error {
 	if workingTreeState.Any() {
 		workingTreeStatus := fmt.Sprintf("(%s)", workingTreeState.LowerCaseTitle(self.c.Tr))
 		if cursorInSubstring(opts.X, upstreamStatus+" ", workingTreeStatus) {
-			return self.c.Helpers().MergeAndRebase.CreateRebaseOptionsMenu()
+			// Clicking the rebase/merge status segment continues the rebase/merge.
+			// To abort or skip, use the `ma` / `ms` chord bindings respectively.
+			return self.c.Helpers().MergeAndRebase.ContinueRebase()
 		}
 		if cursorInSubstring(opts.X, upstreamStatus+" "+workingTreeStatus+" ", repoName) {
 			return self.c.Helpers().Repos.CreateRecentReposMenu()

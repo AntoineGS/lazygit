@@ -9,7 +9,7 @@ var UnsetUpstream = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Unset upstream of selected branch, both when it exists and when it doesn't",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig:  func(config *config.AppConfig) {},
+	SetupConfig:  func(cfg *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		shell.
 			EmptyCommit("one").
@@ -28,10 +28,10 @@ var UnsetUpstream = NewIntegrationTest(NewIntegrationTestArgs{
 			SelectedLines(
 				Contains("master").Contains("origin master"),
 			).
-			Press(keys.Branches.SetUpstream).
+			Press(keys.ChordPrefix.LocalBranches.BranchUpstreamOptions).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Equals("Upstream options")).
+					Title(Equals("Branch upstream options")).
 					Select(Contains("Unset upstream of selected branch")).
 					Confirm()
 			}).
@@ -45,10 +45,10 @@ var UnsetUpstream = NewIntegrationTest(NewIntegrationTestArgs{
 			SelectedLines(
 				Contains("branch_to_remove").Contains("origin branch_to_remove").Contains("upstream gone"),
 			).
-			Press(keys.Branches.SetUpstream).
+			Press(keys.ChordPrefix.LocalBranches.BranchUpstreamOptions).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Equals("Upstream options")).
+					Title(Equals("Branch upstream options")).
 					Select(Contains("Unset upstream of selected branch")).
 					Confirm()
 			}).

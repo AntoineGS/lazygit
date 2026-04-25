@@ -1,8 +1,6 @@
 package interactive_rebase
 
 import (
-	"fmt"
-
 	"github.com/jesseduffield/lazygit/pkg/config"
 	. "github.com/jesseduffield/lazygit/pkg/integration/components"
 )
@@ -17,7 +15,7 @@ const (
 var AdvancedInteractiveRebase = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "It begins an interactive rebase and verifies to have the possibility of editing the commits of the branch before proceeding with the actual rebase",
 	ExtraCmdArgs: []string{},
-	SetupConfig:  func(config *config.AppConfig) {},
+	SetupConfig: func(cfg *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		shell.
 			NewBranch(BASE_BRANCH).
@@ -36,12 +34,13 @@ var AdvancedInteractiveRebase = NewIntegrationTest(NewIntegrationTestArgs{
 		t.Views().Branches().
 			Focus().
 			NavigateToLine(Contains(BASE_BRANCH)).
-			Press(keys.Branches.RebaseBranch)
-
-		t.ExpectPopup().Menu().
-			Title(Equals(fmt.Sprintf("Rebase '%s'", TOP_BRANCH))).
-			Select(Contains("Interactive rebase")).
-			Confirm()
+			Press(keys.ChordPrefix.LocalBranches.RebaseOptions).
+			Tap(func() {
+				t.ExpectPopup().Menu().
+					Title(Equals("Rebase options")).
+					Select(Contains("Interactive rebase")).
+					Confirm()
+			})
 		t.Views().Commits().
 			IsFocused().
 			Lines(

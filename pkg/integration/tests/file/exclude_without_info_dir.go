@@ -21,9 +21,12 @@ var ExcludeWithoutInfoDir = NewIntegrationTest(NewIntegrationTestArgs{
 			IsFocused().
 			Focus().
 			NavigateToLine(Contains("toExclude")).
-			Press(keys.Files.IgnoreFile).
+			Press(keys.ChordPrefix.Files.IgnoreOptions).
 			Tap(func() {
-				t.ExpectPopup().Menu().Title(Equals("Ignore or exclude file")).Select(Contains("Add to .git/info/exclude")).Confirm()
+				t.ExpectPopup().Menu().
+					Title(Equals("Ignore options")).
+					Select(Contains("Add to .git/info/exclude")).
+					Confirm()
 
 				// Should succeed without error, creating .git/info/ directory automatically
 				t.FileSystem().FileContent(".git/info/exclude", Contains("/toExclude"))

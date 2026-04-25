@@ -11,6 +11,10 @@ type Key struct {
 	str     string
 
 	mod Modifier
+
+	// Stored as a pointer so Key stays comparable (slices aren't); two
+	// independently-parsed chord keys therefore have distinct identities.
+	rest *[]Key
 }
 
 func NewKey(keyName KeyName, str string, mod Modifier) Key {
@@ -63,4 +67,32 @@ func (k Key) IsSet() bool {
 
 func (k Key) Equals(otherKey Key) bool {
 	return k.keyName == otherKey.keyName && k.str == otherKey.str && k.mod == otherKey.mod
+}
+
+func (k Key) Rest() []Key {
+	if k.rest == nil {
+		return nil
+	}
+	return *k.rest
+}
+
+func (k Key) HasRest() bool {
+	return k.rest != nil && len(*k.rest) > 0
+}
+
+// Sequence returns the chord sequence starting with k. Returned
+// elements always have empty rest; callers must iterate the slice to
+// see the chord shape, not call HasRest on individual elements.
+func (k Key) Sequence() []Key {
+	head := k
+	head.rest = nil
+	if k.rest == nil {
+		return []Key{head}
+	}
+	return append([]Key{head}, (*k.rest)...)
+}
+
+func (k Key) WithRest(rest []Key) Key {
+	k.rest = &rest
+	return k
 }

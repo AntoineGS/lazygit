@@ -92,11 +92,86 @@ func LabelForKey(key gocui.Key) string {
 	return label
 }
 
+// KeyFromLabel accepts either a single token ("p", "<c-g>") or a
+// sequence of tokens ("bp", "<c-g>p", "abc"). Sequences return a Key
+// whose Rest() holds the remaining tokens.
 func KeyFromLabel(label string) (gocui.Key, bool) {
 	if label == "" || label == "<disabled>" {
 		return gocui.Key{}, true
 	}
 
+	tokens, ok := tokenizeSequence(label)
+	if !ok {
+		// Tokenization fails on a literal "<" (the default for
+		// Universal.GotoTop). Fall back to single-key parsing.
+		if k, ok := singleKeyFromLabel(label); ok {
+			return k, true
+		}
+		return gocui.Key{}, false
+	}
+
+	// Backward compat: an unwrapped multi-rune label that names a known
+	// key ("f1", "space", "enter") parses as a single key, not a chord.
+	// Arbitrary rune sequences ("abc") fall through because
+	// singleKeyFromLabel rejects them.
+	if len(tokens) > 1 {
+		if k, ok := singleKeyFromLabel(label); ok {
+			return k, true
+		}
+	}
+
+	if len(tokens) > 1 {
+		for _, t := range tokens {
+			if t == "<disabled>" {
+				return gocui.Key{}, false
+			}
+		}
+	}
+
+	keys := make([]gocui.Key, 0, len(tokens))
+	for i, tok := range tokens {
+		k, ok := singleKeyFromLabel(tok)
+		if !ok {
+			return gocui.Key{}, false
+		}
+		// Esc is reserved for chord cancel.
+		if i > 0 && k.KeyName() == gocui.KeyName(tcell.KeyEscape) {
+			return gocui.Key{}, false
+		}
+		keys = append(keys, k)
+	}
+
+	if len(keys) == 1 {
+		return keys[0], true
+	}
+	return keys[0].WithRest(keys[1:]), true
+}
+
+// A token is either a single rune or a <...>-bracketed group.
+func tokenizeSequence(label string) ([]string, bool) {
+	var tokens []string
+	i := 0
+	for i < len(label) {
+		if label[i] == '<' {
+			end := strings.Index(label[i:], ">")
+			if end == -1 {
+				return nil, false
+			}
+			tokens = append(tokens, label[i:i+end+1])
+			i += end + 1
+			continue
+		}
+		_, size := utf8.DecodeRuneInString(label[i:])
+		tokens = append(tokens, label[i:i+size])
+		i += size
+	}
+	if len(tokens) == 0 {
+		return nil, false
+	}
+	return tokens, true
+}
+
+func singleKeyFromLabel(label string) (gocui.Key, bool) {
 	if strings.HasPrefix(label, "<") && strings.HasSuffix(label, ">") {
 		label = label[1 : len(label)-1]
 	}
@@ -190,6 +265,23 @@ func KeyFromLabel(label string) (gocui.Key, bool) {
 	}
 
 	return gocui.NewKeyStrMod(label, mod), true
+}
+
+// LabelForKeySequence produces a canonical chord label like "<b><p>"
+// from a key slice. Inverse of tokenizeSequence.
+func LabelForKeySequence(keys []gocui.Key) string {
+	var b strings.Builder
+	for _, k := range keys {
+		b.WriteString(LabelForKey(k))
+	}
+	return b.String()
+}
+
+// LabelForBindingKey renders the full label of a binding key, including
+// any chord tail. Use this for UI display; LabelForKey returns only the
+// head key.
+func LabelForBindingKey(key gocui.Key) string {
+	return LabelForKeySequence(key.Sequence())
 }
 
 func isValidKeybindingKey(key string) bool {

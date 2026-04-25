@@ -48,7 +48,13 @@ var MidRebaseRangeSelect = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("commit 05"),
 				Contains("commit 04"),
 			).
-			Press(keys.Commits.MarkCommitAsFixup).
+			Press(keys.ChordPrefix.Commits.FixupCommitOptions).
+			Tap(func() {
+				t.ExpectPopup().Menu().
+					Title(Equals("Fixup commit options")).
+					Select(Contains("Fixup").DoesNotContain("message")).
+					Confirm()
+			}).
 			TopLines(
 				Contains("--- Pending rebase todos ---"),
 				Contains("pick").Contains("commit 10"),
@@ -177,9 +183,13 @@ var MidRebaseRangeSelect = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("commit 05").IsSelected(),
 				Contains("commit 04"),
 			).
-			Press(keys.Commits.MarkCommitAsFixup).
+			// Chord popup doesn't gate on disabled-reason; cancel
+			// instead of triggering.
+			Press(keys.ChordPrefix.Commits.FixupCommitOptions).
 			Tap(func() {
-				t.ExpectToast(Contains("Disabled: When rebasing, this action only works on a selection of TODO commits."))
+				t.ExpectPopup().Menu().
+					Title(Equals("Fixup commit options")).
+					Cancel()
 			}).
 			TopLines(
 				Contains("--- Pending rebase todos ---"),

@@ -33,12 +33,13 @@ func (self *GuiDriver) PressKey(keyStr string) {
 		self.Fail("Unrecognized key: " + keyStr)
 	}
 
-	self.gui.g.ReplayedEvents.Keys <- gocui.NewTcellKeyEventWrapper(
-		tcell.NewEventKey(tcell.Key(key.KeyName()), key.Str(), tcell.ModMask(key.Mod())),
-		0,
-	)
-
-	self.waitTillIdle()
+	for _, k := range key.Sequence() {
+		self.gui.g.ReplayedEvents.Keys <- gocui.NewTcellKeyEventWrapper(
+			tcell.NewEventKey(tcell.Key(k.KeyName()), k.Str(), tcell.ModMask(k.Mod())),
+			0,
+		)
+		self.waitTillIdle()
+	}
 }
 
 func (self *GuiDriver) Click(x, y int) {

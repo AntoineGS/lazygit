@@ -888,29 +888,65 @@
           "type": "string",
           "default": "-"
         },
-        "rebaseBranch": {
+        "rebaseBranchSimple": {
           "type": "string",
-          "default": "r"
+          "default": "rs"
         },
-        "renameBranch": {
+        "rebaseBranchInteractive": {
           "type": "string",
-          "default": "R"
+          "default": "ri"
         },
-        "mergeIntoCurrentBranch": {
+        "rebaseBranchOntoBase": {
           "type": "string",
-          "default": "M"
+          "default": "rb"
         },
-        "moveCommitsToNewBranch": {
+        "mergeRegular": {
           "type": "string",
-          "default": "N"
+          "default": "Mm"
         },
-        "viewGitFlowOptions": {
+        "mergeNonFFwd": {
           "type": "string",
-          "default": "i"
+          "default": "Mn"
+        },
+        "mergeFastForward": {
+          "type": "string",
+          "default": "Mf"
+        },
+        "mergeSquash": {
+          "type": "string",
+          "default": "Ms"
+        },
+        "mergeSquashCommitted": {
+          "type": "string",
+          "default": "MS"
         },
         "fastForward": {
           "type": "string",
           "default": "f"
+        },
+        "deleteLocalBranch": {
+          "type": "string",
+          "default": "dc"
+        },
+        "deleteRemoteBranch": {
+          "type": "string",
+          "default": "dr"
+        },
+        "deleteLocalAndRemoteBranch": {
+          "type": "string",
+          "default": "db"
+        },
+        "deleteLocalTag": {
+          "type": "string",
+          "default": "dc"
+        },
+        "deleteRemoteTag": {
+          "type": "string",
+          "default": "dr"
+        },
+        "deleteLocalAndRemoteTag": {
+          "type": "string",
+          "default": "db"
         },
         "createTag": {
           "type": "string",
@@ -920,9 +956,73 @@
           "type": "string",
           "default": "P"
         },
+        "gitFlowFinish": {
+          "type": "string",
+          "default": "iF"
+        },
+        "gitFlowStartFeature": {
+          "type": "string",
+          "default": "if"
+        },
+        "gitFlowStartHotfix": {
+          "type": "string",
+          "default": "ih"
+        },
+        "gitFlowStartBugfix": {
+          "type": "string",
+          "default": "ib"
+        },
+        "gitFlowStartRelease": {
+          "type": "string",
+          "default": "ir"
+        },
+        "viewDivergenceFromUpstream": {
+          "type": "string",
+          "default": "ud"
+        },
+        "viewDivergenceFromBase": {
+          "type": "string",
+          "default": "uD"
+        },
         "setUpstream": {
           "type": "string",
-          "default": "u"
+          "default": "us"
+        },
+        "unsetUpstream": {
+          "type": "string",
+          "default": "uu"
+        },
+        "resetUpstreamMixed": {
+          "type": "string",
+          "default": "ugm"
+        },
+        "resetUpstreamSoft": {
+          "type": "string",
+          "default": "ugs"
+        },
+        "resetUpstreamHard": {
+          "type": "string",
+          "default": "ugh"
+        },
+        "rebaseUpstreamSimple": {
+          "type": "string",
+          "default": "urs"
+        },
+        "rebaseUpstreamInteractive": {
+          "type": "string",
+          "default": "uri"
+        },
+        "rebaseUpstreamOntoBase": {
+          "type": "string",
+          "default": "urb"
+        },
+        "renameBranch": {
+          "type": "string",
+          "default": "R"
+        },
+        "moveCommitsToNewBranch": {
+          "type": "string",
+          "default": "N"
         },
         "fetchRemote": {
           "type": "string",
@@ -945,6 +1045,10 @@
         "checkoutCommitFile": {
           "type": "string",
           "default": "c"
+        },
+        "copyFileContent": {
+          "type": "string",
+          "default": "yc"
         }
       },
       "additionalProperties": false,
@@ -974,13 +1078,25 @@
           "type": "string",
           "default": "R"
         },
-        "viewResetOptions": {
+        "mixedResetToRef": {
           "type": "string",
-          "default": "g"
+          "default": "gm"
+        },
+        "softResetToRef": {
+          "type": "string",
+          "default": "gs"
+        },
+        "hardResetToRef": {
+          "type": "string",
+          "default": "gh"
         },
         "markCommitAsFixup": {
           "type": "string",
-          "default": "f"
+          "default": "ff"
+        },
+        "fixupCommitKeepMessage": {
+          "type": "string",
+          "default": "fc"
         },
         "setFixupMessage": {
           "type": "string",
@@ -1058,9 +1174,37 @@
           "type": "string",
           "default": "G"
         },
-        "viewBisectOptions": {
+        "bisectMarkBad": {
           "type": "string",
-          "default": "b"
+          "default": "bb"
+        },
+        "bisectMarkGood": {
+          "type": "string",
+          "default": "bg"
+        },
+        "bisectSkipCurrent": {
+          "type": "string",
+          "default": "bs"
+        },
+        "bisectSkipSelected": {
+          "type": "string",
+          "default": "bS"
+        },
+        "bisectReset": {
+          "type": "string",
+          "default": "br"
+        },
+        "bisectStartMarkBad": {
+          "type": "string",
+          "default": "bb"
+        },
+        "bisectStartMarkGood": {
+          "type": "string",
+          "default": "bg"
+        },
+        "bisectChooseTerms": {
+          "type": "string",
+          "default": "bt"
         },
         "startInteractiveRebase": {
           "type": "string",
@@ -1139,33 +1283,81 @@
           "type": "string",
           "default": "\u003cctrl+f\u003e"
         },
+        "discardAllChanges": {
+          "type": "string",
+          "default": "dc"
+        },
+        "discardUnstagedFile": {
+          "type": "string",
+          "default": "du"
+        },
+        "nukeWorkingTree": {
+          "type": "string",
+          "default": "Dx"
+        },
+        "discardUnstagedChanges": {
+          "type": "string",
+          "default": "Du"
+        },
+        "discardUntrackedFiles": {
+          "type": "string",
+          "default": "Dc"
+        },
+        "discardStagedChanges": {
+          "type": "string",
+          "default": "DS"
+        },
+        "softReset": {
+          "type": "string",
+          "default": "Ds"
+        },
+        "mixedReset": {
+          "type": "string",
+          "default": "Dm"
+        },
+        "hardReset": {
+          "type": "string",
+          "default": "Dh"
+        },
         "confirmDiscard": {
           "type": "string",
           "default": "x"
         },
-        "ignoreFile": {
+        "ignore": {
           "type": "string",
-          "default": "i"
+          "default": "ii"
+        },
+        "exclude": {
+          "type": "string",
+          "default": "ie"
         },
         "refreshFiles": {
           "type": "string",
           "default": "r"
         },
+        "stashAllChangesKeepIndex": {
+          "type": "string",
+          "default": "Si"
+        },
+        "stashIncludeUntrackedChanges": {
+          "type": "string",
+          "default": "SU"
+        },
+        "stashStagedChanges": {
+          "type": "string",
+          "default": "Ss"
+        },
+        "stashUnstagedChanges": {
+          "type": "string",
+          "default": "Su"
+        },
         "stashAllChanges": {
           "type": "string",
           "default": "s"
         },
-        "viewStashOptions": {
-          "type": "string",
-          "default": "S"
-        },
         "toggleStagedAll": {
           "type": "string",
           "default": "a"
-        },
-        "viewResetOptions": {
-          "type": "string",
-          "default": "D"
         },
         "fetch": {
           "type": "string",
@@ -1179,13 +1371,45 @@
           "type": "string",
           "default": "M"
         },
-        "openStatusFilter": {
+        "filterStaged": {
           "type": "string",
-          "default": "\u003cctrl+b\u003e"
+          "default": "\u003cctrl+b\u003es"
         },
-        "copyFileInfoToClipboard": {
+        "filterUnstaged": {
           "type": "string",
-          "default": "y"
+          "default": "\u003cctrl+b\u003eu"
+        },
+        "filterTracked": {
+          "type": "string",
+          "default": "\u003cctrl+b\u003et"
+        },
+        "filterUntracked": {
+          "type": "string",
+          "default": "\u003cctrl+b\u003eT"
+        },
+        "noFilter": {
+          "type": "string",
+          "default": "\u003cctrl+b\u003er"
+        },
+        "copyFileName": {
+          "type": "string",
+          "default": "yn"
+        },
+        "copyRelativeFilePath": {
+          "type": "string",
+          "default": "yp"
+        },
+        "copyAbsoluteFilePath": {
+          "type": "string",
+          "default": "yP"
+        },
+        "copyFileDiff": {
+          "type": "string",
+          "default": "ys"
+        },
+        "copyAllFilesDiff": {
+          "type": "string",
+          "default": "ya"
         },
         "collapseAll": {
           "type": "string",
@@ -1194,6 +1418,32 @@
         "expandAll": {
           "type": "string",
           "default": "="
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "KeybindingGroupConfig": {
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name is the short label shown in the chord-continuation popup row."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description, if set, overrides the cheatsheet row description for\nthe synthetic group header. The cheatsheet generator falls back to\na built-in translated string for default groups, then to Name."
+        },
+        "tooltip": {
+          "type": "string",
+          "description": "Tooltip, if set, overrides the cheatsheet row tooltip for the\nsynthetic group header. Falls back to a built-in translated string\nfor default groups, then to empty."
+        },
+        "displayOnScreen": {
+          "type": "boolean",
+          "description": "DisplayOnScreen, when true, surfaces the chord prefix in the\nbottom-of-screen options bar — restoring the on-screen affordance\nthat menu-opener bindings provided before chording."
+        },
+        "shortName": {
+          "type": "string",
+          "description": "ShortName overrides Name for the bottom options bar only. Useful\nwhen Name is verbose (\"Discard / reset options\") but the bar needs\na tighter label (\"Reset\"). Falls back to Name when empty."
         }
       },
       "additionalProperties": false,
@@ -1263,9 +1513,21 @@
           "type": "string",
           "default": "u"
         },
-        "bulkMenu": {
+        "bulkInit": {
           "type": "string",
-          "default": "b"
+          "default": "bi"
+        },
+        "bulkUpdate": {
+          "type": "string",
+          "default": "bu"
+        },
+        "bulkUpdateRecursive": {
+          "type": "string",
+          "default": "br"
+        },
+        "bulkDeinit": {
+          "type": "string",
+          "default": "bd"
         }
       },
       "additionalProperties": false,
@@ -1511,9 +1773,17 @@
           "type": "string",
           "default": ":"
         },
-        "createRebaseOptionsMenu": {
+        "rebaseContinue": {
           "type": "string",
-          "default": "m"
+          "default": "mc"
+        },
+        "rebaseAbort": {
+          "type": "string",
+          "default": "ma"
+        },
+        "rebaseSkip": {
+          "type": "string",
+          "default": "ms"
         },
         "pushFiles": {
           "type": "string",
@@ -2067,6 +2337,21 @@
         "keybinding": {
           "$ref": "#/$defs/KeybindingConfig",
           "description": "Keybindings"
+        },
+        "keybindingGroups": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "$ref": "#/$defs/KeybindingGroupConfig"
+            },
+            "type": "object"
+          },
+          "type": "object",
+          "description": "Keybinding groups, nested by context name.\nOuter key is a context name (e.g. \"files\", \"branches\", \"localBranches\",\n\"global\"); inner key is the chord-prefix label (e.g. \"i\", \"\u003cctrl+b\u003e\").\nLookup at popup-open time first checks the originating view's context,\nthen falls back to \"global\".\n\nLegacy flat configs (a single map keyed by chord-prefix label) are\nmigrated under the \"global\" outer key by UnmarshalYAML."
+        },
+        "chordPopupDelayMs": {
+          "type": "integer",
+          "description": "Delay in milliseconds before the chord-continuation popup appears.\n0 = instant; negative = popup disabled.",
+          "default": 0
         }
       },
       "additionalProperties": false,

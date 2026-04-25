@@ -170,6 +170,9 @@ func (self *IntegrationTest) ShouldRunForGitVersion(version *git_commands.GitVer
 
 func (self *IntegrationTest) SetupConfig(config *config.AppConfig) {
 	self.setupConfig(config)
+	// Re-resolve so keys.ChordPrefix.* reflects any mutations the
+	// test made to KeybindingGroups.
+	config.GetUserConfig().ResolveChordPrefixes()
 }
 
 func (self *IntegrationTest) SetupRepo(shell *Shell) {

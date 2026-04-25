@@ -26,38 +26,54 @@ var Gitignore = NewIntegrationTest(NewIntegrationTestArgs{
 				Equals("  ?? toIgnore"),
 			).
 			SelectNextItem().
-			Press(keys.Files.IgnoreFile).
 			// ensure we can't exclude the .gitignore file
+			Press(keys.ChordPrefix.Files.IgnoreOptions).
 			Tap(func() {
-				t.ExpectPopup().Menu().Title(Equals("Ignore or exclude file")).Select(Contains("Add to .git/info/exclude")).Confirm()
-
+				t.ExpectPopup().Menu().
+					Title(Equals("Ignore options")).
+					Select(Contains("Add to .git/info/exclude")).
+					Confirm()
+			}).
+			Tap(func() {
 				t.ExpectPopup().Alert().Title(Equals("Error")).Content(Equals("Cannot exclude .gitignore")).Confirm()
 			}).
-			Press(keys.Files.IgnoreFile).
 			// ensure we can't ignore the .gitignore file
+			Press(keys.ChordPrefix.Files.IgnoreOptions).
 			Tap(func() {
-				t.ExpectPopup().Menu().Title(Equals("Ignore or exclude file")).Select(Contains("Add to .gitignore")).Confirm()
-
+				t.ExpectPopup().Menu().
+					Title(Equals("Ignore options")).
+					Select(Contains("Add to .gitignore")).
+					Confirm()
+			}).
+			Tap(func() {
 				t.ExpectPopup().Alert().Title(Equals("Error")).Content(Equals("Cannot ignore .gitignore")).Confirm()
 
 				t.FileSystem().FileContent(".gitignore", Equals(""))
 				t.FileSystem().FileContent(".git/info/exclude", DoesNotContain(".gitignore"))
 			}).
 			SelectNextItem().
-			Press(keys.Files.IgnoreFile).
 			// exclude a file
+			Press(keys.ChordPrefix.Files.IgnoreOptions).
 			Tap(func() {
-				t.ExpectPopup().Menu().Title(Equals("Ignore or exclude file")).Select(Contains("Add to .git/info/exclude")).Confirm()
-
+				t.ExpectPopup().Menu().
+					Title(Equals("Ignore options")).
+					Select(Contains("Add to .git/info/exclude")).
+					Confirm()
+			}).
+			Tap(func() {
 				t.FileSystem().FileContent(".gitignore", Equals(""))
 				t.FileSystem().FileContent(".git/info/exclude", Contains("/toExclude"))
 			}).
 			SelectNextItem().
-			Press(keys.Files.IgnoreFile).
 			// ignore a file
+			Press(keys.ChordPrefix.Files.IgnoreOptions).
 			Tap(func() {
-				t.ExpectPopup().Menu().Title(Equals("Ignore or exclude file")).Select(Contains("Add to .gitignore")).Confirm()
-
+				t.ExpectPopup().Menu().
+					Title(Equals("Ignore options")).
+					Select(Contains("Add to .gitignore")).
+					Confirm()
+			}).
+			Tap(func() {
 				t.FileSystem().FileContent(".gitignore", Equals("/toIgnore\n"))
 				t.FileSystem().FileContent(".git/info/exclude", Contains("/toExclude"))
 			})

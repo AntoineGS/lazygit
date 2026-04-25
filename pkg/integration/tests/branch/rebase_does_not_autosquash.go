@@ -9,7 +9,7 @@ var RebaseDoesNotAutosquash = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Rebase a branch that has fixups onto another branch, and verify that the fixups are not squashed even if rebase.autoSquash is enabled globally.",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig:  func(config *config.AppConfig) {},
+	SetupConfig: func(cfg *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		shell.SetConfig("rebase.autoSquash", "true")
 
@@ -37,10 +37,10 @@ var RebaseDoesNotAutosquash = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("master"),
 			).
 			SelectNextItem().
-			Press(keys.Branches.RebaseBranch)
+			Press(keys.ChordPrefix.LocalBranches.RebaseOptions)
 
 		t.ExpectPopup().Menu().
-			Title(Equals("Rebase 'my-branch'")).
+			Title(Equals("Rebase options")).
 			Select(Contains("Simple rebase")).
 			Confirm()
 

@@ -12,7 +12,6 @@ import (
 	"github.com/jesseduffield/lazygit/pkg/gocui"
 	"github.com/jesseduffield/lazygit/pkg/gui/types"
 	"github.com/jesseduffield/lazygit/pkg/utils"
-	"github.com/samber/lo"
 	"github.com/stefanhaller/git-todo-parser/todo"
 )
 
@@ -36,39 +35,16 @@ const (
 	REBASE_OPTION_SKIP     string = "skip"
 )
 
-func (self *MergeAndRebaseHelper) CreateRebaseOptionsMenu() error {
-	type optionAndKey struct {
-		option string
-		key    gocui.Key
-	}
-
-	options := []optionAndKey{
-		{option: REBASE_OPTION_CONTINUE, key: gocui.NewKeyRune('c')},
-		{option: REBASE_OPTION_ABORT, key: gocui.NewKeyRune('a')},
-	}
-
-	if self.c.Git().Status.WorkingTreeState().CanSkip() {
-		options = append(options, optionAndKey{
-			option: REBASE_OPTION_SKIP, key: gocui.NewKeyRune('s'),
-		})
-	}
-
-	menuItems := lo.Map(options, func(row optionAndKey, _ int) *types.MenuItem {
-		return &types.MenuItem{
-			Label: row.option,
-			OnPress: func() error {
-				return self.genericMergeCommand(row.option)
-			},
-			Key: row.key,
-		}
-	})
-
-	title := self.c.Git().Status.WorkingTreeState().OptionsMenuTitle(self.c.Tr)
-	return self.c.Menu(types.CreateMenuOptions{Title: title, Items: menuItems})
-}
-
 func (self *MergeAndRebaseHelper) ContinueRebase() error {
 	return self.genericMergeCommand(REBASE_OPTION_CONTINUE)
+}
+
+func (self *MergeAndRebaseHelper) AbortRebase() error {
+	return self.genericMergeCommand(REBASE_OPTION_ABORT)
+}
+
+func (self *MergeAndRebaseHelper) SkipRebase() error {
+	return self.genericMergeCommand(REBASE_OPTION_SKIP)
 }
 
 func (self *MergeAndRebaseHelper) genericMergeCommand(command string) error {
@@ -262,117 +238,80 @@ func (self *MergeAndRebaseHelper) PromptToContinueRebase() error {
 	return nil
 }
 
-func (self *MergeAndRebaseHelper) RebaseOntoRef(ref string) error {
+type RebaseVariant string
+
+const (
+	RebaseVariantSimple      RebaseVariant = "simple"
+	RebaseVariantInteractive RebaseVariant = "interactive"
+	RebaseVariantOntoBase    RebaseVariant = "onto-base"
+)
+
+// For RebaseVariantOntoBase, ref is ignored and the base branch is
+// resolved internally.
+func (self *MergeAndRebaseHelper) PerformRebaseOntoRef(ref string, variant RebaseVariant) error {
 	checkedOutBranch := self.c.Model().Branches[0]
-	checkedOutBranchName := checkedOutBranch.Name
-	var disabledReason, baseBranchDisabledReason *types.DisabledReason
-	if checkedOutBranchName == ref {
-		disabledReason = &types.DisabledReason{Text: self.c.Tr.CantRebaseOntoSelf}
+
+	if variant == RebaseVariantOntoBase {
+		baseBranch, err := self.c.Git().Loaders.BranchLoader.GetBaseBranch(checkedOutBranch, self.c.Model().MainBranches)
+		if err != nil {
+			return err
+		}
+		if baseBranch == "" {
+			return errors.New(self.c.Tr.CouldNotDetermineBaseBranch)
+		}
+		ref = baseBranch
 	}
 
-	baseBranch, err := self.c.Git().Loaders.BranchLoader.GetBaseBranch(checkedOutBranch, self.c.Model().MainBranches)
-	if err != nil {
+	if variant == RebaseVariantInteractive {
+		self.c.LogAction(self.c.Tr.Actions.RebaseBranch)
+		baseCommit := self.c.Modes().MarkedBaseCommit.GetHash()
+		var err error
+		if baseCommit != "" {
+			err = self.c.Git().Rebase.EditRebaseFromBaseCommit(ref, baseCommit)
+		} else {
+			err = self.c.Git().Rebase.EditRebase(ref)
+		}
+		if err = self.CheckMergeOrRebase(err); err != nil {
+			return err
+		}
+		if err = self.ResetMarkedBaseCommit(); err != nil {
+			return err
+		}
+		self.c.Context().Push(self.c.Contexts().LocalCommits, types.OnFocusOpts{})
+		return nil
+	}
+
+	// Simple and OntoBase variants share the same body.
+	self.c.LogAction(self.c.Tr.Actions.RebaseBranch)
+	return self.c.WithWaitingStatus(self.c.Tr.RebasingStatus, func(task gocui.Task) error {
+		baseCommit := self.c.Modes().MarkedBaseCommit.GetHash()
+		var err error
+		if baseCommit != "" {
+			err = self.c.Git().Rebase.RebaseBranchFromBaseCommit(ref, baseCommit)
+		} else {
+			err = self.c.Git().Rebase.RebaseBranch(ref)
+		}
+		err = self.CheckMergeOrRebase(err)
+		if err == nil {
+			return self.ResetMarkedBaseCommit()
+		}
 		return err
-	}
-	if baseBranch == "" {
-		baseBranch = self.c.Tr.CouldNotDetermineBaseBranch
-		baseBranchDisabledReason = &types.DisabledReason{Text: self.c.Tr.CouldNotDetermineBaseBranch}
-	}
-
-	menuItems := []*types.MenuItem{
-		{
-			Label: utils.ResolvePlaceholderString(self.c.Tr.SimpleRebase,
-				map[string]string{"ref": ref},
-			),
-			Key:            gocui.NewKeyRune('s'),
-			DisabledReason: disabledReason,
-			OnPress: func() error {
-				self.c.LogAction(self.c.Tr.Actions.RebaseBranch)
-				return self.c.WithWaitingStatus(self.c.Tr.RebasingStatus, func(task gocui.Task) error {
-					baseCommit := self.c.Modes().MarkedBaseCommit.GetHash()
-					var err error
-					if baseCommit != "" {
-						err = self.c.Git().Rebase.RebaseBranchFromBaseCommit(ref, baseCommit)
-					} else {
-						err = self.c.Git().Rebase.RebaseBranch(ref)
-					}
-					err = self.CheckMergeOrRebase(err)
-					if err == nil {
-						return self.ResetMarkedBaseCommit()
-					}
-					return err
-				})
-			},
-		},
-		{
-			Label: utils.ResolvePlaceholderString(self.c.Tr.InteractiveRebase,
-				map[string]string{"ref": ref},
-			),
-			Key:            gocui.NewKeyRune('i'),
-			DisabledReason: disabledReason,
-			Tooltip:        self.c.Tr.InteractiveRebaseTooltip,
-			OnPress: func() error {
-				self.c.LogAction(self.c.Tr.Actions.RebaseBranch)
-				baseCommit := self.c.Modes().MarkedBaseCommit.GetHash()
-				var err error
-				if baseCommit != "" {
-					err = self.c.Git().Rebase.EditRebaseFromBaseCommit(ref, baseCommit)
-				} else {
-					err = self.c.Git().Rebase.EditRebase(ref)
-				}
-				if err = self.CheckMergeOrRebase(err); err != nil {
-					return err
-				}
-				if err = self.ResetMarkedBaseCommit(); err != nil {
-					return err
-				}
-				self.c.Context().Push(self.c.Contexts().LocalCommits, types.OnFocusOpts{})
-				return nil
-			},
-		},
-		{
-			Label: utils.ResolvePlaceholderString(self.c.Tr.RebaseOntoBaseBranch,
-				map[string]string{"baseBranch": ShortBranchName(baseBranch)},
-			),
-			Key:            gocui.NewKeyRune('b'),
-			DisabledReason: baseBranchDisabledReason,
-			Tooltip:        self.c.Tr.RebaseOntoBaseBranchTooltip,
-			OnPress: func() error {
-				self.c.LogAction(self.c.Tr.Actions.RebaseBranch)
-				return self.c.WithWaitingStatus(self.c.Tr.RebasingStatus, func(task gocui.Task) error {
-					baseCommit := self.c.Modes().MarkedBaseCommit.GetHash()
-					var err error
-					if baseCommit != "" {
-						err = self.c.Git().Rebase.RebaseBranchFromBaseCommit(baseBranch, baseCommit)
-					} else {
-						err = self.c.Git().Rebase.RebaseBranch(baseBranch)
-					}
-					err = self.CheckMergeOrRebase(err)
-					if err == nil {
-						return self.ResetMarkedBaseCommit()
-					}
-					return err
-				})
-			},
-		},
-	}
-
-	title := utils.ResolvePlaceholderString(
-		lo.Ternary(self.c.Modes().MarkedBaseCommit.GetHash() != "",
-			self.c.Tr.RebasingFromBaseCommitTitle,
-			self.c.Tr.RebasingTitle),
-		map[string]string{
-			"checkedOutBranch": checkedOutBranchName,
-		},
-	)
-
-	return self.c.Menu(types.CreateMenuOptions{
-		Title: title,
-		Items: menuItems,
 	})
 }
 
-func (self *MergeAndRebaseHelper) MergeRefIntoCheckedOutBranch(refName string) error {
+func (self *MergeAndRebaseHelper) RebaseOntoBaseBranchName() (string, *types.DisabledReason) {
+	if self.c.Git() == nil {
+		return "", nil
+	}
+	checkedOutBranch := self.c.Model().Branches[0]
+	baseBranch, err := self.c.Git().Loaders.BranchLoader.GetBaseBranch(checkedOutBranch, self.c.Model().MainBranches)
+	if err != nil || baseBranch == "" {
+		return "", &types.DisabledReason{Text: self.c.Tr.CouldNotDetermineBaseBranch}
+	}
+	return baseBranch, nil
+}
+
+func (self *MergeAndRebaseHelper) PerformMerge(refName string, variant git_commands.MergeVariant) error {
 	if self.c.Git().Branch.IsHeadDetached() {
 		return errors.New("Cannot merge branch in detached head state. You might have checked out a commit directly or a remote branch, in which case you should checkout the local branch you want to be on")
 	}
@@ -380,112 +319,57 @@ func (self *MergeAndRebaseHelper) MergeRefIntoCheckedOutBranch(refName string) e
 	if checkedOutBranchName == refName {
 		return errors.New(self.c.Tr.CantMergeBranchIntoItself)
 	}
-
-	wantFastForward, wantNonFastForward := self.fastForwardMergeUserPreference()
-	canFastForward := self.c.Git().Branch.CanDoFastForwardMerge(refName)
-
-	var firstRegularMergeItem *types.MenuItem
-	var secondRegularMergeItem *types.MenuItem
-	var fastForwardMergeItem *types.MenuItem
-
-	if !wantNonFastForward && (wantFastForward || canFastForward) {
-		firstRegularMergeItem = &types.MenuItem{
-			Label:   self.c.Tr.RegularMergeFastForward,
-			OnPress: self.RegularMerge(refName, git_commands.MERGE_VARIANT_REGULAR),
-			Key:     gocui.NewKeyRune('m'),
-			Tooltip: utils.ResolvePlaceholderString(
-				self.c.Tr.RegularMergeFastForwardTooltip,
-				map[string]string{
-					"checkedOutBranch": checkedOutBranchName,
-					"selectedBranch":   refName,
-				},
-			),
-		}
-		fastForwardMergeItem = firstRegularMergeItem
-
-		secondRegularMergeItem = &types.MenuItem{
-			Label:   self.c.Tr.RegularMergeNonFastForward,
-			OnPress: self.RegularMerge(refName, git_commands.MERGE_VARIANT_NON_FAST_FORWARD),
-			Key:     gocui.NewKeyRune('n'),
-			Tooltip: utils.ResolvePlaceholderString(
-				self.c.Tr.RegularMergeNonFastForwardTooltip,
-				map[string]string{
-					"checkedOutBranch": checkedOutBranchName,
-					"selectedBranch":   refName,
-				},
-			),
-		}
-	} else {
-		firstRegularMergeItem = &types.MenuItem{
-			Label:   self.c.Tr.RegularMergeNonFastForward,
-			OnPress: self.RegularMerge(refName, git_commands.MERGE_VARIANT_REGULAR),
-			Key:     gocui.NewKeyRune('m'),
-			Tooltip: utils.ResolvePlaceholderString(
-				self.c.Tr.RegularMergeNonFastForwardTooltip,
-				map[string]string{
-					"checkedOutBranch": checkedOutBranchName,
-					"selectedBranch":   refName,
-				},
-			),
-		}
-
-		secondRegularMergeItem = &types.MenuItem{
-			Label:   self.c.Tr.RegularMergeFastForward,
-			OnPress: self.RegularMerge(refName, git_commands.MERGE_VARIANT_FAST_FORWARD),
-			Key:     gocui.NewKeyRune('f'),
-			Tooltip: utils.ResolvePlaceholderString(
-				self.c.Tr.RegularMergeFastForwardTooltip,
-				map[string]string{
-					"checkedOutBranch": checkedOutBranchName,
-					"selectedBranch":   refName,
-				},
-			),
-		}
-		fastForwardMergeItem = secondRegularMergeItem
-	}
-
-	if !canFastForward {
-		fastForwardMergeItem.DisabledReason = &types.DisabledReason{
-			Text: utils.ResolvePlaceholderString(
-				self.c.Tr.CannotFastForwardMerge,
-				map[string]string{
-					"checkedOutBranch": checkedOutBranchName,
-					"selectedBranch":   refName,
-				},
-			),
-		}
-	}
-
-	return self.c.Menu(types.CreateMenuOptions{
-		Title: self.c.Tr.Merge,
-		Items: []*types.MenuItem{
-			firstRegularMergeItem,
-			secondRegularMergeItem,
-			{
-				Label:   self.c.Tr.SquashMergeUncommitted,
-				OnPress: self.SquashMergeUncommitted(refName),
-				Key:     gocui.NewKeyRune('s'),
-				Tooltip: utils.ResolvePlaceholderString(
-					self.c.Tr.SquashMergeUncommittedTooltip,
-					map[string]string{
-						"selectedBranch": refName,
-					},
-				),
+	if variant == git_commands.MERGE_VARIANT_FAST_FORWARD && !self.c.Git().Branch.CanDoFastForwardMerge(refName) {
+		// Surface the friendly error before letting git fail with its
+		// own message.
+		return errors.New(utils.ResolvePlaceholderString(
+			self.c.Tr.CannotFastForwardMerge,
+			map[string]string{
+				"checkedOutBranch": checkedOutBranchName,
+				"selectedBranch":   refName,
 			},
-			{
-				Label:   self.c.Tr.SquashMergeCommitted,
-				OnPress: self.SquashMergeCommitted(refName, checkedOutBranchName),
-				Key:     gocui.NewKeyRune('S'),
-				Tooltip: utils.ResolvePlaceholderString(
-					self.c.Tr.SquashMergeCommittedTooltip,
-					map[string]string{
-						"checkedOutBranch": checkedOutBranchName,
-						"selectedBranch":   refName,
-					},
-				),
-			},
-		},
-	})
+		))
+	}
+	return self.RegularMerge(refName, variant)()
+}
+
+func (self *MergeAndRebaseHelper) PerformSquashMerge(refName string) error {
+	if self.c.Git().Branch.IsHeadDetached() {
+		return errors.New("Cannot merge branch in detached head state. You might have checked out a commit directly or a remote branch, in which case you should checkout the local branch you want to be on")
+	}
+	checkedOutBranchName := self.c.Model().Branches[0].Name
+	if checkedOutBranchName == refName {
+		return errors.New(self.c.Tr.CantMergeBranchIntoItself)
+	}
+	return self.SquashMergeUncommitted(refName)()
+}
+
+// PerformSquashMergeCommitted runs a squash merge AND commits it.
+func (self *MergeAndRebaseHelper) PerformSquashMergeCommitted(refName string) error {
+	if self.c.Git().Branch.IsHeadDetached() {
+		return errors.New("Cannot merge branch in detached head state. You might have checked out a commit directly or a remote branch, in which case you should checkout the local branch you want to be on")
+	}
+	checkedOutBranchName := self.c.Model().Branches[0].Name
+	if checkedOutBranchName == refName {
+		return errors.New(self.c.Tr.CantMergeBranchIntoItself)
+	}
+	return self.SquashMergeCommitted(refName, checkedOutBranchName)()
+}
+
+func (self *MergeAndRebaseHelper) MergeIntoSelfDisabledReason(selectedRefName string) *types.DisabledReason {
+	if self.c.Git() == nil {
+		return nil
+	}
+	if self.c.Git().Branch.IsHeadDetached() {
+		return &types.DisabledReason{Text: "Cannot merge while in detached HEAD state"}
+	}
+	if len(self.c.Model().Branches) == 0 {
+		return nil
+	}
+	if self.c.Model().Branches[0].Name == selectedRefName {
+		return &types.DisabledReason{Text: self.c.Tr.CantMergeBranchIntoItself}
+	}
+	return nil
 }
 
 func (self *MergeAndRebaseHelper) RegularMerge(refName string, variant git_commands.MergeVariant) func() error {
@@ -547,6 +431,49 @@ func (self *MergeAndRebaseHelper) fastForwardMergeUserPreference() (bool, bool) 
 	}
 
 	return false, false
+}
+
+// Disabled when the regular merge already creates a merge commit — i.e.
+// the user's config prevents fast-forward or the branches aren't
+// fast-forwardable. (Adding --no-ff would be redundant.)
+func (self *MergeAndRebaseHelper) NonFastForwardMergeDisabledReason(refName string) *types.DisabledReason {
+	if self.c.Git() == nil {
+		return nil
+	}
+	wantFF, wantNFF := self.fastForwardMergeUserPreference()
+	canFF := self.c.Git().Branch.CanDoFastForwardMerge(refName)
+	if wantNFF || (!wantFF && !canFF) {
+		return &types.DisabledReason{Text: self.c.Tr.MergeNonFastForwardNotApplicable}
+	}
+	return nil
+}
+
+func (self *MergeAndRebaseHelper) FastForwardOnlyMergeDisabledReason(refName string) *types.DisabledReason {
+	if self.c.Git() == nil {
+		return nil
+	}
+	wantFF, wantNFF := self.fastForwardMergeUserPreference()
+	canFF := self.c.Git().Branch.CanDoFastForwardMerge(refName)
+	if !wantNFF && (wantFF || canFF) {
+		return &types.DisabledReason{Text: self.c.Tr.MergeFastForwardNotApplicable}
+	}
+	if !canFF {
+		checkedOutBranch := ""
+		if len(self.c.Model().Branches) > 0 {
+			checkedOutBranch = self.c.Model().Branches[0].Name
+		}
+		return &types.DisabledReason{
+			Text: utils.ResolvePlaceholderString(
+				self.c.Tr.CannotFastForwardMerge,
+				map[string]string{
+					"checkedOutBranch": checkedOutBranch,
+					"selectedBranch":   refName,
+				},
+			),
+			ShowErrorInPanel: true,
+		}
+	}
+	return nil
 }
 
 func (self *MergeAndRebaseHelper) ResetMarkedBaseCommit() error {

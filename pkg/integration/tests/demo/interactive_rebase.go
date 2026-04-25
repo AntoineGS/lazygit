@@ -33,7 +33,13 @@ var InteractiveRebase = NewIntegrationTest(NewIntegrationTestArgs{
 			Press(keys.Commits.StartInteractiveRebase).
 			PressFast(keys.Universal.RangeSelectDown).
 			PressFast(keys.Universal.RangeSelectDown).
-			Press(keys.Commits.MarkCommitAsFixup).
+			Press(keys.ChordPrefix.Commits.FixupCommitOptions).
+			Tap(func() {
+				t.ExpectPopup().Menu().
+					Title(Equals("Fixup commit options")).
+					Select(Contains("Fixup").DoesNotContain("message")).
+					Confirm()
+			}).
 			PressFast(keys.Commits.MoveDownCommit).
 			PressFast(keys.Commits.MoveDownCommit).
 			Delay().
@@ -42,12 +48,8 @@ var InteractiveRebase = NewIntegrationTest(NewIntegrationTestArgs{
 			Press(keys.Universal.Remove).
 			SelectNextItem().
 			Press(keys.Commits.SquashDown).
-			Press(keys.Universal.CreateRebaseOptionsMenu).
 			Tap(func() {
-				t.ExpectPopup().Menu().
-					Title(Contains("Rebase options")).
-					Select(Contains("continue")).
-					Confirm()
+				t.Common().ContinueRebase()
 			}).
 			SetCaptionPrefix("Push to remote").
 			Press(keys.Universal.NextScreenMode).

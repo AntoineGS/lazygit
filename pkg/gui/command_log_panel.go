@@ -82,9 +82,9 @@ func (gui *Gui) getRandomTip() string {
 			config.Universal.FilteringMenu,
 		),
 		fmt.Sprintf(
-			"To start an interactive rebase, press '%s' on a commit. You can always abort the rebase by pressing '%s' and selecting 'abort'",
+			"To start an interactive rebase, press '%s' on a commit. You can always abort the rebase by pressing '%s'",
 			config.Universal.Edit,
-			config.Universal.CreateRebaseOptionsMenu,
+			config.Universal.RebaseAbort,
 		),
 		fmt.Sprintf(
 			"In flat file view, merge conflicts are sorted to the top. To switch to flat file view press '%s'",
@@ -99,7 +99,7 @@ func (gui *Gui) getRandomTip() string {
 		),
 		fmt.Sprintf(
 			"to hard reset onto your current upstream branch, press '%s' in the files panel",
-			config.Commits.ViewResetOptions,
+			config.Commits.HardResetToRef,
 		),
 		fmt.Sprintf(
 			"To push a tag, navigate to the tag in the tags tab and press '%s'",

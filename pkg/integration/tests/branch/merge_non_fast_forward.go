@@ -9,8 +9,8 @@ var MergeNonFastForward = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Merge a branch into another using non-fast-forward merge",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig: func(config *config.AppConfig) {
-		config.GetUserConfig().Git.LocalBranchSortOrder = "alphabetical"
+	SetupConfig: func(cfg *config.AppConfig) {
+		cfg.GetUserConfig().Git.LocalBranchSortOrder = "alphabetical"
 	},
 	SetupRepo: func(shell *Shell) {
 		shell.NewBranch("original-branch").
@@ -31,14 +31,10 @@ var MergeNonFastForward = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("branch2"),
 			).
 			SelectNextItem().
-			Press(keys.Branches.MergeIntoCurrentBranch)
+			Press(keys.ChordPrefix.LocalBranches.Merge)
 
 		t.ExpectPopup().Menu().
 			Title(Equals("Merge")).
-			TopLines(
-				Contains("Regular merge (fast-forward)"),
-				Contains("Regular merge (with merge commit)"),
-			).
 			Select(Contains("Regular merge (with merge commit)")).
 			Confirm()
 
@@ -49,19 +45,16 @@ var MergeNonFastForward = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("◯─╯ one"),
 			)
 
-		// Check that branch2 shows the non-fast-forward option first
+		// Divergent: --no-ff is disabled because plain Merge already
+		// creates a merge commit.
 		t.Views().Branches().
 			Focus().
 			NavigateToLine(Contains("branch2")).
-			Press(keys.Branches.MergeIntoCurrentBranch)
+			Press(keys.ChordPrefix.LocalBranches.Merge)
 
 		t.ExpectPopup().Menu().
 			Title(Equals("Merge")).
-			TopLines(
-				Contains("Regular merge (with merge commit)"),
-				Contains("Regular merge (fast-forward)"),
-			).
-			Select(Contains("Regular merge (with merge commit)")).
+			Select(MatchesRegexp(`^m\s+Merge$`)).
 			Confirm()
 
 		t.Views().Commits().

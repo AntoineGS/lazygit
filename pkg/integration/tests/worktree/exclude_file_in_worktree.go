@@ -30,9 +30,12 @@ var ExcludeFileInWorktree = NewIntegrationTest(NewIntegrationTestArgs{
 			Lines(
 				Contains("toExclude"),
 			).
-			Press(keys.Files.IgnoreFile).
+			Press(keys.ChordPrefix.Files.IgnoreOptions).
 			Tap(func() {
-				t.ExpectPopup().Menu().Title(Equals("Ignore or exclude file")).Select(Contains("Add to .git/info/exclude")).Confirm()
+				t.ExpectPopup().Menu().
+					Title(Equals("Ignore options")).
+					Select(Contains("Add to .git/info/exclude")).
+					Confirm()
 			}).
 			IsEmpty()
 

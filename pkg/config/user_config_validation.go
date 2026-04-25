@@ -5,10 +5,23 @@ import (
 	"log"
 	"reflect"
 	"slices"
+	"sort"
 	"strings"
 
 	"github.com/jesseduffield/lazygit/pkg/constants"
+	"github.com/jesseduffield/lazygit/pkg/gocui"
 )
+
+// canonicalLabel hashes aliases like "<C-b>" and "<ctrl+b>" to the
+// same value for collision detection. Returns the raw label on parse
+// failure (errors are reported elsewhere).
+func canonicalLabel(label string) string {
+	k, ok := KeyFromLabel(label)
+	if !ok {
+		return label
+	}
+	return LabelForKeySequence(k.Sequence())
+}
 
 func (config *UserConfig) Validate() error {
 	if err := validateEnum("gui.statusPanelView", config.Gui.StatusPanelView,
@@ -44,6 +57,9 @@ func (config *UserConfig) Validate() error {
 		return err
 	}
 	if err := validateKeybindings(config.Keybinding); err != nil {
+		return err
+	}
+	if err := validateKeybindingGroups(config.KeybindingGroups, config.Keybinding); err != nil {
 		return err
 	}
 	if err := validateCustomCommands(config.CustomCommands); err != nil {
@@ -163,5 +179,124 @@ func validateCustomCommandPrompt(prompt CustomCommandPrompt) error {
 		}
 	}
 
+	return nil
+}
+
+func collectAllKeybindingStrings(node any) []string {
+	var out []string
+	value := reflect.ValueOf(node)
+	switch value.Kind() {
+	case reflect.Struct:
+		// Skip ChordPrefix: its fields are chord-prefix keys that
+		// intentionally collide with chord groups.
+		if _, isChordPrefix := node.(ChordPrefixConfig); isChordPrefix {
+			return nil
+		}
+		for _, f := range reflect.VisibleFields(reflect.TypeOf(node)) {
+			out = append(out, collectAllKeybindingStrings(value.FieldByName(f.Name).Interface())...)
+		}
+	case reflect.Slice:
+		for i := range value.Len() {
+			out = append(out, collectAllKeybindingStrings(value.Index(i).Interface())...)
+		}
+	case reflect.String:
+		s := node.(string)
+		if s != "" && s != "<disabled>" {
+			out = append(out, s)
+		}
+	default:
+		log.Fatalf("collectAllKeybindingStrings: unexpected reflect kind %s", value.Kind())
+	}
+	return out
+}
+
+// Returns true even when bseq == prefixSeq; callers compare lengths to
+// distinguish equal vs proper-prefix.
+func bindingSequenceStartsWith(bseq, prefixSeq []gocui.Key) bool {
+	if len(bseq) < len(prefixSeq) {
+		return false
+	}
+	for i, k := range prefixSeq {
+		if !bseq[i].Equals(k) {
+			return false
+		}
+	}
+	return true
+}
+
+func validateKeybindingGroups(groups map[string]map[string]KeybindingGroupConfig, keybindings KeybindingConfig) error {
+	allBindings := collectAllKeybindingStrings(keybindings)
+
+	for contextName, contextGroups := range groups {
+		// Sort iteration to make error messages deterministic.
+		canonicalSeen := map[string]string{}
+		nameSeen := map[string]string{}
+		sortedPrefixes := make([]string, 0, len(contextGroups))
+		for p := range contextGroups {
+			sortedPrefixes = append(sortedPrefixes, p)
+		}
+		sort.Strings(sortedPrefixes)
+		for _, prefix := range sortedPrefixes {
+			group := contextGroups[prefix]
+			if _, ok := KeyFromLabel(prefix); !ok {
+				return fmt.Errorf("Unrecognized chord prefix '%s' in keybindingGroups. For permitted values see %s",
+					prefix, constants.Links.Docs.CustomKeybindings)
+			}
+			if strings.TrimSpace(group.Name) == "" {
+				return fmt.Errorf("keybindingGroups[%s] must have a non-empty name", prefix)
+			}
+
+			canonical := canonicalLabel(prefix)
+			if other, dup := canonicalSeen[canonical]; dup {
+				return fmt.Errorf(
+					"keybindingGroups[%s][%s] resolves to the same chord prefix as keybindingGroups[%s][%s] (both canonicalize to %q); remove or rename one",
+					contextName, prefix, contextName, other, canonical)
+			}
+			canonicalSeen[canonical] = prefix
+
+			if other, dup := nameSeen[group.Name]; dup {
+				return fmt.Errorf(
+					"keybindingGroups[%s][%s] has the same name %q as keybindingGroups[%s][%s]; group names must be unique within a context so chord-prefix lookup is deterministic",
+					contextName, prefix, group.Name, contextName, other)
+			}
+			nameSeen[group.Name] = prefix
+
+			prefixKey, _ := KeyFromLabel(prefix)
+			prefixSeq := prefixKey.Sequence()
+
+			// Leaf/group collision check applies only to "global". In
+			// view-scoped contexts the same key can legitimately fire
+			// as a leaf in one view and a chord prefix in another.
+			if contextName == "global" {
+				for _, b := range allBindings {
+					bk, ok := KeyFromLabel(b)
+					if !ok {
+						continue
+					}
+					bseq := bk.Sequence()
+					if len(bseq) == len(prefixSeq) && bindingSequenceStartsWith(bseq, prefixSeq) {
+						return fmt.Errorf("keybindingGroups[%s] collides with a leaf binding using the same key sequence; a key cannot be both an action and a sub-menu", prefix)
+					}
+				}
+			}
+
+			hasChild := false
+			for _, b := range allBindings {
+				bk, ok := KeyFromLabel(b)
+				if !ok {
+					continue
+				}
+				bseq := bk.Sequence()
+				if len(bseq) > len(prefixSeq) && bindingSequenceStartsWith(bseq, prefixSeq) {
+					hasChild = true
+					break
+				}
+			}
+			if !hasChild {
+				return fmt.Errorf("keybindingGroups[%s] has no bindings under it; either add a chord binding starting with %s or remove the group entry",
+					prefix, prefix)
+			}
+		}
+	}
 	return nil
 }

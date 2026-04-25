@@ -11,7 +11,9 @@ import (
 	"github.com/jesseduffield/lazygit/pkg/commands/models"
 	"github.com/jesseduffield/lazygit/pkg/gocui"
 	"github.com/jesseduffield/lazygit/pkg/gui/context"
+	"github.com/jesseduffield/lazygit/pkg/gui/controllers/helpers"
 	"github.com/jesseduffield/lazygit/pkg/gui/filetree"
+	"github.com/jesseduffield/lazygit/pkg/gui/style"
 	"github.com/jesseduffield/lazygit/pkg/gui/types"
 	"github.com/jesseduffield/lazygit/pkg/utils"
 	"github.com/samber/lo"
@@ -50,15 +52,91 @@ func (self *FilesController) GetKeybindings(opts types.KeybindingsOpts) []*types
 			DisplayOnScreen:   true,
 		},
 		{
-			Key:         opts.GetKey(opts.Config.Files.OpenStatusFilter),
-			Handler:     self.handleStatusFilterPressed,
-			Description: self.c.Tr.FileFilter,
+			Key:         opts.GetKey(opts.Config.Files.FilterStaged),
+			Handler:     self.filterStaged,
+			Description: self.c.Tr.FilterStagedFiles,
+			DescriptionFunc: func() string {
+				if self.context() == nil {
+					return self.c.Tr.FilterStagedFiles
+				}
+				return statusFilterRowLabel(self.c.Tr.FilterStagedFiles, self.context().GetStatusFilter() == filetree.DisplayStaged)
+			},
 		},
 		{
-			Key:         opts.GetKey(opts.Config.Files.CopyFileInfoToClipboard),
-			Handler:     self.openCopyMenu,
-			Description: self.c.Tr.CopyToClipboardMenu,
-			OpensMenu:   true,
+			Key:         opts.GetKey(opts.Config.Files.FilterUnstaged),
+			Handler:     self.filterUnstaged,
+			Description: self.c.Tr.FilterUnstagedFiles,
+			DescriptionFunc: func() string {
+				if self.context() == nil {
+					return self.c.Tr.FilterUnstagedFiles
+				}
+				return statusFilterRowLabel(self.c.Tr.FilterUnstagedFiles, self.context().GetStatusFilter() == filetree.DisplayUnstaged)
+			},
+		},
+		{
+			Key:         opts.GetKey(opts.Config.Files.FilterTracked),
+			Handler:     self.filterTracked,
+			Description: self.c.Tr.FilterTrackedFiles,
+			DescriptionFunc: func() string {
+				if self.context() == nil {
+					return self.c.Tr.FilterTrackedFiles
+				}
+				return statusFilterRowLabel(self.c.Tr.FilterTrackedFiles, self.context().GetStatusFilter() == filetree.DisplayTracked)
+			},
+		},
+		{
+			Key:         opts.GetKey(opts.Config.Files.FilterUntracked),
+			Handler:     self.filterUntracked,
+			Description: self.c.Tr.FilterUntrackedFiles,
+			DescriptionFunc: func() string {
+				if self.context() == nil {
+					return self.c.Tr.FilterUntrackedFiles
+				}
+				return statusFilterRowLabel(self.c.Tr.FilterUntrackedFiles, self.context().GetStatusFilter() == filetree.DisplayUntracked)
+			},
+		},
+		{
+			Key:         opts.GetKey(opts.Config.Files.NoFilter),
+			Handler:     self.noFilter,
+			Description: self.c.Tr.NoFilter,
+			DescriptionFunc: func() string {
+				if self.context() == nil {
+					return self.c.Tr.NoFilter
+				}
+				return statusFilterRowLabel(self.c.Tr.NoFilter, self.context().GetStatusFilter() == filetree.DisplayAll)
+			},
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Files.CopyFileName),
+			Handler:           self.withItem(self.copyFileName),
+			Description:       self.c.Tr.CopyFileName,
+			GetDisabledReason: self.require(self.singleItemSelected()),
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Files.CopyRelativeFilePath),
+			Handler:           self.withItem(self.copyRelativeFilePath),
+			Description:       self.c.Tr.CopyRelativeFilePath,
+			GetDisabledReason: self.require(self.singleItemSelected()),
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Files.CopyAbsoluteFilePath),
+			Handler:           self.withItem(self.copyAbsoluteFilePath),
+			Description:       self.c.Tr.CopyAbsoluteFilePath,
+			GetDisabledReason: self.require(self.singleItemSelected()),
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Files.CopyFileDiff),
+			Handler:           self.withItem(self.copyFileDiff),
+			Description:       self.c.Tr.CopySelectedDiff,
+			Tooltip:           self.c.Tr.CopyFileDiffTooltip,
+			GetDisabledReason: self.require(self.singleItemSelected(self.canCopyFileDiff)),
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Files.CopyAllFilesDiff),
+			Handler:           self.copyAllFilesDiff,
+			Description:       self.c.Tr.CopyAllFilesDiff,
+			Tooltip:           self.c.Tr.CopyFileDiffTooltip,
+			GetDisabledReason: self.canCopyAllFilesDiff,
 		},
 		{
 			Key:             opts.GetKey(opts.Config.Files.CommitChanges),
@@ -104,11 +182,16 @@ func (self *FilesController) GetKeybindings(opts types.KeybindingsOpts) []*types
 			Tooltip:           self.c.Tr.OpenFileTooltip,
 		},
 		{
-			Key:               opts.GetKey(opts.Config.Files.IgnoreFile),
-			Handler:           self.withItem(self.ignoreOrExcludeMenu),
+			Key:               opts.GetKey(opts.Config.Files.Ignore),
+			Handler:           self.withItem(self.ignore),
+			Description:       self.c.Tr.IgnoreFile,
 			GetDisabledReason: self.require(self.singleItemSelected()),
-			Description:       self.c.Tr.Actions.IgnoreExcludeFile,
-			OpensMenu:         true,
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Files.Exclude),
+			Handler:           self.withItem(self.exclude),
+			Description:       self.c.Tr.ExcludeFile,
+			GetDisabledReason: self.require(self.singleItemSelected()),
 		},
 		{
 			Key:         opts.GetKey(opts.Config.Files.RefreshFiles),
@@ -123,11 +206,24 @@ func (self *FilesController) GetKeybindings(opts types.KeybindingsOpts) []*types
 			DisplayOnScreen: true,
 		},
 		{
-			Key:         opts.GetKey(opts.Config.Files.ViewStashOptions),
-			Handler:     self.createStashMenu,
-			Description: self.c.Tr.ViewStashOptions,
-			Tooltip:     self.c.Tr.ViewStashOptionsTooltip,
-			OpensMenu:   true,
+			Key:         opts.GetKey(opts.Config.Files.StashAllChangesKeepIndex),
+			Handler:     self.stashAllChangesKeepIndex,
+			Description: self.c.Tr.StashAllChangesKeepIndex,
+		},
+		{
+			Key:         opts.GetKey(opts.Config.Files.StashIncludeUntrackedChanges),
+			Handler:     self.stashIncludeUntrackedChanges,
+			Description: self.c.Tr.StashIncludeUntrackedChanges,
+		},
+		{
+			Key:         opts.GetKey(opts.Config.Files.StashStagedChanges),
+			Handler:     self.stashStagedChanges,
+			Description: self.c.Tr.StashStagedChanges,
+		},
+		{
+			Key:         opts.GetKey(opts.Config.Files.StashUnstagedChanges),
+			Handler:     self.stashUnstagedChanges,
+			Description: self.c.Tr.StashUnstagedChanges,
 		},
 		{
 			Key:         opts.GetKey(opts.Config.Files.ToggleStagedAll),
@@ -143,27 +239,90 @@ func (self *FilesController) GetKeybindings(opts types.KeybindingsOpts) []*types
 			Tooltip:           self.c.Tr.FileEnterTooltip,
 		},
 		{
-			Key:               opts.GetKey(opts.Config.Universal.Remove),
-			Handler:           self.withItems(self.remove),
+			Key:               opts.GetKey(opts.Config.Files.DiscardAllChanges),
+			Handler:           self.withItems(self.discardAllChanges),
 			GetDisabledReason: self.withFileTreeViewModelMutex(self.require(self.itemsSelected(self.canRemove))),
 			Description:       self.c.Tr.Discard,
+			DescriptionFunc:   self.discardAllChangesDescriptionFunc,
 			Tooltip:           self.c.Tr.DiscardFileChangesTooltip,
-			OpensMenu:         true,
 			DisplayOnScreen:   true,
 		},
 		{
-			Key:         opts.GetKey(opts.Config.Commits.ViewResetOptions),
-			Handler:     self.createResetToUpstreamMenu,
-			Description: self.c.Tr.ViewResetToUpstreamOptions,
-			OpensMenu:   true,
+			Key:               opts.GetKey(opts.Config.Files.DiscardUnstagedFile),
+			Handler:           self.withItems(self.discardUnstagedFileChanges),
+			GetDisabledReason: self.withFileTreeViewModelMutex(self.require(self.itemsSelected(self.canDiscardUnstaged))),
+			Description:       self.c.Tr.DiscardUnstagedChanges,
 		},
 		{
-			Key:             opts.GetKey(opts.Config.Files.ViewResetOptions),
-			Handler:         self.createResetMenu,
-			Description:     self.c.Tr.Reset,
-			Tooltip:         self.c.Tr.FileResetOptionsTooltip,
-			OpensMenu:       true,
-			DisplayOnScreen: true,
+			Key:             opts.GetKey(opts.Config.Commits.MixedResetToRef),
+			Handler:         self.gitMixedResetToUpstream,
+			Description:     "Mixed reset to upstream",
+			Tooltip:         self.c.Tr.ResetMixedTooltip,
+			ChordPopupExtra: self.gitResetPreview(style.FgRed, "mixed"),
+		},
+		{
+			Key:             opts.GetKey(opts.Config.Commits.SoftResetToRef),
+			Handler:         self.gitSoftResetToUpstream,
+			Description:     "Soft reset to upstream",
+			Tooltip:         self.c.Tr.ResetSoftTooltip,
+			ChordPopupExtra: self.gitResetPreview(style.FgRed, "soft"),
+		},
+		{
+			Key:             opts.GetKey(opts.Config.Commits.HardResetToRef),
+			Handler:         self.gitHardResetToUpstream,
+			Description:     "Hard reset to upstream",
+			Tooltip:         self.c.Tr.ResetHardTooltip,
+			ChordPopupExtra: self.gitResetPreview(style.FgRed, "hard"),
+		},
+		{
+			Key:         opts.GetKey(opts.Config.Files.NukeWorkingTree),
+			Handler:     self.nukeWorkingTree,
+			Description: self.c.Tr.DiscardAllChangesToAllFiles,
+			Tooltip:     self.c.Tr.NukeDescription,
+			ChordPopupExtra: self.resetPreview(style.FgRed, func() string {
+				s := "git reset --hard HEAD && git clean -fd"
+				if len(self.c.Model().Submodules) > 0 {
+					s = fmt.Sprintf("%s (%s)", s, self.c.Tr.AndResetSubmodules)
+				}
+				return s
+			}),
+		},
+		{
+			Key:             opts.GetKey(opts.Config.Files.DiscardUnstagedChanges),
+			Handler:         self.discardUnstagedChanges,
+			Description:     self.c.Tr.DiscardAnyUnstagedChanges,
+			ChordPopupExtra: self.resetPreview(style.FgRed, func() string { return "git checkout -- ." }),
+		},
+		{
+			Key:             opts.GetKey(opts.Config.Files.DiscardUntrackedFiles),
+			Handler:         self.discardUntrackedFiles,
+			Description:     self.c.Tr.DiscardUntrackedFiles,
+			ChordPopupExtra: self.resetPreview(style.FgRed, func() string { return "git clean -fd" }),
+		},
+		{
+			Key:             opts.GetKey(opts.Config.Files.DiscardStagedChanges),
+			Handler:         self.discardStagedChanges,
+			Description:     self.c.Tr.DiscardStagedChanges,
+			Tooltip:         self.c.Tr.DiscardStagedChangesDescription,
+			ChordPopupExtra: self.resetPreview(style.FgRed, func() string { return "stash staged and drop stash" }),
+		},
+		{
+			Key:             opts.GetKey(opts.Config.Files.SoftReset),
+			Handler:         self.softReset,
+			Description:     self.c.Tr.SoftReset,
+			ChordPopupExtra: self.resetPreview(style.FgRed, func() string { return "git reset --soft HEAD" }),
+		},
+		{
+			Key:             opts.GetKey(opts.Config.Files.MixedReset),
+			Handler:         self.mixedReset,
+			Description:     "mixed reset",
+			ChordPopupExtra: self.resetPreview(style.FgRed, func() string { return "git reset --mixed HEAD" }),
+		},
+		{
+			Key:             opts.GetKey(opts.Config.Files.HardReset),
+			Handler:         self.hardReset,
+			Description:     self.c.Tr.HardReset,
+			ChordPopupExtra: self.resetPreview(style.FgRed, func() string { return "git reset --hard HEAD" }),
 		},
 		{
 			Key:         opts.GetKey(opts.Config.Files.ToggleTreeView),
@@ -833,7 +992,7 @@ func (self *FilesController) ignore(node *filetree.FileNode) error {
 	if node.GetPath() == ".gitignore" {
 		return errors.New(self.c.Tr.Actions.IgnoreFileErr)
 	}
-	return self.ignoreOrExcludeFile(node, self.c.Tr.IgnoreTracked, self.c.Tr.IgnoreTrackedPrompt, self.c.Tr.Actions.IgnoreExcludeFile, self.c.Git().WorkingTree.Ignore)
+	return self.ignoreOrExcludeFile(node, self.c.Tr.IgnoreTracked, self.c.Tr.IgnoreTrackedPrompt, self.c.Tr.Actions.IgnoreFile, self.c.Git().WorkingTree.Ignore)
 }
 
 func (self *FilesController) exclude(node *filetree.FileNode) error {
@@ -842,34 +1001,6 @@ func (self *FilesController) exclude(node *filetree.FileNode) error {
 	}
 
 	return self.ignoreOrExcludeFile(node, self.c.Tr.ExcludeTracked, self.c.Tr.ExcludeTrackedPrompt, self.c.Tr.Actions.ExcludeFile, self.c.Git().WorkingTree.Exclude)
-}
-
-func (self *FilesController) ignoreOrExcludeMenu(node *filetree.FileNode) error {
-	return self.c.Menu(types.CreateMenuOptions{
-		Title: self.c.Tr.Actions.IgnoreExcludeFile,
-		Items: []*types.MenuItem{
-			{
-				LabelColumns: []string{self.c.Tr.IgnoreFile},
-				OnPress: func() error {
-					if err := self.ignore(node); err != nil {
-						return err
-					}
-					return nil
-				},
-				Key: gocui.NewKeyRune('i'),
-			},
-			{
-				LabelColumns: []string{self.c.Tr.ExcludeFile},
-				OnPress: func() error {
-					if err := self.exclude(node); err != nil {
-						return err
-					}
-					return nil
-				},
-				Key: gocui.NewKeyRune('e'),
-			},
-		},
-	})
 }
 
 func (self *FilesController) refresh() error {
@@ -940,53 +1071,31 @@ func (self *FilesController) isResolvingConflicts() bool {
 	return false
 }
 
-func (self *FilesController) handleStatusFilterPressed() error {
-	currentFilter := self.context().GetStatusFilter()
-	return self.c.Menu(types.CreateMenuOptions{
-		Title: self.c.Tr.FilteringMenuTitle,
-		Items: []*types.MenuItem{
-			{
-				Label: self.c.Tr.FilterStagedFiles,
-				OnPress: func() error {
-					return self.setStatusFiltering(filetree.DisplayStaged)
-				},
-				Key:    gocui.NewKeyRune('s'),
-				Widget: types.MakeMenuRadioButton(currentFilter == filetree.DisplayStaged),
-			},
-			{
-				Label: self.c.Tr.FilterUnstagedFiles,
-				OnPress: func() error {
-					return self.setStatusFiltering(filetree.DisplayUnstaged)
-				},
-				Key:    gocui.NewKeyRune('u'),
-				Widget: types.MakeMenuRadioButton(currentFilter == filetree.DisplayUnstaged),
-			},
-			{
-				Label: self.c.Tr.FilterTrackedFiles,
-				OnPress: func() error {
-					return self.setStatusFiltering(filetree.DisplayTracked)
-				},
-				Key:    gocui.NewKeyRune('t'),
-				Widget: types.MakeMenuRadioButton(currentFilter == filetree.DisplayTracked),
-			},
-			{
-				Label: self.c.Tr.FilterUntrackedFiles,
-				OnPress: func() error {
-					return self.setStatusFiltering(filetree.DisplayUntracked)
-				},
-				Key:    gocui.NewKeyRune('T'),
-				Widget: types.MakeMenuRadioButton(currentFilter == filetree.DisplayUntracked),
-			},
-			{
-				Label: self.c.Tr.NoFilter,
-				OnPress: func() error {
-					return self.setStatusFiltering(filetree.DisplayAll)
-				},
-				Key:    gocui.NewKeyRune('r'),
-				Widget: types.MakeMenuRadioButton(currentFilter == filetree.DisplayAll),
-			},
-		},
-	})
+func statusFilterRowLabel(label string, active bool) string {
+	if active {
+		return "(•) " + label
+	}
+	return "( ) " + label
+}
+
+func (self *FilesController) filterStaged() error {
+	return self.setStatusFiltering(filetree.DisplayStaged)
+}
+
+func (self *FilesController) filterUnstaged() error {
+	return self.setStatusFiltering(filetree.DisplayUnstaged)
+}
+
+func (self *FilesController) filterTracked() error {
+	return self.setStatusFiltering(filetree.DisplayTracked)
+}
+
+func (self *FilesController) filterUntracked() error {
+	return self.setStatusFiltering(filetree.DisplayUntracked)
+}
+
+func (self *FilesController) noFilter() error {
+	return self.setStatusFiltering(filetree.DisplayAll)
 }
 
 func (self *FilesController) filteringLabel(filter filetree.FileTreeDisplayFilter) string {
@@ -1080,65 +1189,35 @@ func (self *FilesController) switchToMerge() error {
 	return self.c.Helpers().MergeConflicts.SwitchToMerge(file.Path)
 }
 
-func (self *FilesController) createStashMenu() error {
-	return self.c.Menu(types.CreateMenuOptions{
-		Title: self.c.Tr.StashOptions,
-		Items: []*types.MenuItem{
-			{
-				Label: self.c.Tr.StashAllChanges,
-				OnPress: func() error {
-					if !self.c.Helpers().WorkingTree.IsWorkingTreeDirtyExceptSubmodules() {
-						return errors.New(self.c.Tr.NoFilesToStash)
-					}
-					return self.handleStashSave(self.c.Git().Stash.Push, self.c.Tr.Actions.StashAllChanges)
-				},
-				Key: gocui.NewKeyRune('a'),
-			},
-			{
-				Label: self.c.Tr.StashAllChangesKeepIndex,
-				OnPress: func() error {
-					if !self.c.Helpers().WorkingTree.IsWorkingTreeDirtyExceptSubmodules() {
-						return errors.New(self.c.Tr.NoFilesToStash)
-					}
-					// if there are no staged files it behaves the same as Stash.Save
-					return self.handleStashSave(self.c.Git().Stash.StashAndKeepIndex, self.c.Tr.Actions.StashAllChangesKeepIndex)
-				},
-				Key: gocui.NewKeyRune('i'),
-			},
-			{
-				Label: self.c.Tr.StashIncludeUntrackedChanges,
-				OnPress: func() error {
-					return self.handleStashSave(self.c.Git().Stash.StashIncludeUntrackedChanges, self.c.Tr.Actions.StashIncludeUntrackedChanges)
-				},
-				Key: gocui.NewKeyRune('U'),
-			},
-			{
-				Label: self.c.Tr.StashStagedChanges,
-				OnPress: func() error {
-					// there must be something in staging otherwise the current implementation mucks the stash up
-					if !self.c.Helpers().WorkingTree.AnyStagedFilesExceptSubmodules() {
-						return errors.New(self.c.Tr.NoTrackedStagedFilesStash)
-					}
-					return self.handleStashSave(self.c.Git().Stash.SaveStagedChanges, self.c.Tr.Actions.StashStagedChanges)
-				},
-				Key: gocui.NewKeyRune('s'),
-			},
-			{
-				Label: self.c.Tr.StashUnstagedChanges,
-				OnPress: func() error {
-					if !self.c.Helpers().WorkingTree.IsWorkingTreeDirtyExceptSubmodules() {
-						return errors.New(self.c.Tr.NoFilesToStash)
-					}
-					if self.c.Helpers().WorkingTree.AnyStagedFilesExceptSubmodules() {
-						return self.handleStashSave(self.c.Git().Stash.StashUnstagedChanges, self.c.Tr.Actions.StashUnstagedChanges)
-					}
-					// ordinary stash
-					return self.handleStashSave(self.c.Git().Stash.Push, self.c.Tr.Actions.StashUnstagedChanges)
-				},
-				Key: gocui.NewKeyRune('u'),
-			},
-		},
-	})
+func (self *FilesController) stashAllChangesKeepIndex() error {
+	if !self.c.Helpers().WorkingTree.IsWorkingTreeDirtyExceptSubmodules() {
+		return errors.New(self.c.Tr.NoFilesToStash)
+	}
+	// if there are no staged files it behaves the same as Stash.Save
+	return self.handleStashSave(self.c.Git().Stash.StashAndKeepIndex, self.c.Tr.Actions.StashAllChangesKeepIndex)
+}
+
+func (self *FilesController) stashIncludeUntrackedChanges() error {
+	return self.handleStashSave(self.c.Git().Stash.StashIncludeUntrackedChanges, self.c.Tr.Actions.StashIncludeUntrackedChanges)
+}
+
+func (self *FilesController) stashStagedChanges() error {
+	// there must be something in staging otherwise the current implementation mucks the stash up
+	if !self.c.Helpers().WorkingTree.AnyStagedFilesExceptSubmodules() {
+		return errors.New(self.c.Tr.NoTrackedStagedFilesStash)
+	}
+	return self.handleStashSave(self.c.Git().Stash.SaveStagedChanges, self.c.Tr.Actions.StashStagedChanges)
+}
+
+func (self *FilesController) stashUnstagedChanges() error {
+	if !self.c.Helpers().WorkingTree.IsWorkingTreeDirtyExceptSubmodules() {
+		return errors.New(self.c.Tr.NoFilesToStash)
+	}
+	if self.c.Helpers().WorkingTree.AnyStagedFilesExceptSubmodules() {
+		return self.handleStashSave(self.c.Git().Stash.StashUnstagedChanges, self.c.Tr.Actions.StashUnstagedChanges)
+	}
+	// ordinary stash
+	return self.handleStashSave(self.c.Git().Stash.Push, self.c.Tr.Actions.StashUnstagedChanges)
 }
 
 func (self *FilesController) openMergeConflictMenu(nodes []*filetree.FileNode) error {
@@ -1169,111 +1248,73 @@ func (self *FilesController) canOpenMergeConflictMenu(nodes []*filetree.FileNode
 	return nil
 }
 
-func (self *FilesController) openCopyMenu() error {
-	node := self.context().GetSelected()
+func (self *FilesController) copyFileName(node *filetree.FileNode) error {
+	if err := self.c.OS().CopyToClipboard(node.Name()); err != nil {
+		return err
+	}
+	self.c.Toast(self.c.Tr.FileNameCopiedToast)
+	return nil
+}
 
-	copyNameItem := &types.MenuItem{
-		Label: self.c.Tr.CopyFileName,
-		OnPress: func() error {
-			if err := self.c.OS().CopyToClipboard(node.Name()); err != nil {
-				return err
-			}
-			self.c.Toast(self.c.Tr.FileNameCopiedToast)
-			return nil
-		},
-		DisabledReason: self.require(self.singleItemSelected())(),
-		Key:            gocui.NewKeyRune('n'),
+func (self *FilesController) copyRelativeFilePath(node *filetree.FileNode) error {
+	if err := self.c.OS().CopyToClipboard(node.GetPath()); err != nil {
+		return err
 	}
-	copyRelativePathItem := &types.MenuItem{
-		Label: self.c.Tr.CopyRelativeFilePath,
-		OnPress: func() error {
-			if err := self.c.OS().CopyToClipboard(node.GetPath()); err != nil {
-				return err
-			}
-			self.c.Toast(self.c.Tr.FilePathCopiedToast)
-			return nil
-		},
-		DisabledReason: self.require(self.singleItemSelected())(),
-		Key:            gocui.NewKeyRune('p'),
-	}
-	copyAbsolutePathItem := &types.MenuItem{
-		Label: self.c.Tr.CopyAbsoluteFilePath,
-		OnPress: func() error {
-			absPath, err := filepath.Abs(node.GetPath())
-			if err != nil {
-				return err
-			}
-			if err := self.c.OS().CopyToClipboard(absPath); err != nil {
-				return err
-			}
-			self.c.Toast(self.c.Tr.FilePathCopiedToast)
-			return nil
-		},
-		DisabledReason: self.require(self.singleItemSelected())(),
-		Key:            gocui.NewKeyRune('P'),
-	}
-	copyFileDiffItem := &types.MenuItem{
-		Label:   self.c.Tr.CopySelectedDiff,
-		Tooltip: self.c.Tr.CopyFileDiffTooltip,
-		OnPress: func() error {
-			path := self.context().GetSelectedPath()
-			hasStaged := self.hasPathStagedChanges(node)
-			diff, err := self.c.Git().Diff.GetDiff(hasStaged, "--", path)
-			if err != nil {
-				return err
-			}
-			if err := self.c.OS().CopyToClipboard(diff); err != nil {
-				return err
-			}
-			self.c.Toast(self.c.Tr.FileDiffCopiedToast)
-			return nil
-		},
-		DisabledReason: self.require(self.singleItemSelected(
-			func(file *filetree.FileNode) *types.DisabledReason {
-				if !node.GetHasStagedOrTrackedChanges() {
-					return &types.DisabledReason{Text: self.c.Tr.NoContentToCopyError}
-				}
-				return nil
-			},
-		))(),
-		Key: gocui.NewKeyRune('s'),
-	}
-	copyAllDiff := &types.MenuItem{
-		Label:   self.c.Tr.CopyAllFilesDiff,
-		Tooltip: self.c.Tr.CopyFileDiffTooltip,
-		OnPress: func() error {
-			hasStaged := self.c.Helpers().WorkingTree.AnyStagedFiles()
-			diff, err := self.c.Git().Diff.GetDiff(hasStaged, "--")
-			if err != nil {
-				return err
-			}
-			if err := self.c.OS().CopyToClipboard(diff); err != nil {
-				return err
-			}
-			self.c.Toast(self.c.Tr.AllFilesDiffCopiedToast)
-			return nil
-		},
-		DisabledReason: self.require(
-			func() *types.DisabledReason {
-				if !self.anyStagedOrTrackedFile() {
-					return &types.DisabledReason{Text: self.c.Tr.NoContentToCopyError}
-				}
-				return nil
-			},
-		)(),
-		Key: gocui.NewKeyRune('a'),
-	}
+	self.c.Toast(self.c.Tr.FilePathCopiedToast)
+	return nil
+}
 
-	return self.c.Menu(types.CreateMenuOptions{
-		Title: self.c.Tr.CopyToClipboardMenu,
-		Items: []*types.MenuItem{
-			copyNameItem,
-			copyRelativePathItem,
-			copyAbsolutePathItem,
-			copyFileDiffItem,
-			copyAllDiff,
-		},
-	})
+func (self *FilesController) copyAbsoluteFilePath(node *filetree.FileNode) error {
+	absPath, err := filepath.Abs(node.GetPath())
+	if err != nil {
+		return err
+	}
+	if err := self.c.OS().CopyToClipboard(absPath); err != nil {
+		return err
+	}
+	self.c.Toast(self.c.Tr.FilePathCopiedToast)
+	return nil
+}
+
+func (self *FilesController) copyFileDiff(node *filetree.FileNode) error {
+	path := self.context().GetSelectedPath()
+	hasStaged := self.hasPathStagedChanges(node)
+	diff, err := self.c.Git().Diff.GetDiff(hasStaged, "--", path)
+	if err != nil {
+		return err
+	}
+	if err := self.c.OS().CopyToClipboard(diff); err != nil {
+		return err
+	}
+	self.c.Toast(self.c.Tr.FileDiffCopiedToast)
+	return nil
+}
+
+func (self *FilesController) copyAllFilesDiff() error {
+	hasStaged := self.c.Helpers().WorkingTree.AnyStagedFiles()
+	diff, err := self.c.Git().Diff.GetDiff(hasStaged, "--")
+	if err != nil {
+		return err
+	}
+	if err := self.c.OS().CopyToClipboard(diff); err != nil {
+		return err
+	}
+	self.c.Toast(self.c.Tr.AllFilesDiffCopiedToast)
+	return nil
+}
+
+func (self *FilesController) canCopyFileDiff(file *filetree.FileNode) *types.DisabledReason {
+	if !file.GetHasStagedOrTrackedChanges() {
+		return &types.DisabledReason{Text: self.c.Tr.NoContentToCopyError}
+	}
+	return nil
+}
+
+func (self *FilesController) canCopyAllFilesDiff() *types.DisabledReason {
+	if !self.anyStagedOrTrackedFile() {
+		return &types.DisabledReason{Text: self.c.Tr.NoContentToCopyError}
+	}
+	return nil
 }
 
 func (self *FilesController) anyStagedOrTrackedFile() bool {
@@ -1293,8 +1334,23 @@ func (self *FilesController) stash() error {
 	return self.handleStashSave(self.c.Git().Stash.Push, self.c.Tr.Actions.StashAllChanges)
 }
 
-func (self *FilesController) createResetToUpstreamMenu() error {
-	return self.c.Helpers().Refs.CreateGitResetMenu("@{upstream}", "@{upstream}")
+func (self *FilesController) gitMixedResetToUpstream() error {
+	return self.c.Helpers().Refs.PerformGitReset("@{upstream}", "@{upstream}", "mixed")
+}
+
+func (self *FilesController) gitSoftResetToUpstream() error {
+	return self.c.Helpers().Refs.PerformGitReset("@{upstream}", "@{upstream}", "soft")
+}
+
+func (self *FilesController) gitHardResetToUpstream() error {
+	return self.c.Helpers().Refs.PerformGitReset("@{upstream}", "@{upstream}", "hard")
+}
+
+func (self *FilesController) gitResetPreview(s style.TextStyle, strength string) string {
+	if self.c.Git() == nil {
+		return ""
+	}
+	return s.Sprintf("reset --%s @{upstream}", strength)
 }
 
 func (self *FilesController) handleToggleDirCollapsed() error {
@@ -1468,91 +1524,79 @@ func (self *FilesController) canRemove(selectedNodes []*filetree.FileNode) *type
 	return nil
 }
 
-func (self *FilesController) remove(selectedNodes []*filetree.FileNode) error {
+func (self *FilesController) discardAllChanges(selectedNodes []*filetree.FileNode) error {
 	submodules := self.c.Model().Submodules
-
 	selectedNodes = normalisedSelectedNodes(selectedNodes)
 
-	// If we have one submodule then we must only have one submodule or `canRemove` would have
-	// returned an error
+	// If we have one submodule then we must only have one submodule or `canRemove` would
+	// have returned an error.
 	submoduleNode := findSubmoduleNode(selectedNodes, submodules)
 	if submoduleNode != nil {
-		submodule := submoduleNode.SubmoduleConfig(submodules)
-
-		menuItems := []*types.MenuItem{
-			{
-				Label: self.c.Tr.SubmoduleStashAndReset,
-				OnPress: func() error {
-					return self.ResetSubmodule(submodule)
-				},
-			},
-		}
-
-		return self.c.Menu(types.CreateMenuOptions{Title: submoduleNode.GetPath(), Items: menuItems})
+		return self.ResetSubmodule(submoduleNode.SubmoduleConfig(submodules))
 	}
 
-	discardAllChangesItem := types.MenuItem{
-		Label: self.c.Tr.DiscardAllChanges,
-		OnPress: func() error {
-			self.c.LogAction(self.c.Tr.Actions.DiscardAllChangesInFile)
+	self.c.LogAction(self.c.Tr.Actions.DiscardAllChangesInFile)
 
-			if self.context().IsSelectingRange() {
-				defer self.context().CancelRangeSelect()
-			}
-
-			nodes := lo.Map(selectedNodes, func(n *filetree.FileNode, _ int) git_commands.IFileNode { return n })
-			if err := self.c.Git().WorkingTree.DiscardAllDirChanges(nodes); err != nil {
-				return err
-			}
-
-			self.c.Refresh(types.RefreshOptions{Mode: types.ASYNC, Scope: []types.RefreshableView{types.FILES, types.WORKTREES}})
-			return nil
-		},
-		Key: self.c.KeybindingsOpts().GetKey(self.c.UserConfig().Keybinding.Files.ConfirmDiscard),
-		Tooltip: utils.ResolvePlaceholderString(
-			self.c.Tr.DiscardAllTooltip,
-			map[string]string{
-				"path": self.formattedPaths(selectedNodes),
-			},
-		),
+	if self.context().IsSelectingRange() {
+		defer self.context().CancelRangeSelect()
 	}
 
-	discardUnstagedChangesItem := types.MenuItem{
-		Label: self.c.Tr.DiscardUnstagedChanges,
-		OnPress: func() error {
-			self.c.LogAction(self.c.Tr.Actions.DiscardAllUnstagedChangesInFile)
-
-			if self.context().IsSelectingRange() {
-				defer self.context().CancelRangeSelect()
-			}
-
-			nodes := lo.Map(selectedNodes, func(n *filetree.FileNode, _ int) git_commands.IFileNode { return n })
-			if err := self.c.Git().WorkingTree.DiscardUnstagedDirChanges(nodes); err != nil {
-				return err
-			}
-
-			self.c.Refresh(types.RefreshOptions{Mode: types.ASYNC, Scope: []types.RefreshableView{types.FILES, types.WORKTREES}})
-			return nil
-		},
-		Key: gocui.NewKeyRune('u'),
-		Tooltip: utils.ResolvePlaceholderString(
-			self.c.Tr.DiscardUnstagedTooltip,
-			map[string]string{
-				"path": self.formattedPaths(selectedNodes),
-			},
-		),
+	nodes := lo.Map(selectedNodes, func(n *filetree.FileNode, _ int) git_commands.IFileNode { return n })
+	if err := self.c.Git().WorkingTree.DiscardAllDirChanges(nodes); err != nil {
+		return err
 	}
 
+	self.c.Refresh(types.RefreshOptions{Mode: types.ASYNC, Scope: []types.RefreshableView{types.FILES, types.WORKTREES}})
+	return nil
+}
+
+func (self *FilesController) discardUnstagedFileChanges(selectedNodes []*filetree.FileNode) error {
+	selectedNodes = normalisedSelectedNodes(selectedNodes)
+
+	self.c.LogAction(self.c.Tr.Actions.DiscardAllUnstagedChangesInFile)
+
+	if self.context().IsSelectingRange() {
+		defer self.context().CancelRangeSelect()
+	}
+
+	nodes := lo.Map(selectedNodes, func(n *filetree.FileNode, _ int) git_commands.IFileNode { return n })
+	if err := self.c.Git().WorkingTree.DiscardUnstagedDirChanges(nodes); err != nil {
+		return err
+	}
+
+	self.c.Refresh(types.RefreshOptions{Mode: types.ASYNC, Scope: []types.RefreshableView{types.FILES, types.WORKTREES}})
+	return nil
+}
+
+func (self *FilesController) canDiscardUnstaged(selectedNodes []*filetree.FileNode) *types.DisabledReason {
+	if r := self.canRemove(selectedNodes); r != nil {
+		return r
+	}
+	// Submodules have no "unstaged" semantics; only discardAllChanges applies.
+	if findSubmoduleNode(normalisedSelectedNodes(selectedNodes), self.c.Model().Submodules) != nil {
+		return &types.DisabledReason{Text: self.c.Tr.DiscardUnstagedDisabled}
+	}
 	if !someNodesHaveStagedChanges(selectedNodes) || !someNodesHaveUnstagedChanges(selectedNodes) {
-		discardUnstagedChangesItem.DisabledReason = &types.DisabledReason{Text: self.c.Tr.DiscardUnstagedDisabled}
+		return &types.DisabledReason{Text: self.c.Tr.DiscardUnstagedDisabled}
 	}
+	return nil
+}
 
-	menuItems := []*types.MenuItem{
-		&discardAllChangesItem,
-		&discardUnstagedChangesItem,
+// Switches the label to "Stash and reset submodule" for submodule
+// selections, since the handler's behaviour differs in that case.
+func (self *FilesController) discardAllChangesDescriptionFunc() string {
+	if self.c.Git() == nil {
+		return self.c.Tr.Discard
 	}
-
-	return self.c.Menu(types.CreateMenuOptions{Title: self.c.Tr.DiscardChangesTitle, Items: menuItems})
+	selectedNodes, _, _ := self.context().GetSelectedItems()
+	if len(selectedNodes) == 0 {
+		return self.c.Tr.Discard
+	}
+	submoduleNode := findSubmoduleNode(normalisedSelectedNodes(selectedNodes), self.c.Model().Submodules)
+	if submoduleNode != nil {
+		return self.c.Tr.SubmoduleStashAndReset
+	}
+	return self.c.Tr.DiscardAllChanges
 }
 
 func (self *FilesController) ResetSubmodule(submodule *models.SubmoduleConfig) error {
@@ -1578,16 +1622,99 @@ func (self *FilesController) ResetSubmodule(submodule *models.SubmoduleConfig) e
 	})
 }
 
-func (self *FilesController) formattedPaths(nodes []*filetree.FileNode) string {
-	return utils.FormatPaths(lo.Map(nodes, func(node *filetree.FileNode, _ int) string {
-		return node.GetPath()
-	}))
-}
-
 func (self *FilesController) isInTreeMode() *types.DisabledReason {
 	if !self.context().FileTreeViewModel.InTreeMode() {
 		return &types.DisabledReason{Text: self.c.Tr.DisabledInFlatView}
 	}
 
 	return nil
+}
+
+func (self *FilesController) nukeWorkingTree() error {
+	self.c.Confirm(types.ConfirmOpts{
+		Title:  self.c.Tr.Actions.NukeWorkingTree,
+		Prompt: self.c.Tr.NukeTreeConfirmation,
+		HandleConfirm: func() error {
+			self.c.LogAction(self.c.Tr.Actions.NukeWorkingTree)
+			if err := self.c.Git().WorkingTree.ResetAndClean(); err != nil {
+				return err
+			}
+
+			if self.c.UserConfig().Gui.AnimateExplosion {
+				self.animateExplosion()
+			}
+
+			self.c.Refresh(types.RefreshOptions{Mode: types.ASYNC, Scope: []types.RefreshableView{types.FILES}})
+			return nil
+		},
+	})
+	return nil
+}
+
+func (self *FilesController) discardUnstagedChanges() error {
+	self.c.LogAction(self.c.Tr.Actions.DiscardUnstagedFileChanges)
+	if err := self.c.Git().WorkingTree.DiscardAnyUnstagedFileChanges(); err != nil {
+		return err
+	}
+	self.c.Refresh(types.RefreshOptions{Mode: types.ASYNC, Scope: []types.RefreshableView{types.FILES}})
+	return nil
+}
+
+func (self *FilesController) discardUntrackedFiles() error {
+	self.c.LogAction(self.c.Tr.Actions.RemoveUntrackedFiles)
+	if err := self.c.Git().WorkingTree.RemoveUntrackedFiles(); err != nil {
+		return err
+	}
+	self.c.Refresh(types.RefreshOptions{Mode: types.ASYNC, Scope: []types.RefreshableView{types.FILES}})
+	return nil
+}
+
+func (self *FilesController) discardStagedChanges() error {
+	self.c.LogAction(self.c.Tr.Actions.RemoveStagedFiles)
+	if !self.c.Helpers().WorkingTree.IsWorkingTreeDirtyExceptSubmodules() {
+		return errors.New(self.c.Tr.NoTrackedStagedFilesStash)
+	}
+	if err := self.c.Git().Stash.SaveStagedChanges("[lazygit] tmp stash"); err != nil {
+		return err
+	}
+	if err := self.c.Git().Stash.DropNewest(); err != nil {
+		return err
+	}
+	self.c.Refresh(types.RefreshOptions{Mode: types.ASYNC, Scope: []types.RefreshableView{types.FILES}})
+	return nil
+}
+
+func (self *FilesController) softReset() error {
+	self.c.LogAction(self.c.Tr.Actions.SoftReset)
+	if err := self.c.Git().WorkingTree.ResetSoft("HEAD"); err != nil {
+		return err
+	}
+	self.c.Refresh(types.RefreshOptions{Mode: types.ASYNC, Scope: []types.RefreshableView{types.FILES}})
+	return nil
+}
+
+func (self *FilesController) mixedReset() error {
+	self.c.LogAction(self.c.Tr.Actions.MixedReset)
+	if err := self.c.Git().WorkingTree.ResetMixed("HEAD"); err != nil {
+		return err
+	}
+	self.c.Refresh(types.RefreshOptions{Mode: types.ASYNC, Scope: []types.RefreshableView{types.FILES}})
+	return nil
+}
+
+func (self *FilesController) hardReset() error {
+	return self.c.ConfirmIf(
+		helpers.IsWorkingTreeDirtyExceptSubmodules(self.c.Model().Files, self.c.Model().Submodules),
+		types.ConfirmOpts{
+			Title:  self.c.Tr.Actions.HardReset,
+			Prompt: self.c.Tr.ResetHardConfirmation,
+			HandleConfirm: func() error {
+				self.c.LogAction(self.c.Tr.Actions.HardReset)
+				if err := self.c.Git().WorkingTree.ResetHard("HEAD"); err != nil {
+					return err
+				}
+				self.c.Refresh(types.RefreshOptions{Mode: types.ASYNC, Scope: []types.RefreshableView{types.FILES}})
+				return nil
+			},
+		})
 }

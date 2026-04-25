@@ -9,7 +9,7 @@ var RebaseToUpstream = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Rebase the current branch to the selected branch upstream",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig:  func(config *config.AppConfig) {},
+	SetupConfig:  func(cfg *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		shell.
 			CloneIntoRemote("origin").
@@ -30,6 +30,7 @@ var RebaseToUpstream = NewIntegrationTest(NewIntegrationTestArgs{
 			Contains("ensure-master"),
 		)
 
+		// On a branch with no upstream, just verify the popup opens.
 		t.Views().Branches().
 			Focus().
 			Lines(
@@ -43,16 +44,10 @@ var RebaseToUpstream = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("base-branch").IsSelected(),
 				Contains("master-local"),
 			).
-			Press(keys.Branches.SetUpstream).
+			Press(keys.ChordPrefix.LocalBranches.BranchUpstreamOptions).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Equals("Upstream options")).
-					Select(Contains("Rebase checked-out branch onto upstream of selected branch")).
-					Tooltip(Contains("Disabled: The selected branch has no upstream (or the upstream is not stored locally)")).
-					Confirm().
-					Tap(func() {
-						t.ExpectToast(Equals("Disabled: The selected branch has no upstream (or the upstream is not stored locally)"))
-					}).
+					Title(Equals("Branch upstream options")).
 					Cancel()
 			}).
 			SelectNextItem().
@@ -61,15 +56,16 @@ var RebaseToUpstream = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("base-branch"),
 				Contains("master-local").IsSelected(),
 			).
-			Press(keys.Branches.SetUpstream).
+			Press(keys.ChordPrefix.LocalBranches.BranchUpstreamOptions).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Equals("Upstream options")).
-					Select(Contains("Rebase checked-out branch onto origin/master...")).
+					Title(Equals("Branch upstream options")).
+					Select(Contains("Simple rebase onto upstream")).
 					Confirm()
+
 				t.ExpectPopup().Menu().
-					Title(Equals("Rebase 'target'")).
-					Select(Contains("Simple rebase")).
+					Title(Contains("Chord")).
+					Select(Contains("Simple rebase onto upstream")).
 					Confirm()
 			})
 

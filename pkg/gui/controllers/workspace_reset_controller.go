@@ -2,185 +2,21 @@ package controllers
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
 	"math"
 	"math/rand"
 	"time"
 
 	"github.com/jesseduffield/lazygit/pkg/gocui"
-	"github.com/jesseduffield/lazygit/pkg/gui/controllers/helpers"
 	"github.com/jesseduffield/lazygit/pkg/gui/style"
-	"github.com/jesseduffield/lazygit/pkg/gui/types"
 )
 
 // this is in its own file given that the workspace controller file is already quite long
 
-func (self *FilesController) createResetMenu() error {
-	red := style.FgRed
-
-	nukeStr := "git reset --hard HEAD && git clean -fd"
-	if len(self.c.Model().Submodules) > 0 {
-		nukeStr = fmt.Sprintf("%s (%s)", nukeStr, self.c.Tr.AndResetSubmodules)
+func (self *FilesController) resetPreview(s style.TextStyle, cmd func() string) string {
+	if self.c.Git() == nil {
+		return ""
 	}
-
-	menuItems := []*types.MenuItem{
-		{
-			LabelColumns: []string{
-				self.c.Tr.DiscardAllChangesToAllFiles,
-				red.Sprint(nukeStr),
-			},
-			OnPress: func() error {
-				self.c.Confirm(
-					types.ConfirmOpts{
-						Title:  self.c.Tr.Actions.NukeWorkingTree,
-						Prompt: self.c.Tr.NukeTreeConfirmation,
-						HandleConfirm: func() error {
-							self.c.LogAction(self.c.Tr.Actions.NukeWorkingTree)
-							if err := self.c.Git().WorkingTree.ResetAndClean(); err != nil {
-								return err
-							}
-
-							if self.c.UserConfig().Gui.AnimateExplosion {
-								self.animateExplosion()
-							}
-
-							self.c.Refresh(
-								types.RefreshOptions{Mode: types.ASYNC, Scope: []types.RefreshableView{types.FILES}},
-							)
-							return nil
-						},
-					})
-				return nil
-			},
-			Key:     gocui.NewKeyRune('x'),
-			Tooltip: self.c.Tr.NukeDescription,
-		},
-		{
-			LabelColumns: []string{
-				self.c.Tr.DiscardAnyUnstagedChanges,
-				red.Sprint("git checkout -- ."),
-			},
-			OnPress: func() error {
-				self.c.LogAction(self.c.Tr.Actions.DiscardUnstagedFileChanges)
-				if err := self.c.Git().WorkingTree.DiscardAnyUnstagedFileChanges(); err != nil {
-					return err
-				}
-
-				self.c.Refresh(
-					types.RefreshOptions{Mode: types.ASYNC, Scope: []types.RefreshableView{types.FILES}},
-				)
-				return nil
-			},
-			Key: gocui.NewKeyRune('u'),
-		},
-		{
-			LabelColumns: []string{
-				self.c.Tr.DiscardUntrackedFiles,
-				red.Sprint("git clean -fd"),
-			},
-			OnPress: func() error {
-				self.c.LogAction(self.c.Tr.Actions.RemoveUntrackedFiles)
-				if err := self.c.Git().WorkingTree.RemoveUntrackedFiles(); err != nil {
-					return err
-				}
-
-				self.c.Refresh(
-					types.RefreshOptions{Mode: types.ASYNC, Scope: []types.RefreshableView{types.FILES}},
-				)
-				return nil
-			},
-			Key: gocui.NewKeyRune('c'),
-		},
-		{
-			LabelColumns: []string{
-				self.c.Tr.DiscardStagedChanges,
-				red.Sprint("stash staged and drop stash"),
-			},
-			Tooltip: self.c.Tr.DiscardStagedChangesDescription,
-			OnPress: func() error {
-				self.c.LogAction(self.c.Tr.Actions.RemoveStagedFiles)
-				if !self.c.Helpers().WorkingTree.IsWorkingTreeDirtyExceptSubmodules() {
-					return errors.New(self.c.Tr.NoTrackedStagedFilesStash)
-				}
-				if err := self.c.Git().Stash.SaveStagedChanges("[lazygit] tmp stash"); err != nil {
-					return err
-				}
-				if err := self.c.Git().Stash.DropNewest(); err != nil {
-					return err
-				}
-
-				self.c.Refresh(
-					types.RefreshOptions{Mode: types.ASYNC, Scope: []types.RefreshableView{types.FILES}},
-				)
-				return nil
-			},
-			Key: gocui.NewKeyRune('S'),
-		},
-		{
-			LabelColumns: []string{
-				self.c.Tr.SoftReset,
-				red.Sprint("git reset --soft HEAD"),
-			},
-			OnPress: func() error {
-				self.c.LogAction(self.c.Tr.Actions.SoftReset)
-				if err := self.c.Git().WorkingTree.ResetSoft("HEAD"); err != nil {
-					return err
-				}
-
-				self.c.Refresh(
-					types.RefreshOptions{Mode: types.ASYNC, Scope: []types.RefreshableView{types.FILES}},
-				)
-				return nil
-			},
-			Key: gocui.NewKeyRune('s'),
-		},
-		{
-			LabelColumns: []string{
-				"mixed reset",
-				red.Sprint("git reset --mixed HEAD"),
-			},
-			OnPress: func() error {
-				self.c.LogAction(self.c.Tr.Actions.MixedReset)
-				if err := self.c.Git().WorkingTree.ResetMixed("HEAD"); err != nil {
-					return err
-				}
-
-				self.c.Refresh(
-					types.RefreshOptions{Mode: types.ASYNC, Scope: []types.RefreshableView{types.FILES}},
-				)
-				return nil
-			},
-			Key: gocui.NewKeyRune('m'),
-		},
-		{
-			LabelColumns: []string{
-				self.c.Tr.HardReset,
-				red.Sprint("git reset --hard HEAD"),
-			},
-			OnPress: func() error {
-				return self.c.ConfirmIf(helpers.IsWorkingTreeDirtyExceptSubmodules(self.c.Model().Files, self.c.Model().Submodules),
-					types.ConfirmOpts{
-						Title:  self.c.Tr.Actions.HardReset,
-						Prompt: self.c.Tr.ResetHardConfirmation,
-						HandleConfirm: func() error {
-							self.c.LogAction(self.c.Tr.Actions.HardReset)
-							if err := self.c.Git().WorkingTree.ResetHard("HEAD"); err != nil {
-								return err
-							}
-
-							self.c.Refresh(
-								types.RefreshOptions{Mode: types.ASYNC, Scope: []types.RefreshableView{types.FILES}},
-							)
-							return nil
-						},
-					})
-			},
-			Key: gocui.NewKeyRune('h'),
-		},
-	}
-
-	return self.c.Menu(types.CreateMenuOptions{Title: "", Items: menuItems})
+	return s.Sprint(cmd())
 }
 
 func (self *FilesController) animateExplosion() {

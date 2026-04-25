@@ -9,7 +9,7 @@ var DiscardRangeSelect = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Discard a range of files using range select",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig: func(config *config.AppConfig) {
+	SetupConfig: func(cfg *config.AppConfig) {
 	},
 	SetupRepo: func(shell *Shell) {
 		shell.CreateFileAndAdd("dir2/file-2b", "old content")
@@ -60,11 +60,11 @@ var DiscardRangeSelect = NewIntegrationTest(NewIntegrationTestArgs{
 				Equals("  ?? file-b"),
 			).
 			// Discard
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.Files.DiscardChanges).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Discard changes")).
-					Select(Contains("Discard all changes")).
+					Select(Contains("Discard").DoesNotContain("unstaged")).
 					Confirm()
 			}).
 			Lines(
@@ -89,11 +89,11 @@ var DiscardRangeSelect = NewIntegrationTest(NewIntegrationTestArgs{
 				Equals("  ?? file-a").IsSelected(),
 				Equals("  ?? file-b"),
 			).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.Files.DiscardChanges).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Discard changes")).
-					Select(Contains("Discard all changes")).
+					Select(Contains("Discard").DoesNotContain("unstaged")).
 					Confirm()
 			}).
 			Lines(

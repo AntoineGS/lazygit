@@ -9,7 +9,7 @@ var CrudLightweight = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Create and delete a lightweight tag in the tags panel",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig:  func(config *config.AppConfig) {},
+	SetupConfig: func(cfg *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		shell.EmptyCommit("initial commit")
 		shell.CloneIntoRemote("origin")
@@ -54,15 +54,13 @@ var CrudLightweight = NewIntegrationTest(NewIntegrationTestArgs{
 					).
 					Confirm()
 			}).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.Tags.DeleteTag).
 			Tap(func() {
-				t.ExpectPopup().
-					Menu().
-					Title(Equals("Delete tag 'new-tag'?")).
+				t.ExpectPopup().Menu().
+					Title(Equals("Delete tag")).
 					Select(Contains("Delete remote tag")).
 					Confirm()
-			}).
-			Tap(func() {
+
 				t.ExpectPopup().Prompt().
 					Title(Equals("Remote from which to remove tag 'new-tag':")).
 					InitialText(Equals("origin")).
@@ -86,11 +84,10 @@ var CrudLightweight = NewIntegrationTest(NewIntegrationTestArgs{
 				t.Git().
 					RemoteTagDeleted("origin", "new-tag")
 			}).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.Tags.DeleteTag).
 			Tap(func() {
-				t.ExpectPopup().
-					Menu().
-					Title(Equals("Delete tag 'new-tag'?")).
+				t.ExpectPopup().Menu().
+					Title(Equals("Delete tag")).
 					Select(Contains("Delete local tag")).
 					Confirm()
 			}).

@@ -26,15 +26,12 @@ var DeleteRemoteBranchWithDifferentName = NewIntegrationTest(NewIntegrationTestA
 				Contains("mybranch-local ✓"),
 			).
 			SelectNextItem().
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.LocalBranches.DeleteBranch).
 			Tap(func() {
-				t.ExpectPopup().
-					Menu().
-					Title(Equals("Delete branch 'mybranch-local'?")).
+				t.ExpectPopup().Menu().
+					Title(Equals("Delete branch")).
 					Select(Contains("Delete remote branch")).
 					Confirm()
-			}).
-			Tap(func() {
 				t.ExpectPopup().
 					Confirmation().
 					Title(Equals("Delete branch 'mybranch-remote'?")).

@@ -26,11 +26,11 @@ var DetachWorktreeFromBranch = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("newbranch (worktree linked-worktree)"),
 			).
 			NavigateToLine(Contains("newbranch")).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.LocalBranches.DeleteBranch).
 			Tap(func() {
 				t.ExpectPopup().
 					Menu().
-					Title(Equals("Delete branch 'newbranch'?")).
+					Title(Equals("Delete branch")).
 					Select(Contains("Delete local branch")).
 					Confirm()
 			}).

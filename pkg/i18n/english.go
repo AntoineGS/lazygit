@@ -270,8 +270,10 @@ type TranslationSet struct {
 	RegularMergeFastForward               string
 	RegularMergeFastForwardTooltip        string
 	CannotFastForwardMerge                string
+	MergeFastForwardNotApplicable         string
 	RegularMergeNonFastForward            string
 	RegularMergeNonFastForwardTooltip     string
+	MergeNonFastForwardNotApplicable      string
 	SquashMergeUncommitted                string
 	SquashMergeUncommittedTooltip         string
 	SquashMergeCommitted                  string
@@ -320,6 +322,9 @@ type TranslationSet struct {
 	PickAllHunks                          string
 	ViewMergeRebaseOptions                string
 	ViewMergeRebaseOptionsTooltip         string
+	ContinueRebaseChord                   string
+	AbortRebaseChord                      string
+	SkipRebaseChord                       string
 	ViewMergeOptions                      string
 	ViewRebaseOptions                     string
 	ViewCherryPickOptions                 string
@@ -503,8 +508,6 @@ type TranslationSet struct {
 	ResetHardTooltip                      string
 	ResetHardConfirmation                 string
 	PressEnterToReturn                    string
-	ViewStashOptions                      string
-	ViewStashOptionsTooltip               string
 	Stash                                 string
 	StashTooltip                          string
 	StashAllChanges                       string
@@ -512,7 +515,8 @@ type TranslationSet struct {
 	StashAllChangesKeepIndex              string
 	StashUnstagedChanges                  string
 	StashIncludeUntrackedChanges          string
-	StashOptions                          string
+	ViewStashOptions                      string
+	ViewStashOptionsTooltip               string
 	NotARepository                        string
 	WorkingDirectoryDoesNotExist          string
 	ScrollLeft                            string
@@ -732,7 +736,6 @@ type TranslationSet struct {
 	BulkDeinitSubmodules                  string
 	BulkUpdateRecursiveSubmodules         string
 	ViewBulkSubmoduleOptions              string
-	BulkSubmoduleOptions                  string
 	RunningCommand                        string
 	SubCommitsTitle                       string
 	ExitSubview                           string
@@ -814,6 +817,12 @@ type TranslationSet struct {
 	CantChangeContextSizeError               string
 	OpenCommitInBrowser                      string
 	ViewBisectOptions                        string
+	BisectMarkBad                            string
+	BisectMarkGood                           string
+	BisectSkipCurrent                        string
+	BisectSkipSelected                       string
+	BisectStartMarkBad                       string
+	BisectStartMarkGood                      string
 	ConfirmRevertCommit                      string
 	ConfirmRevertCommitRange                 string
 	RewordInEditorTitle                      string
@@ -1025,10 +1034,11 @@ type Actions struct {
 	NotEnoughContextToDiscard        string
 	NotEnoughContextToRemoveLines    string
 	NotEnoughContextForCustomPatch   string
-	IgnoreExcludeFile                string
+	IgnoreFile                       string
 	IgnoreFileErr                    string
 	ExcludeFile                      string
 	ExcludeGitIgnoreErr              string
+	IgnoreExcludeFile                string
 	Commit                           string
 	Push                             string
 	Pull                             string
@@ -1389,8 +1399,10 @@ func EnglishTranslationSet() *TranslationSet {
 		RegularMergeFastForward:              "Regular merge (fast-forward)",
 		RegularMergeFastForwardTooltip:       "Fast-forward '{{.checkedOutBranch}}' to '{{.selectedBranch}}' without creating a merge commit.",
 		CannotFastForwardMerge:               "Cannot fast-forward '{{.checkedOutBranch}}' to '{{.selectedBranch}}'",
+		MergeFastForwardNotApplicable:        "Not applicable: regular merge already fast-forwards when possible with your config",
 		RegularMergeNonFastForward:           "Regular merge (with merge commit)",
 		RegularMergeNonFastForwardTooltip:    "Merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}', creating a merge commit.",
+		MergeNonFastForwardNotApplicable:     "Not applicable: regular merge already creates a merge commit with your config",
 		SquashMergeUncommitted:               "Squash merge and leave uncommitted",
 		SquashMergeUncommittedTooltip:        "Squash merge '{{.selectedBranch}}' into the working tree.",
 		SquashMergeCommitted:                 "Squash merge and commit",
@@ -1440,6 +1452,9 @@ func EnglishTranslationSet() *TranslationSet {
 		AbortMenuItem:                        "Abort the %s",
 		ViewMergeRebaseOptions:               "View merge/rebase options",
 		ViewMergeRebaseOptionsTooltip:        "View options to abort/continue/skip the current merge/rebase.",
+		ContinueRebaseChord:                  "Continue rebase / merge",
+		AbortRebaseChord:                     "Abort rebase / merge",
+		SkipRebaseChord:                      "Skip current rebase commit",
 		ViewMergeOptions:                     "View merge options",
 		ViewRebaseOptions:                    "View rebase options",
 		ViewCherryPickOptions:                "View cherry-pick options",
@@ -1629,16 +1644,15 @@ func EnglishTranslationSet() *TranslationSet {
 		CommitChangesWithoutHook:             "Commit changes without pre-commit hook",
 		ResetTo:                              `Reset to`,
 		PressEnterToReturn:                   "Press enter to return to lazygit",
-		ViewStashOptions:                     "View stash options",
-		ViewStashOptionsTooltip:              "View stash options (e.g. stash all, stash staged, stash unstaged).",
 		Stash:                                "Stash",
-		StashTooltip:                         "Stash all changes. For other variations of stashing, use the view stash options keybinding.",
+		StashTooltip:                         "Stash all changes. Press capital S for variations (keep index, include untracked, staged only, unstaged only).",
 		StashAllChanges:                      "Stash all changes",
 		StashStagedChanges:                   "Stash staged changes",
 		StashAllChangesKeepIndex:             "Stash all changes and keep index",
 		StashUnstagedChanges:                 "Stash unstaged changes",
 		StashIncludeUntrackedChanges:         "Stash all changes including untracked files",
-		StashOptions:                         "Stash options",
+		ViewStashOptions:                     "View stash options",
+		ViewStashOptionsTooltip:              "View stash options (e.g. stash all, stash staged, stash unstaged).",
 		NotARepository:                       "Error: must be run inside a git repository",
 		WorkingDirectoryDoesNotExist:         "Error: the current working directory does not exist",
 		ScrollLeft:                           "Scroll left",
@@ -1856,7 +1870,6 @@ func EnglishTranslationSet() *TranslationSet {
 		BulkDeinitSubmodules:                     "Bulk deinit submodules",
 		BulkUpdateRecursiveSubmodules:            "Bulk init and update submodules recursively",
 		ViewBulkSubmoduleOptions:                 "View bulk submodule options",
-		BulkSubmoduleOptions:                     "Bulk submodule options",
 		RunningCommand:                           "Running command",
 		SubCommitsTitle:                          "Sub-commits",
 		ExitSubview:                              "Exit subview",
@@ -1935,6 +1948,12 @@ func EnglishTranslationSet() *TranslationSet {
 		CantChangeContextSizeError:               "Cannot change context while in patch building mode because we were too lazy to support it when releasing the feature. If you really want it, please let us know!",
 		OpenCommitInBrowser:                      "Open commit in browser",
 		ViewBisectOptions:                        "View bisect options",
+		BisectMarkBad:                            "Mark commit as bad",
+		BisectMarkGood:                           "Mark commit as good",
+		BisectSkipCurrent:                        "Skip current bisect commit",
+		BisectSkipSelected:                       "Skip selected commit",
+		BisectStartMarkBad:                       "Mark commit as bad (start bisect)",
+		BisectStartMarkGood:                      "Mark commit as good (start bisect)",
 		ConfirmRevertCommit:                      "Are you sure you want to revert {{.selectedCommit}}?",
 		ConfirmRevertCommitRange:                 "Are you sure you want to revert the selected commits?",
 		RewordInEditorTitle:                      "Reword in editor",
@@ -2105,10 +2124,11 @@ func EnglishTranslationSet() *TranslationSet {
 			NotEnoughContextToDiscard:        "Discarding changes is not possible with a diff context size of 0. Increase the context using '%s'.",
 			NotEnoughContextToRemoveLines:    "Removing lines from a commit is not possible with a diff context size of 0. Increase the context using '%s'.",
 			NotEnoughContextForCustomPatch:   "Creating custom patches is not possible with a diff context size of 0. Increase the context using '%s'.",
-			IgnoreExcludeFile:                "Ignore or exclude file",
+			IgnoreFile:                       "Ignore file",
 			IgnoreFileErr:                    "Cannot ignore .gitignore",
 			ExcludeFile:                      "Exclude file",
 			ExcludeGitIgnoreErr:              "Cannot exclude .gitignore",
+			IgnoreExcludeFile:                "Ignore or exclude file",
 			Commit:                           "Commit",
 			Push:                             "Push",
 			Pull:                             "Pull",

@@ -9,7 +9,7 @@ var RebaseWithCommitThatBecomesEmpty = NewIntegrationTest(NewIntegrationTestArgs
 	Description:  "Performs a rebase involving a commit that becomes empty during the rebase, and gets dropped.",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig:  func(config *config.AppConfig) {},
+	SetupConfig: func(cfg *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		shell.EmptyCommit("initial commit")
 		// It is important that we create two separate commits for the two
@@ -28,10 +28,10 @@ var RebaseWithCommitThatBecomesEmpty = NewIntegrationTest(NewIntegrationTestArgs
 		t.Views().Branches().
 			Focus().
 			NavigateToLine(Contains("master")).
-			Press(keys.Branches.RebaseBranch)
+			Press(keys.ChordPrefix.LocalBranches.RebaseOptions)
 
 		t.ExpectPopup().Menu().
-			Title(Equals("Rebase 'branch'")).
+			Title(Equals("Rebase options")).
 			Select(Contains("Simple rebase")).
 			Confirm()
 

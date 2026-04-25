@@ -60,10 +60,10 @@ var RebaseFromMarkedBase = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("base-branch"),
 			).
 			SelectNextItem().
-			Press(keys.Branches.RebaseBranch)
+			Press(keys.ChordPrefix.LocalBranches.RebaseOptions)
 
 		t.ExpectPopup().Menu().
-			Title(Equals("Rebase 'active-branch' from marked base")).
+			Title(Equals("Rebase options")).
 			Select(Contains("Simple rebase")).
 			Confirm()
 

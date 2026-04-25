@@ -9,7 +9,7 @@ var DiscardStagedChanges = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Discarding staged changes",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig: func(config *config.AppConfig) {
+	SetupConfig: func(cfg *config.AppConfig) {
 	},
 	SetupRepo: func(shell *Shell) {
 		shell.CreateFileAndAdd("fileToRemove", "original content")
@@ -37,9 +37,12 @@ var DiscardStagedChanges = NewIntegrationTest(NewIntegrationTestArgs{
 				Equals("  ?? file3"),
 				Equals("  M  fileToRemove").IsSelected(),
 			).
-			Press(keys.Files.ViewResetOptions)
+			Press(keys.ChordPrefix.Files.DiscardAndResetOptions)
 
-		t.ExpectPopup().Menu().Title(Equals("")).Select(Contains("Discard staged changes")).Confirm()
+		t.ExpectPopup().Menu().
+			Title(Equals("Discard / reset options")).
+			Select(Contains("Discard staged changes")).
+			Confirm()
 
 		// staged file has been removed
 		t.Views().Files().

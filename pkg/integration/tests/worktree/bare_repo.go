@@ -9,7 +9,7 @@ var BareRepo = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Open lazygit in the worktree of a bare repo and do a rebase/bisect",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig:  func(config *config.AppConfig) {},
+	SetupConfig: func(cfg *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		// we're going to have a directory structure like this:
 		// project
@@ -67,23 +67,21 @@ var BareRepo = NewIntegrationTest(NewIntegrationTestArgs{
 			).
 			// test that bisect works fine (same logic as above)
 			NavigateToLine(Contains("commit two")).
-			Press(keys.Commits.ViewBisectOptions).
+			Press(keys.ChordPrefix.Commits.BisectOptions).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Equals("Bisect")).
+					Title(Equals("Bisect options")).
 					Select(MatchesRegexp(`Mark .* as bad`)).
 					Confirm()
-
 				t.Views().Information().Content(Contains("Bisecting"))
 			}).
 			NavigateToLine(Contains("initial commit")).
-			Press(keys.Commits.ViewBisectOptions).
+			Press(keys.ChordPrefix.Commits.BisectOptions).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Equals("Bisect")).
+					Title(Equals("Bisect options")).
 					Select(MatchesRegexp(`Mark .* as good`)).
 					Confirm()
-
 				t.Views().Information().Content(Contains("Bisecting"))
 			})
 

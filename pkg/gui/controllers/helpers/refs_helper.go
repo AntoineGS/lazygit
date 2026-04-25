@@ -256,46 +256,19 @@ func (self *RefsHelper) CreateSortOrderMenu(sortOptionsOrder []string, menuPromp
 	})
 }
 
-func (self *RefsHelper) CreateGitResetMenu(name string, ref string) error {
-	type strengthWithKey struct {
-		strength string
-		label    string
-		key      gocui.Key
-		tooltip  string
-	}
-	strengths := []strengthWithKey{
-		// not i18'ing because it's git terminology
-		{strength: "mixed", label: "Mixed reset", key: gocui.NewKeyRune('m'), tooltip: self.c.Tr.ResetMixedTooltip},
-		{strength: "soft", label: "Soft reset", key: gocui.NewKeyRune('s'), tooltip: self.c.Tr.ResetSoftTooltip},
-		{strength: "hard", label: "Hard reset", key: gocui.NewKeyRune('h'), tooltip: self.c.Tr.ResetHardTooltip},
-	}
-
-	menuItems := lo.Map(strengths, func(row strengthWithKey, _ int) *types.MenuItem {
-		return &types.MenuItem{
-			LabelColumns: []string{
-				row.label,
-				style.FgRed.Sprintf("reset --%s %s", row.strength, name),
+// strength is "mixed" / "soft" / "hard". A "hard" reset prompts for
+// confirmation when the working tree is dirty (excluding submodules).
+func (self *RefsHelper) PerformGitReset(name string, ref string, strength string) error {
+	_ = name
+	return self.c.ConfirmIf(strength == "hard" && IsWorkingTreeDirtyExceptSubmodules(self.c.Model().Files, self.c.Model().Submodules),
+		types.ConfirmOpts{
+			Title:  self.c.Tr.Actions.HardReset,
+			Prompt: self.c.Tr.ResetHardConfirmation,
+			HandleConfirm: func() error {
+				self.c.LogAction("Reset")
+				return self.ResetToRef(ref, strength, []string{})
 			},
-			OnPress: func() error {
-				return self.c.ConfirmIf(row.strength == "hard" && IsWorkingTreeDirtyExceptSubmodules(self.c.Model().Files, self.c.Model().Submodules),
-					types.ConfirmOpts{
-						Title:  self.c.Tr.Actions.HardReset,
-						Prompt: self.c.Tr.ResetHardConfirmation,
-						HandleConfirm: func() error {
-							self.c.LogAction("Reset")
-							return self.ResetToRef(ref, row.strength, []string{})
-						},
-					})
-			},
-			Key:     row.key,
-			Tooltip: row.tooltip,
-		}
-	})
-
-	return self.c.Menu(types.CreateMenuOptions{
-		Title: fmt.Sprintf("%s %s", self.c.Tr.ResetTo, name),
-		Items: menuItems,
-	})
+		})
 }
 
 func (self *RefsHelper) CreateCheckoutMenu(commit *models.Commit) error {

@@ -19,6 +19,9 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` : `` | Executar comando da shell | Traga um prompt onde você pode digitar um comando shell para executar. |
 | `` <ctrl+p> `` | Ver opções de patch personalizadas |  |
 | `` m `` | Ver opções de mesclar/rebase | Ver opções para abortar/continuar/pular o merge/rebase atual. |
+| `` mc `` | Continue rebase / merge | Ver opções para abortar/continuar/pular o merge/rebase atual. |
+| `` ma `` | Abort rebase / merge | Ver opções para abortar/continuar/pular o merge/rebase atual. |
+| `` ms `` | Skip current rebase commit | Ver opções para abortar/continuar/pular o merge/rebase atual. |
 | `` R `` | Atualizar | Atualize o estado do git (ou seja, execute `git status`, `git branch`, etc em segundo plano para atualizar o conteúdo de painéis). Isso não executa `git fetch`. |
 | `` + `` | Modo de tela seguinte (normal/metade/tela cheia) |  |
 | `` _ `` | Modo de tela anterior |  |
@@ -58,7 +61,17 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | Copiar caminho para área de transferência |  |
 | `` <space> `` | Etapa | Alternar para staging para o arquivo selecionado. |
 | `` <ctrl+b> `` | Filtrar arquivos por status |  |
+| `` <ctrl+b>s `` | Mostrar somente os arquivos  em staging |  |
+| `` <ctrl+b>u `` | Mostrar  somente arquivos que não estão em staging |  |
+| `` <ctrl+b>t `` | Mostrar apenas arquivos rastreados |  |
+| `` <ctrl+b>T `` | Mostrar apenas arquivos não rastreados |  |
+| `` <ctrl+b>r `` | Sem filtros |  |
 | `` y `` | Copy to clipboard |  |
+| `` yn `` | Nome do arquivo |  |
+| `` yp `` | Caminho relativo |  |
+| `` yP `` | Caminho absoluto |  |
+| `` ys `` | Diferença do arquivo selecionado | Se existirem itens  preparados, este comando considera apenas eles |
+| `` ya `` | Diferença de todos os arquivos | Se existirem itens  preparados, este comando considera apenas eles |
 | `` c `` | Commit | Submeter mudanças em staging |
 | `` w `` | Fazer commit de alterações sem pré-commit |  |
 | `` A `` | Alterar último commit |  |
@@ -67,14 +80,32 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` e `` | Editar | Abrir arquivo no editor externo. |
 | `` o `` | Abrir arquivo | Abrir arquivo no aplicativo padrão. |
 | `` i `` | Ignore or exclude file |  |
+| `` ii `` | Adicionar ao .gitignore |  |
+| `` ie `` | Adicionar ao .git/info/exclui |  |
 | `` r `` | Atualizar arquivos |  |
 | `` s `` | Stash | Stash todas as alterações. Para outras variações de armazenamento, use a fixação de teclas de armazenamento. |
 | `` S `` | Ver opções de stash | Ver opções de stash (por exemplo, trash all, stash staged, stash unsttued). |
+| `` Si `` | Guardar todas as alterações e manter índice |  |
+| `` SU `` | Stash todas as alterações, incluindo arquivos não rastreados |  |
+| `` Ss `` | Alterações preparadas |  |
+| `` Su `` | Stash todas as mudanças não preparadas |  |
 | `` a `` | Stage completo | Alternar para todos os arquivos na árvore de trabalho |
 | `` <enter> `` | Stage lines / Colapso diretório | Se o item selecionado for um arquivo, o foco na exibição de preparo para o estágio de cenas/linhas individuais. Se o item selecionado for um diretório, recolher/expandi-lo. |
-| `` d `` | Descartar | Exibir opções para descartar alterações para o arquivo selecionado. |
-| `` g `` | View upstream reset options |  |
+| `` d `` | Discard changes |  |
+| `` dc `` | Descartar | Exibir opções para descartar alterações para o arquivo selecionado. |
+| `` du `` | Descartar mudanças não preparadas |  |
+| `` g `` | Reset to upstream |  |
+| `` gm `` | Mixed reset to upstream | Redefinir o HEAD para o commit escolhido e manter as alterações entre o commit atual e escolhido conforme mudanças não preparadas. |
+| `` gs `` | Soft reset to upstream | Redefinir o HEAD para o commit escolhido, e manter as alterações entre o commit atual e o commit escolhido à medida que as mudanças forem processadas. |
+| `` gh `` | Hard reset to upstream | Redefinir HEAD para o commit escolhido e descartar todas as alterações entre o atual e o commit escolhido, bem como todas as modificações actuais na árvore de trabalho. |
 | `` D `` | Restaurar | Opções de redefinição de exibição para árvore de trabalho (por exemplo, nukando a árvore de trabalho). |
+| `` Dx `` | Apargar árvore ativa | If you want to make all the changes in the worktree go away, this is the way to do it. If there are dirty submodule changes this will stash those changes in the submodule(s). |
+| `` Du `` | Descartar mudanças não preparadas |  |
+| `` Dc `` | Descartar arquivos não monitorizados |  |
+| `` DS `` | Descartar mudanças em Staging | This will create a new stash entry containing only staged files and then drop it, so that the working tree is left with only unstaged changes |
+| `` Ds `` | Reiniciar suave |  |
+| `` Dm `` | mixed reset |  |
+| `` Dh `` | reinicialização total |  |
 | `` ` `` | Alternar exibição de árvore de arquivo | Toggle file view between flat and tree layout. Flat layout shows all file paths in a single list, tree layout groups files by directory.<br><br>The default can be changed in the config file with the key 'gui.showFileTree'. |
 | `` <ctrl+t> `` | Abrir ferramenta de diff externa (git difftool) |  |
 | `` M `` | View merge conflict options | View options for resolving merge conflicts. |
@@ -90,6 +121,11 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 |-----|--------|-------------|
 | `` <ctrl+o> `` | Copiar nome da branch para área de transferência |  |
 | `` i `` | Exibir opções do git-flow |  |
+| `` iF `` | Finish git-flow branch |  |
+| `` if `` | Start git-flow feature |  |
+| `` ih `` | Start git-flow hotfix |  |
+| `` ib `` | Start git-flow bugfix |  |
+| `` ir `` | Start git-flow release |  |
 | `` <space> `` | Verificar | Checar item selecionado |
 | `` n `` | Nova branch |  |
 | `` N `` | Mover commits para uma nova branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
@@ -101,14 +137,38 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` - `` | Checkout da branch anterior |  |
 | `` F `` | Forçar checagem | Forçar checagem da branch selecionada. Isso irá descartar todas as mudanças no seu diretório de trabalho antes cheque a branch selecionada   |
 | `` d `` | Apagar | Ver opções de exclusão para a branch local/remoto. |
+| `` dc `` | Deletar branch local | Ver opções de exclusão para a branch local/remoto. |
+| `` dr `` | Deletar branch remota | Excluir o branch remoto do controle remoto. |
+| `` db `` | Excluir ramo local e remoto | Ver opções de exclusão para a branch local/remoto. |
 | `` r `` | Refazer | Refazer a branch checada na branch selecionada |
+| `` rs `` | Simple rebase | Refazer a branch checada na branch selecionada |
+| `` ri `` | Interactive rebase | Comece uma rebase interativa com uma pausa no início, então você pode atualizar os commits TODO antes de continuar. |
+| `` rb `` | Rebase onto base branch | Rebase o branch check-out em seu ramo base (ou seja, o ramo principal mais próximo). |
 | `` M `` | Mesclar | Ver opções para mesclar o item selecionado no branch atual (mesclar regularmente, mesclar squash) |
+| `` Mm `` | Mesclar | Ver opções para mesclar o item selecionado no branch atual (mesclar regularmente, mesclar squash) |
+| `` Mn `` | Mesclagem normal (com commit de mesclagem) | Mesclar '{{.selectedBranch}}' em '{{.checkedOutBranch}}', criando um commit de mesclagem. |
+| `` Mf `` | Mesclagem normal (encaminhamento-rápido) | Fast-forward '{{.checkedOutBranch}}' to '{{.selectedBranch}}' without creating a merge commit. |
+| `` Ms `` | Squash merge (uncommitted) | Squash merge '{{.selectedBranch}}' into the working tree. |
+| `` MS `` | Squash merge (committed) | Squash merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}' as a single commit. |
 | `` f `` | Avanço rápido | Encaminhamento rápido de branch selecionada a partir do upstream. |
 | `` T `` | Nova etiqueta |  |
 | `` s `` | Sort order |  |
-| `` g `` | Restaurar |  |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Redefinir o HEAD para o commit escolhido e manter as alterações entre o commit atual e escolhido conforme mudanças não preparadas. |
+| `` gs `` | Reiniciar suave | Redefinir o HEAD para o commit escolhido, e manter as alterações entre o commit atual e o commit escolhido à medida que as mudanças forem processadas. |
+| `` gh `` | reinicialização total | Redefinir HEAD para o commit escolhido e descartar todas as alterações entre o atual e o commit escolhido, bem como todas as modificações actuais na árvore de trabalho. |
 | `` R `` | Renomear branch |  |
 | `` u `` | View upstream options | View options relating to the branch's upstream e.g. setting/unsetting the upstream and resetting to the upstream. |
+| `` ud `` | Ver divergência do upstream | View options relating to the branch's upstream e.g. setting/unsetting the upstream and resetting to the upstream. |
+| `` uD `` | View divergence from base branch |  |
+| `` us `` | Configurar o upstream da filial selecionada |  |
+| `` uu `` | Desconfigurar upstream do branch selecionado |  |
+| `` ugm `` | Mixed reset to upstream | Redefinir o HEAD para o commit escolhido e manter as alterações entre o commit atual e escolhido conforme mudanças não preparadas. |
+| `` ugs `` | Soft reset to upstream | Redefinir o HEAD para o commit escolhido, e manter as alterações entre o commit atual e o commit escolhido à medida que as mudanças forem processadas. |
+| `` ugh `` | Hard reset to upstream | Redefinir HEAD para o commit escolhido e descartar todas as alterações entre o atual e o commit escolhido, bem como todas as modificações actuais na árvore de trabalho. |
+| `` urs `` | Simple rebase onto upstream |  |
+| `` uri `` | Interactive rebase onto upstream | Comece uma rebase interativa com uma pausa no início, então você pode atualizar os commits TODO antes de continuar. |
+| `` urb `` | Rebase onto base branch | Rebase o branch check-out em seu ramo base (ou seja, o ramo principal mais próximo). |
 | `` <ctrl+t> `` | Abrir ferramenta de diff externa (git difftool) |  |
 | `` 0 `` | Focar visualização principal |  |
 | `` <enter> `` | Ver commits |  |
@@ -122,12 +182,23 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | Copiar nome da branch para área de transferência |  |
 | `` <space> `` | Verificar | Checar a nova branch baseada na brach remota selecionada, ou a branch remota como HEAD, desanexado |
 | `` n `` | Nova branch |  |
-| `` M `` | Mesclar | Ver opções para mesclar o item selecionado no branch atual (mesclar regularmente, mesclar squash) |
-| `` r `` | Refazer | Refazer a branch checada na branch selecionada |
+| `` M `` | Merge |  |
+| `` Mm `` | Mesclar | Ver opções para mesclar o item selecionado no branch atual (mesclar regularmente, mesclar squash) |
+| `` Mn `` | Non-fast-forward merge | Mesclar '{{.selectedBranch}}' em '{{.checkedOutBranch}}', criando um commit de mesclagem. |
+| `` Mf `` | Fast-forward only merge | Fast-forward '{{.checkedOutBranch}}' to '{{.selectedBranch}}' without creating a merge commit. |
+| `` Ms `` | Squash merge (uncommitted) | Squash merge '{{.selectedBranch}}' into the working tree. |
+| `` MS `` | Squash merge (committed) | Squash merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}' as a single commit. |
+| `` r `` | Rebase options |  |
+| `` rs `` | Refazer | Refazer a branch checada na branch selecionada |
+| `` ri `` | Interactive rebase | Comece uma rebase interativa com uma pausa no início, então você pode atualizar os commits TODO antes de continuar. |
+| `` rb `` | Rebase onto base branch | Rebase o branch check-out em seu ramo base (ou seja, o ramo principal mais próximo). |
 | `` d `` | Apagar | Excluir o branch remoto do controle remoto. |
-| `` u `` | Definir como upstream | Definir o ramo remoto selecionado como fluxo do branch check-out. |
+| `` us `` | Definir como upstream | Definir o ramo remoto selecionado como fluxo do branch check-out. |
 | `` s `` | Sort order |  |
-| `` g `` | Restaurar | Ver opções de redefinição (soft/mixed/hard) para redefinir para o item selecionado. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Redefinir o HEAD para o commit escolhido e manter as alterações entre o commit atual e escolhido conforme mudanças não preparadas. |
+| `` gs `` | Reiniciar suave | Redefinir o HEAD para o commit escolhido, e manter as alterações entre o commit atual e o commit escolhido à medida que as mudanças forem processadas. |
+| `` gh `` | reinicialização total | Redefinir HEAD para o commit escolhido e descartar todas as alterações entre o atual e o commit escolhido, bem como todas as modificações actuais na árvore de trabalho. |
 | `` <ctrl+t> `` | Abrir ferramenta de diff externa (git difftool) |  |
 | `` 0 `` | Focar visualização principal |  |
 | `` <enter> `` | Ver commits |  |
@@ -140,6 +211,12 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 |-----|--------|-------------|
 | `` <ctrl+o> `` | Copiar caminho para área de transferência |  |
 | `` y `` | Copy to clipboard |  |
+| `` yn `` | Nome do arquivo |  |
+| `` yp `` | Caminho relativo |  |
+| `` yP `` | Caminho absoluto |  |
+| `` ys `` | Diferença do arquivo selecionado |  |
+| `` ya `` | Diferença de todos os arquivos |  |
+| `` yc `` | Conteúdo do arquivo selecionado |  |
 | `` c `` | Verificar | Arquivo de check-out. Isso substitui o arquivo em sua árvore de trabalho com a versão do commit selecionado. |
 | `` d `` | Descartar | Descartar as alterações desse commit para este arquivo. Isso executa uma rebase interativa em segundo plano, então você pode ter um conflito de merge se um commit posterior também alterar este arquivo. |
 | `` o `` | Abrir arquivo | Abrir arquivo no aplicativo padrão. |
@@ -161,8 +238,18 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | Copy abbreviated commit hash to clipboard |  |
 | `` <ctrl+r> `` | Reset copied (cherry-picked) commits selection |  |
 | `` b `` | Ver opções de bissecção |  |
+| `` bb `` | Mark commit as bad |  |
+| `` bg `` | Mark commit as good |  |
+| `` bs `` | Skip current bisect commit |  |
+| `` bS `` | Skip selected commit |  |
+| `` br `` | Reiniciar bissecção |  |
+| `` bb `` | Mark commit as bad (start bisect) |  |
+| `` bg `` | Mark commit as good (start bisect) |  |
+| `` bt `` | Escolher termos da bissecção |  |
 | `` s `` | Squash | Squash o commit selecionado no commit abaixo dele. A mensagem do commit selecionado será anexada ao commit abaixo dele. |
 | `` f `` | Corrigir | Faça o commit selecionado no commit abaixo dele. Semelhante para o squash, mas a mensagem do commit selecionado será descartada. |
+| `` ff `` | Corrigir | Faça o commit selecionado no commit abaixo dele. Semelhante para o squash, mas a mensagem do commit selecionado será descartada. |
+| `` fc `` | Corrigir e usar a mensagem deste commit | Combine o commit selecionado no commit abaixo, descartando a mensagem do commit abaixo. |
 | `` c `` | Configurar mensagem de correção | Defina a opção de mensagem para o commit de correção. A opção -C significa usar a mensagem deste commit em vez da mensagem do commit alvo. |
 | `` r `` | Reword | Repetir a mensagem de submissão selecionada. |
 | `` R `` | Republicar com o editor |  |
@@ -188,6 +275,9 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` n `` | Create new branch off of commit |  |
 | `` N `` | Mover commits para uma nova branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
 | `` g `` | Restaurar | Ver opções de redefinição (soft/mixed/hard) para redefinir para o item selecionado. |
+| `` gm `` | Mixed reset | Redefinir o HEAD para o commit escolhido e manter as alterações entre o commit atual e escolhido conforme mudanças não preparadas. |
+| `` gs `` | Reiniciar suave | Redefinir o HEAD para o commit escolhido, e manter as alterações entre o commit atual e o commit escolhido à medida que as mudanças forem processadas. |
+| `` gh `` | reinicialização total | Redefinir HEAD para o commit escolhido e descartar todas as alterações entre o atual e o commit escolhido, bem como todas as modificações actuais na árvore de trabalho. |
 | `` C `` | Copiar (cherry-pick) | Marcar commit como copiado. Então, dentro da visualização local de commits, você pode pressionar `V` para colar (cherry-pick) o(s) commit(s) copiado(s) em seu branch de check-out. A qualquer momento você pode pressionar `<esc>` para cancelar a seleção. |
 | `` <ctrl+t> `` | Abrir ferramenta de diff externa (git difftool) |  |
 | `` * `` | Select commits of current branch |  |
@@ -203,9 +293,15 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | Copiar etiqueta para área de transferência |  |
 | `` <space> `` | Verificar | Checar a tag selecionada como um HEAD, desanexado |
 | `` n `` | Nova etiqueta | Crie uma nova etiqueta a partir do commit atual. Você será solicitado a digitar um nome e uma descrição opcional. |
-| `` d `` | Apagar | Ver opções de exclusão para tag local/remoto. |
+| `` d `` | Apagar |  |
+| `` dc `` | Excluir etiqueta local | Ver opções de exclusão para tag local/remoto. |
+| `` dr `` | Excluir etiqueta remota | Ver opções de exclusão para tag local/remoto. |
+| `` db `` | Excluir etiqueta local e remota | Ver opções de exclusão para tag local/remoto. |
 | `` P `` | Empurrar etiqueta | Push the selected tag to a remote. You'll be prompted to select a remote. |
-| `` g `` | Restaurar | Ver opções de redefinição (soft/mixed/hard) para redefinir para o item selecionado. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Redefinir o HEAD para o commit escolhido e manter as alterações entre o commit atual e escolhido conforme mudanças não preparadas. |
+| `` gs `` | Reiniciar suave | Redefinir o HEAD para o commit escolhido, e manter as alterações entre o commit atual e o commit escolhido à medida que as mudanças forem processadas. |
+| `` gh `` | reinicialização total | Redefinir HEAD para o commit escolhido e descartar todas as alterações entre o atual e o commit escolhido, bem como todas as modificações actuais na árvore de trabalho. |
 | `` <ctrl+t> `` | Abrir ferramenta de diff externa (git difftool) |  |
 | `` 0 `` | Focar visualização principal |  |
 | `` <enter> `` | Ver commits |  |
@@ -309,7 +405,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` o `` | Abrir commit no navegador |  |
 | `` n `` | Create new branch off of commit |  |
 | `` N `` | Mover commits para uma nova branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
-| `` g `` | Restaurar | Ver opções de redefinição (soft/mixed/hard) para redefinir para o item selecionado. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Redefinir o HEAD para o commit escolhido e manter as alterações entre o commit atual e escolhido conforme mudanças não preparadas. |
+| `` gs `` | Reiniciar suave | Redefinir o HEAD para o commit escolhido, e manter as alterações entre o commit atual e o commit escolhido à medida que as mudanças forem processadas. |
+| `` gh `` | reinicialização total | Redefinir HEAD para o commit escolhido e descartar todas as alterações entre o atual e o commit escolhido, bem como todas as modificações actuais na árvore de trabalho. |
 | `` C `` | Copiar (cherry-pick) | Marcar commit como copiado. Então, dentro da visualização local de commits, você pode pressionar `V` para colar (cherry-pick) o(s) commit(s) copiado(s) em seu branch de check-out. A qualquer momento você pode pressionar `<esc>` para cancelar a seleção. |
 | `` <ctrl+r> `` | Reset copied (cherry-picked) commits selection |  |
 | `` <ctrl+t> `` | Abrir ferramenta de diff externa (git difftool) |  |
@@ -375,7 +474,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` o `` | Abrir commit no navegador |  |
 | `` n `` | Create new branch off of commit |  |
 | `` N `` | Mover commits para uma nova branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
-| `` g `` | Restaurar | Ver opções de redefinição (soft/mixed/hard) para redefinir para o item selecionado. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Redefinir o HEAD para o commit escolhido e manter as alterações entre o commit atual e escolhido conforme mudanças não preparadas. |
+| `` gs `` | Reiniciar suave | Redefinir o HEAD para o commit escolhido, e manter as alterações entre o commit atual e o commit escolhido à medida que as mudanças forem processadas. |
+| `` gh `` | reinicialização total | Redefinir HEAD para o commit escolhido e descartar todas as alterações entre o atual e o commit escolhido, bem como todas as modificações actuais na árvore de trabalho. |
 | `` C `` | Copiar (cherry-pick) | Marcar commit como copiado. Então, dentro da visualização local de commits, você pode pressionar `V` para colar (cherry-pick) o(s) commit(s) copiado(s) em seu branch de check-out. A qualquer momento você pode pressionar `<esc>` para cancelar a seleção. |
 | `` <ctrl+r> `` | Reset copied (cherry-picked) commits selection |  |
 | `` <ctrl+t> `` | Abrir ferramenta de diff externa (git difftool) |  |
@@ -397,6 +499,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` e `` | Atualizar URL do submódulo |  |
 | `` i `` | Inicializar | Initialize the selected submodule to prepare for fetching. You probably want to follow this up by invoking the 'update' action to fetch the submodule. |
 | `` b `` | View bulk submodule options |  |
+| `` bi `` | Bulk init submodules |  |
+| `` bu `` | Bulk update submodules |  |
+| `` br `` | Bulk init and update submodules recursively |  |
+| `` bd `` | Bulk deinit submodules |  |
 | `` / `` | Filtrar a visualização atual por texto |  |
 
 ## Sumário do commit

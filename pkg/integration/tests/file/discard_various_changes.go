@@ -9,7 +9,7 @@ var DiscardVariousChanges = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Discarding all possible permutations of changed files",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig: func(config *config.AppConfig) {
+	SetupConfig: func(cfg *config.AppConfig) {
 	},
 	SetupRepo: func(shell *Shell) {
 		createAllPossiblePermutationsOfChangedFiles(shell)
@@ -32,11 +32,11 @@ var DiscardVariousChanges = NewIntegrationTest(NewIntegrationTestArgs{
 				t.Views().Files().
 					IsFocused().
 					NavigateToLine(Contains(file.status + " " + file.label)).
-					Press(keys.Universal.Remove)
+					Press(keys.ChordPrefix.Files.DiscardChanges)
 
 				t.ExpectPopup().Menu().
 					Title(Equals("Discard changes")).
-					Select(Contains("Discard all changes")).
+					Select(Contains("Discard").DoesNotContain("unstaged")).
 					Confirm()
 			}
 		}

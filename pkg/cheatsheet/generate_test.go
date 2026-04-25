@@ -263,7 +263,7 @@ func TestGetBindingSections(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
-			actual := getBindingSections(test.bindings, tr)
+			actual := getBindingSections(test.bindings, tr, nil, nil)
 			assert.EqualValues(t, test.expected, actual)
 		})
 	}

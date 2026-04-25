@@ -1,11 +1,9 @@
 package controllers
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/jesseduffield/lazygit/pkg/commands/models"
-	"github.com/jesseduffield/lazygit/pkg/gocui"
 	"github.com/jesseduffield/lazygit/pkg/gui/types"
 	"github.com/jesseduffield/lazygit/pkg/utils"
 )
@@ -34,82 +32,105 @@ func NewGitFlowController(
 }
 
 func (self *GitFlowController) GetKeybindings(opts types.KeybindingsOpts) []*types.Binding {
-	bindings := []*types.Binding{
-		{
-			Key:         opts.GetKey(opts.Config.Branches.ViewGitFlowOptions),
-			Handler:     self.withItem(self.handleCreateGitFlowMenu),
-			Description: self.c.Tr.GitFlowOptions,
-			OpensMenu:   true,
-		},
-	}
-
-	return bindings
-}
-
-func (self *GitFlowController) handleCreateGitFlowMenu(branch *models.Branch) error {
-	if !self.c.Git().Flow.GitFlowEnabled() {
-		return errors.New("You need to install git-flow and enable it in this repo to use git-flow features")
-	}
-
-	startHandler := func(branchType string) func() error {
-		return func() error {
-			title := utils.ResolvePlaceholderString(self.c.Tr.NewGitFlowBranchPrompt, map[string]string{"branchType": branchType})
-
-			self.c.Prompt(types.PromptOpts{
-				Title: title,
-				HandleConfirm: func(name string) error {
-					self.c.LogAction(self.c.Tr.Actions.GitFlowStart)
-					return self.c.RunSubprocessAndRefresh(
-						self.c.Git().Flow.StartCmdObj(branchType, name),
-					)
-				},
-			})
-
+	gitFlowDisabledReason := func() *types.DisabledReason {
+		if self.c.Git() == nil {
 			return nil
 		}
+		if !self.c.Git().Flow.GitFlowEnabled() {
+			return &types.DisabledReason{Text: "You need to install git-flow and enable it in this repo to use git-flow features"}
+		}
+		return nil
 	}
 
-	return self.c.Menu(types.CreateMenuOptions{
-		Title: "git flow",
-		Items: []*types.MenuItem{
-			{
-				// not localising here because it's one to one with the actual git flow commands
-				Label: fmt.Sprintf("finish branch '%s'", branch.Name),
-				OnPress: func() error {
-					return self.gitFlowFinishBranch(branch.Name)
-				},
-				DisabledReason: self.require(self.singleItemSelected())(),
-			},
-			{
-				Label:   "start feature",
-				OnPress: startHandler("feature"),
-				Key:     gocui.NewKeyRune('f'),
-			},
-			{
-				Label:   "start hotfix",
-				OnPress: startHandler("hotfix"),
-				Key:     gocui.NewKeyRune('h'),
-			},
-			{
-				Label:   "start bugfix",
-				OnPress: startHandler("bugfix"),
-				Key:     gocui.NewKeyRune('b'),
-			},
-			{
-				Label:   "start release",
-				OnPress: startHandler("release"),
-				Key:     gocui.NewKeyRune('r'),
+	return []*types.Binding{
+		{
+			Key:             opts.GetKey(opts.Config.Branches.GitFlowFinish),
+			Handler:         self.withItem(self.gitFlowFinish),
+			Description:     "Finish git-flow branch",
+			DescriptionFunc: self.gitFlowFinishLabel,
+			GetDisabledReason: func() *types.DisabledReason {
+				if r := gitFlowDisabledReason(); r != nil {
+					return r
+				}
+				return self.require(self.singleItemSelected())()
 			},
 		},
-	})
+		{
+			Key:               opts.GetKey(opts.Config.Branches.GitFlowStartFeature),
+			Handler:           self.startGitFlowFeature,
+			Description:       "Start git-flow feature",
+			GetDisabledReason: gitFlowDisabledReason,
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Branches.GitFlowStartHotfix),
+			Handler:           self.startGitFlowHotfix,
+			Description:       "Start git-flow hotfix",
+			GetDisabledReason: gitFlowDisabledReason,
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Branches.GitFlowStartBugfix),
+			Handler:           self.startGitFlowBugfix,
+			Description:       "Start git-flow bugfix",
+			GetDisabledReason: gitFlowDisabledReason,
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Branches.GitFlowStartRelease),
+			Handler:           self.startGitFlowRelease,
+			Description:       "Start git-flow release",
+			GetDisabledReason: gitFlowDisabledReason,
+		},
+	}
 }
 
-func (self *GitFlowController) gitFlowFinishBranch(branchName string) error {
-	cmdObj, err := self.c.Git().Flow.FinishCmdObj(branchName)
+func (self *GitFlowController) gitFlowFinishLabel() string {
+	if self.c.Git() == nil {
+		return "Finish git-flow branch"
+	}
+	branch := self.c.Contexts().Branches.GetSelected()
+	if branch == nil {
+		return "Finish git-flow branch"
+	}
+	return fmt.Sprintf("finish branch '%s'", branch.Name)
+}
+
+func (self *GitFlowController) gitFlowFinish(branch *models.Branch) error {
+	cmdObj, err := self.c.Git().Flow.FinishCmdObj(branch.Name)
 	if err != nil {
 		return err
 	}
 
 	self.c.LogAction(self.c.Tr.Actions.GitFlowFinish)
 	return self.c.RunSubprocessAndRefresh(cmdObj)
+}
+
+func (self *GitFlowController) startGitFlowFeature() error {
+	return self.startGitFlowBranch("feature")
+}
+
+func (self *GitFlowController) startGitFlowHotfix() error {
+	return self.startGitFlowBranch("hotfix")
+}
+
+func (self *GitFlowController) startGitFlowBugfix() error {
+	return self.startGitFlowBranch("bugfix")
+}
+
+func (self *GitFlowController) startGitFlowRelease() error {
+	return self.startGitFlowBranch("release")
+}
+
+func (self *GitFlowController) startGitFlowBranch(branchType string) error {
+	title := utils.ResolvePlaceholderString(self.c.Tr.NewGitFlowBranchPrompt, map[string]string{"branchType": branchType})
+
+	self.c.Prompt(types.PromptOpts{
+		Title: title,
+		HandleConfirm: func(name string) error {
+			self.c.LogAction(self.c.Tr.Actions.GitFlowStart)
+			return self.c.RunSubprocessAndRefresh(
+				self.c.Git().Flow.StartCmdObj(branchType, name),
+			)
+		},
+	})
+
+	return nil
 }

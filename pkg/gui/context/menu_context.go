@@ -73,7 +73,7 @@ func NewMenuViewModel(c *ContextCommon) *MenuViewModel {
 		func() []*types.MenuItem { return self.menuItems },
 		func(item *types.MenuItem) []string {
 			if filterKeybindings {
-				return []string{config.LabelForKey(item.Key)}
+				return []string{config.LabelForBindingKey(item.Key)}
 			}
 
 			return item.LabelColumns
@@ -139,7 +139,7 @@ func (self *MenuViewModel) GetDisplayStrings(_ int, _ int) [][]string {
 
 		keyLabel := ""
 		if item.Key.IsSet() {
-			keyLabel = style.FgCyan.Sprint(config.LabelForKey(item.Key))
+			keyLabel = style.FgCyan.Sprint(config.LabelForBindingKey(item.Key))
 		}
 
 		checkMark := ""
@@ -250,11 +250,10 @@ func (self *MenuContext) OnMenuPress(selectedItem *types.MenuItem) error {
 		return nil
 	}
 
-	if err := selectedItem.OnPress(); err != nil {
-		return err
+	if selectedItem.OnPress == nil {
+		return nil
 	}
-
-	return nil
+	return selectedItem.OnPress()
 }
 
 // There is currently no need to use range-select in a menu so we're disabling it.

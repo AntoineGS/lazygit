@@ -3,8 +3,11 @@ package controllers
 import (
 	"strings"
 
+	"github.com/jesseduffield/lazygit/pkg/commands/git_commands"
 	"github.com/jesseduffield/lazygit/pkg/commands/models"
 	"github.com/jesseduffield/lazygit/pkg/gui/context"
+	"github.com/jesseduffield/lazygit/pkg/gui/controllers/helpers"
+	"github.com/jesseduffield/lazygit/pkg/gui/style"
 	"github.com/jesseduffield/lazygit/pkg/gui/types"
 	"github.com/jesseduffield/lazygit/pkg/utils"
 )
@@ -49,20 +52,61 @@ func (self *RemoteBranchesController) GetKeybindings(opts types.KeybindingsOpts)
 			Description:       self.c.Tr.NewBranch,
 		},
 		{
-			Key:               opts.GetKey(opts.Config.Branches.MergeIntoCurrentBranch),
-			Handler:           opts.Guards.OutsideFilterMode(self.withItem(self.merge)),
+			Key:               opts.GetKey(opts.Config.Branches.MergeRegular),
+			Handler:           opts.Guards.OutsideFilterMode(self.withItem(self.mergeRegular)),
 			GetDisabledReason: self.require(self.singleItemSelected()),
 			Description:       self.c.Tr.Merge,
 			Tooltip:           self.c.Tr.MergeBranchTooltip,
 			DisplayOnScreen:   true,
 		},
 		{
-			Key:               opts.GetKey(opts.Config.Branches.RebaseBranch),
-			Handler:           opts.Guards.OutsideFilterMode(self.withItem(self.rebase)),
+			Key:               opts.GetKey(opts.Config.Branches.MergeNonFFwd),
+			Handler:           opts.Guards.OutsideFilterMode(self.withItem(self.mergeNonFastForward)),
+			GetDisabledReason: self.require(self.singleItemSelected()),
+			Description:       "Non-fast-forward merge",
+			Tooltip:           self.c.Tr.RegularMergeNonFastForwardTooltip,
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Branches.MergeFastForward),
+			Handler:           opts.Guards.OutsideFilterMode(self.withItem(self.mergeFastForward)),
+			GetDisabledReason: self.require(self.singleItemSelected()),
+			Description:       "Fast-forward only merge",
+			Tooltip:           self.c.Tr.RegularMergeFastForwardTooltip,
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Branches.MergeSquash),
+			Handler:           opts.Guards.OutsideFilterMode(self.withItem(self.mergeSquash)),
+			GetDisabledReason: self.require(self.singleItemSelected()),
+			Description:       "Squash merge (uncommitted)",
+			Tooltip:           self.c.Tr.SquashMergeUncommittedTooltip,
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Branches.MergeSquashCommitted),
+			Handler:           opts.Guards.OutsideFilterMode(self.withItem(self.mergeSquashCommitted)),
+			GetDisabledReason: self.require(self.singleItemSelected()),
+			Description:       "Squash merge (committed)",
+			Tooltip:           self.c.Tr.SquashMergeCommittedTooltip,
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Branches.RebaseBranchSimple),
+			Handler:           opts.Guards.OutsideFilterMode(self.withItem(self.rebaseSimple)),
 			GetDisabledReason: self.require(self.singleItemSelected()),
 			Description:       self.c.Tr.RebaseBranch,
 			Tooltip:           self.c.Tr.RebaseBranchTooltip,
 			DisplayOnScreen:   true,
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Branches.RebaseBranchInteractive),
+			Handler:           opts.Guards.OutsideFilterMode(self.withItem(self.rebaseInteractive)),
+			GetDisabledReason: self.require(self.singleItemSelected()),
+			Description:       "Interactive rebase",
+			Tooltip:           self.c.Tr.InteractiveRebaseTooltip,
+		},
+		{
+			Key:         opts.GetKey(opts.Config.Branches.RebaseBranchOntoBase),
+			Handler:     opts.Guards.OutsideFilterMode(self.rebaseOntoBaseBranch),
+			Description: "Rebase onto base branch",
+			Tooltip:     self.c.Tr.RebaseOntoBaseBranchTooltip,
 		},
 		{
 			Key:               opts.GetKey(opts.Config.Universal.Remove),
@@ -87,12 +131,28 @@ func (self *RemoteBranchesController) GetKeybindings(opts types.KeybindingsOpts)
 			OpensMenu:   true,
 		},
 		{
-			Key:               opts.GetKey(opts.Config.Commits.ViewResetOptions),
-			Handler:           self.withItem(self.createResetMenu),
+			Key:               opts.GetKey(opts.Config.Commits.MixedResetToRef),
+			Handler:           self.withItem(self.gitMixedResetToRef),
 			GetDisabledReason: self.require(self.singleItemSelected()),
-			Description:       self.c.Tr.ViewResetOptions,
-			Tooltip:           self.c.Tr.ResetTooltip,
-			OpensMenu:         true,
+			Description:       "Mixed reset",
+			Tooltip:           self.c.Tr.ResetMixedTooltip,
+			ChordPopupExtra:   self.gitResetPreview(style.FgRed, "mixed"),
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Commits.SoftResetToRef),
+			Handler:           self.withItem(self.gitSoftResetToRef),
+			GetDisabledReason: self.require(self.singleItemSelected()),
+			Description:       self.c.Tr.SoftReset,
+			Tooltip:           self.c.Tr.ResetSoftTooltip,
+			ChordPopupExtra:   self.gitResetPreview(style.FgRed, "soft"),
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Commits.HardResetToRef),
+			Handler:           self.withItem(self.gitHardResetToRef),
+			GetDisabledReason: self.require(self.singleItemSelected()),
+			Description:       self.c.Tr.HardReset,
+			Tooltip:           self.c.Tr.ResetHardTooltip,
+			ChordPopupExtra:   self.gitResetPreview(style.FgRed, "hard"),
 		},
 		{
 			Key: opts.GetKey(opts.Config.Universal.OpenDiffTool),
@@ -136,12 +196,36 @@ func (self *RemoteBranchesController) delete(selectedBranches []*models.RemoteBr
 	return self.c.Helpers().BranchesHelper.ConfirmDeleteRemote(selectedBranches, true)
 }
 
-func (self *RemoteBranchesController) merge(selectedBranch *models.RemoteBranch) error {
-	return self.c.Helpers().MergeAndRebase.MergeRefIntoCheckedOutBranch(selectedBranch.FullName())
+func (self *RemoteBranchesController) mergeRegular(selectedBranch *models.RemoteBranch) error {
+	return self.c.Helpers().MergeAndRebase.PerformMerge(selectedBranch.FullName(), git_commands.MERGE_VARIANT_REGULAR)
 }
 
-func (self *RemoteBranchesController) rebase(selectedBranch *models.RemoteBranch) error {
-	return self.c.Helpers().MergeAndRebase.RebaseOntoRef(selectedBranch.FullName())
+func (self *RemoteBranchesController) mergeNonFastForward(selectedBranch *models.RemoteBranch) error {
+	return self.c.Helpers().MergeAndRebase.PerformMerge(selectedBranch.FullName(), git_commands.MERGE_VARIANT_NON_FAST_FORWARD)
+}
+
+func (self *RemoteBranchesController) mergeFastForward(selectedBranch *models.RemoteBranch) error {
+	return self.c.Helpers().MergeAndRebase.PerformMerge(selectedBranch.FullName(), git_commands.MERGE_VARIANT_FAST_FORWARD)
+}
+
+func (self *RemoteBranchesController) mergeSquashCommitted(selectedBranch *models.RemoteBranch) error {
+	return self.c.Helpers().MergeAndRebase.PerformSquashMergeCommitted(selectedBranch.FullName())
+}
+
+func (self *RemoteBranchesController) mergeSquash(selectedBranch *models.RemoteBranch) error {
+	return self.c.Helpers().MergeAndRebase.PerformSquashMerge(selectedBranch.FullName())
+}
+
+func (self *RemoteBranchesController) rebaseSimple(selectedBranch *models.RemoteBranch) error {
+	return self.c.Helpers().MergeAndRebase.PerformRebaseOntoRef(selectedBranch.FullName(), helpers.RebaseVariantSimple)
+}
+
+func (self *RemoteBranchesController) rebaseInteractive(selectedBranch *models.RemoteBranch) error {
+	return self.c.Helpers().MergeAndRebase.PerformRebaseOntoRef(selectedBranch.FullName(), helpers.RebaseVariantInteractive)
+}
+
+func (self *RemoteBranchesController) rebaseOntoBaseBranch() error {
+	return self.c.Helpers().MergeAndRebase.PerformRebaseOntoRef("", helpers.RebaseVariantOntoBase)
 }
 
 func (self *RemoteBranchesController) createSortMenu() error {
@@ -159,8 +243,27 @@ func (self *RemoteBranchesController) createSortMenu() error {
 		self.c.UserConfig().Git.RemoteBranchSortOrder)
 }
 
-func (self *RemoteBranchesController) createResetMenu(selectedBranch *models.RemoteBranch) error {
-	return self.c.Helpers().Refs.CreateGitResetMenu(selectedBranch.FullName(), selectedBranch.FullRefName())
+func (self *RemoteBranchesController) gitMixedResetToRef(selectedBranch *models.RemoteBranch) error {
+	return self.c.Helpers().Refs.PerformGitReset(selectedBranch.FullName(), selectedBranch.FullRefName(), "mixed")
+}
+
+func (self *RemoteBranchesController) gitSoftResetToRef(selectedBranch *models.RemoteBranch) error {
+	return self.c.Helpers().Refs.PerformGitReset(selectedBranch.FullName(), selectedBranch.FullRefName(), "soft")
+}
+
+func (self *RemoteBranchesController) gitHardResetToRef(selectedBranch *models.RemoteBranch) error {
+	return self.c.Helpers().Refs.PerformGitReset(selectedBranch.FullName(), selectedBranch.FullRefName(), "hard")
+}
+
+func (self *RemoteBranchesController) gitResetPreview(s style.TextStyle, strength string) string {
+	if self.c.Git() == nil {
+		return ""
+	}
+	branch := self.context().GetSelected()
+	if branch == nil {
+		return ""
+	}
+	return s.Sprintf("reset --%s %s", strength, branch.FullName())
 }
 
 func (self *RemoteBranchesController) setAsUpstream(selectedBranch *models.RemoteBranch) error {

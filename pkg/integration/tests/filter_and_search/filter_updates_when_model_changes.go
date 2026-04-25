@@ -31,11 +31,11 @@ var FilterUpdatesWhenModelChanges = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("branch-to-delete"),
 			).
 			SelectNextItem().
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.LocalBranches.DeleteBranch).
 			Tap(func() {
 				t.ExpectPopup().
 					Menu().
-					Title(Equals("Delete branch 'branch-to-delete'?")).
+					Title(Equals("Delete branch")).
 					Select(Contains("Delete local branch")).
 					Confirm()
 			}).

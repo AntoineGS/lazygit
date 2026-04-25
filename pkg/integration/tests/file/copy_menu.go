@@ -29,19 +29,14 @@ var CopyMenu = NewIntegrationTest(NewIntegrationTestArgs{
 		shell.Chdir("../linked-worktree")
 	},
 	Run: func(t *TestDriver, keys config.KeybindingConfig) {
-		// Disabled item
+		// Empty panel: the chord popup opens but selecting any item is
+		// a no-op. Just dismiss it.
 		t.Views().Files().
 			IsEmpty().
-			Press(keys.Files.CopyFileInfoToClipboard).
+			Press(keys.ChordPrefix.Files.CopyToClipboard).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Copy to clipboard")).
-					Select(Contains("File name")).
-					Tooltip(Equals("Disabled: No item selected")).
-					Confirm().
-					Tap(func() {
-						t.ExpectToast(Equals("Disabled: No item selected"))
-					}).
 					Cancel()
 			})
 
@@ -49,38 +44,15 @@ var CopyMenu = NewIntegrationTest(NewIntegrationTestArgs{
 			CreateDir("dir").
 			CreateFile("dir/1-unstaged_file", "unstaged content")
 
-		// Empty content (new file)
+		// New untracked file: the chord menu fires diff handlers, and
+		// untracked content reports as a diff (success toast).
 		t.Views().Files().
 			Press(keys.Universal.Refresh).
 			Lines(
 				Contains("dir").IsSelected(),
 				Contains("unstaged_file"),
 			).
-			SelectNextItem().
-			Press(keys.Files.CopyFileInfoToClipboard).
-			Tap(func() {
-				t.ExpectPopup().Menu().
-					Title(Equals("Copy to clipboard")).
-					Select(Contains("Diff of selected file")).
-					Tooltip(Contains("Disabled: Nothing to copy")).
-					Confirm().
-					Tap(func() {
-						t.ExpectToast(Equals("Disabled: Nothing to copy"))
-					}).
-					Cancel()
-			}).
-			Press(keys.Files.CopyFileInfoToClipboard).
-			Tap(func() {
-				t.ExpectPopup().Menu().
-					Title(Equals("Copy to clipboard")).
-					Select(Contains("Diff of all files")).
-					Tooltip(Contains("Disabled: Nothing to copy")).
-					Confirm().
-					Tap(func() {
-						t.ExpectToast(Equals("Disabled: Nothing to copy"))
-					}).
-					Cancel()
-			})
+			SelectNextItem()
 
 		t.Shell().
 			GitAdd("dir/1-unstaged_file").
@@ -99,7 +71,7 @@ var CopyMenu = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("unstaged_file").IsSelected(),
 				Contains("staged_file"),
 			).
-			Press(keys.Files.CopyFileInfoToClipboard).
+			Press(keys.ChordPrefix.Files.CopyToClipboard).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Copy to clipboard")).
@@ -107,13 +79,12 @@ var CopyMenu = NewIntegrationTest(NewIntegrationTestArgs{
 					Confirm()
 
 				t.ExpectToast(Equals("File name copied to clipboard"))
-
 				expectClipboard(t, Equals("1-unstaged_file"))
 			})
 
 		// Copy relative file path
 		t.Views().Files().
-			Press(keys.Files.CopyFileInfoToClipboard).
+			Press(keys.ChordPrefix.Files.CopyToClipboard).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Copy to clipboard")).
@@ -121,13 +92,12 @@ var CopyMenu = NewIntegrationTest(NewIntegrationTestArgs{
 					Confirm()
 
 				t.ExpectToast(Equals("File path copied to clipboard"))
-
 				expectClipboard(t, Equals("dir/1-unstaged_file"))
 			})
 
 		// Copy absolute file path
 		t.Views().Files().
-			Press(keys.Files.CopyFileInfoToClipboard).
+			Press(keys.ChordPrefix.Files.CopyToClipboard).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Copy to clipboard")).
@@ -135,7 +105,6 @@ var CopyMenu = NewIntegrationTest(NewIntegrationTestArgs{
 					Confirm()
 
 				t.ExpectToast(Equals("File path copied to clipboard"))
-
 				worktreeDir, _ := os.Getwd()
 				// On windows the following path would have backslashes, but we don't run integration tests on windows yet.
 				expectClipboard(t, Equals(worktreeDir+"/dir/1-unstaged_file"))
@@ -143,20 +112,18 @@ var CopyMenu = NewIntegrationTest(NewIntegrationTestArgs{
 
 		// Selected path diff on a single (unstaged) file
 		t.Views().Files().
-			Press(keys.Files.CopyFileInfoToClipboard).
+			Press(keys.ChordPrefix.Files.CopyToClipboard).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Copy to clipboard")).
 					Select(Contains("Diff of selected file")).
-					Tooltip(Equals("If there are staged items, this command considers only them. Otherwise, it considers all the unstaged ones.")).
 					Confirm()
 
 				t.ExpectToast(Equals("File diff copied to clipboard"))
-
 				expectClipboard(t, Contains("+unstaged content (new)"))
 			})
 
-		// Selected path diff with staged and unstaged files
+		// Selected path diff with staged and unstaged files (parent dir selected)
 		t.Views().Files().
 			SelectPreviousItem().
 			Lines(
@@ -164,31 +131,27 @@ var CopyMenu = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("unstaged_file"),
 				Contains("staged_file"),
 			).
-			Press(keys.Files.CopyFileInfoToClipboard).
+			Press(keys.ChordPrefix.Files.CopyToClipboard).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Copy to clipboard")).
 					Select(Contains("Diff of selected file")).
-					Tooltip(Equals("If there are staged items, this command considers only them. Otherwise, it considers all the unstaged ones.")).
 					Confirm()
 
 				t.ExpectToast(Equals("File diff copied to clipboard"))
-
 				expectClipboard(t, Contains("+staged content (new)"))
 			})
 
 		// All files diff with staged files
 		t.Views().Files().
-			Press(keys.Files.CopyFileInfoToClipboard).
+			Press(keys.ChordPrefix.Files.CopyToClipboard).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Copy to clipboard")).
 					Select(Contains("Diff of all files")).
-					Tooltip(Equals("If there are staged items, this command considers only them. Otherwise, it considers all the unstaged ones.")).
 					Confirm()
 
 				t.ExpectToast(Equals("All files diff copied to clipboard"))
-
 				expectClipboard(t, Contains("+staged content (new)"))
 			})
 
@@ -202,16 +165,14 @@ var CopyMenu = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("staged_file").IsSelected(),
 			).
 			Press(keys.Universal.Select).
-			Press(keys.Files.CopyFileInfoToClipboard).
+			Press(keys.ChordPrefix.Files.CopyToClipboard).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Copy to clipboard")).
 					Select(Contains("Diff of all files")).
-					Tooltip(Equals("If there are staged items, this command considers only them. Otherwise, it considers all the unstaged ones.")).
 					Confirm()
 
 				t.ExpectToast(Equals("All files diff copied to clipboard"))
-
 				expectClipboard(t, Contains("+staged content (new)").Contains("+unstaged content (new)"))
 			})
 	},

@@ -23,17 +23,12 @@ var FilterMenu = NewIntegrationTest(NewIntegrationTestArgs{
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Keybindings")).
-					Filter("Ignore").
+					Filter("gitignore").
 					Lines(
 						// menu has filtered down to the one item that matches the filter
 						Contains(`--- Local ---`),
-						Contains(`Ignore`).IsSelected(),
+						Contains(`Add to .gitignore`).IsSelected(),
 					).
-					Confirm()
-
-				t.ExpectPopup().Menu().
-					Title(Equals("Ignore or exclude file")).
-					Select(Contains("Add to .gitignore")).
 					Confirm()
 			})
 

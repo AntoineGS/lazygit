@@ -19,6 +19,9 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` : `` | Execute shell command | Bring up a prompt where you can enter a shell command to execute. |
 | `` <ctrl+p> `` | Bekijk aangepaste patch opties |  |
 | `` m `` | Bekijk merge/rebase opties | View options to abort/continue/skip the current merge/rebase. |
+| `` mc `` | Continue rebase / merge | View options to abort/continue/skip the current merge/rebase. |
+| `` ma `` | Abort rebase / merge | View options to abort/continue/skip the current merge/rebase. |
+| `` ms `` | Skip current rebase commit | View options to abort/continue/skip the current merge/rebase. |
 | `` R `` | Verversen | Refresh the git state (i.e. run `git status`, `git branch`, etc in background to update the contents of panels). This does not run `git fetch`. |
 | `` + `` | Volgende scherm modus (normaal/half/groot) |  |
 | `` _ `` | Vorige scherm modus |  |
@@ -58,7 +61,17 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | Kopieer de bestandsnaam naar het klembord |  |
 | `` <space> `` | Toggle staged | Toggle staged for selected file. |
 | `` <ctrl+b> `` | Filter files by status |  |
+| `` <ctrl+b>s `` | Show only staged files |  |
+| `` <ctrl+b>u `` | Show only unstaged files |  |
+| `` <ctrl+b>t `` | Show only tracked files |  |
+| `` <ctrl+b>T `` | Show only untracked files |  |
+| `` <ctrl+b>r `` | No filter |  |
 | `` y `` | Copy to clipboard |  |
+| `` yn `` | File name |  |
+| `` yp `` | Relative path |  |
+| `` yP `` | Absolute path |  |
+| `` ys `` | Diff of selected file | If there are staged items, this command considers only them. Otherwise, it considers all the unstaged ones. |
+| `` ya `` | Diff of all files | If there are staged items, this command considers only them. Otherwise, it considers all the unstaged ones. |
 | `` c `` | Commit veranderingen | Commit staged changes. |
 | `` w `` | Commit veranderingen zonder pre-commit hook |  |
 | `` A `` | Wijzig laatste commit |  |
@@ -67,14 +80,32 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` e `` | Edit | Open file in external editor. |
 | `` o `` | Open bestand | Open file in default application. |
 | `` i `` | Ignore or exclude file |  |
+| `` ii `` | Voeg toe aan .gitignore |  |
+| `` ie `` | Add to .git/info/exclude |  |
 | `` r `` | Refresh bestanden |  |
-| `` s `` | Stash | Stash all changes. For other variations of stashing, use the view stash options keybinding. |
+| `` s `` | Stash | Stash all changes. Press capital S for variations (keep index, include untracked, staged only, unstaged only). |
 | `` S `` | Bekijk stash opties | View stash options (e.g. stash all, stash staged, stash unstaged). |
+| `` Si `` | Stash staged wijzigingen |  |
+| `` SU `` | Stash all changes including untracked files |  |
+| `` Ss `` | Stash staged changes |  |
+| `` Su `` | Stash unstaged changes |  |
 | `` a `` | Toggle staged alle | Toggle staged/unstaged for all files in working tree. |
 | `` <enter> `` | Stage individuele hunks/lijnen | If the selected item is a file, focus the staging view so you can stage individual hunks/lines. If the selected item is a directory, collapse/expand it. |
-| `` d `` | Bekijk 'veranderingen ongedaan maken' opties | View options for discarding changes to the selected file. |
-| `` g `` | Bekijk upstream reset opties |  |
+| `` d `` | Discard changes |  |
+| `` dc `` | Bekijk 'veranderingen ongedaan maken' opties | View options for discarding changes to the selected file. |
+| `` du `` | Negeer unstaged wijzigingen |  |
+| `` g `` | Reset to upstream |  |
+| `` gm `` | Mixed reset to upstream | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | Soft reset to upstream | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | Hard reset to upstream | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` D `` | Reset | View reset options for working tree (e.g. nuking the working tree). |
+| `` Dx `` | Verwijder werkende tree | If you want to make all the changes in the worktree go away, this is the way to do it. If there are dirty submodule changes this will stash those changes in the submodule(s). |
+| `` Du `` | Gooi unstaged wijzigingen weg |  |
+| `` Dc `` | Negeer niet-gevonden bestanden |  |
+| `` DS `` | Discard staged changes | This will create a new stash entry containing only staged files and then drop it, so that the working tree is left with only unstaged changes |
+| `` Ds `` | Zacht reset |  |
+| `` Dm `` | mixed reset |  |
+| `` Dh `` | Harde reset |  |
 | `` ` `` | Toggle bestandsboom weergave | Toggle file view between flat and tree layout. Flat layout shows all file paths in a single list, tree layout groups files by directory.<br><br>The default can be changed in the config file with the key 'gui.showFileTree'. |
 | `` <ctrl+t> `` | Open external diff tool (git difftool) |  |
 | `` M `` | View merge conflict options | View options for resolving merge conflicts. |
@@ -98,6 +129,11 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 |-----|--------|-------------|
 | `` <ctrl+o> `` | Kopieer branch name naar klembord |  |
 | `` i `` | Laat git-flow opties zien |  |
+| `` iF `` | Finish git-flow branch |  |
+| `` if `` | Start git-flow feature |  |
+| `` ih `` | Start git-flow hotfix |  |
+| `` ib `` | Start git-flow bugfix |  |
+| `` ir `` | Start git-flow release |  |
 | `` <space> `` | Uitchecken | Checkout selected item. |
 | `` n `` | Nieuwe branch |  |
 | `` N `` | Move commits to new branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
@@ -109,14 +145,38 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` - `` | Checkout previous branch |  |
 | `` F `` | Forceer checkout | Force checkout selected branch. This will discard all local changes in your working directory before checking out the selected branch. |
 | `` d `` | Delete | View delete options for local/remote branch. |
+| `` dc `` | Delete local branch | View delete options for local/remote branch. |
+| `` dr `` | Verwijder remote branch | Delete the remote branch from the remote. |
+| `` db `` | Delete local and remote branch | View delete options for local/remote branch. |
 | `` r `` | Rebase branch | Rebase the checked-out branch onto the selected branch. |
+| `` rs `` | Simple rebase | Rebase the checked-out branch onto the selected branch. |
+| `` ri `` | Interactive rebase | Begin an interactive rebase with a break at the start, so you can update the TODO commits before continuing. |
+| `` rb `` | Rebase onto base branch | Rebase the checked out branch onto its base branch (i.e. the closest main branch). |
 | `` M `` | Merge in met huidige checked out branch | View options for merging the selected item into the current branch (regular merge, squash merge) |
+| `` Mm `` | Merge in met huidige checked out branch | View options for merging the selected item into the current branch (regular merge, squash merge) |
+| `` Mn `` | Regular merge (with merge commit) | Merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}', creating a merge commit. |
+| `` Mf `` | Regular merge (fast-forward) | Fast-forward '{{.checkedOutBranch}}' to '{{.selectedBranch}}' without creating a merge commit. |
+| `` Ms `` | Squash merge (uncommitted) | Squash merge '{{.selectedBranch}}' into the working tree. |
+| `` MS `` | Squash merge (committed) | Squash merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}' as a single commit. |
 | `` f `` | Fast-forward deze branch vanaf zijn upstream | Fast-forward selected branch from its upstream. |
 | `` T `` | Creëer tag |  |
 | `` s `` | Sort order |  |
-| `` g `` | Bekijk reset opties |  |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | Zacht reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | Harde reset | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` R `` | Hernoem branch |  |
 | `` u `` | View upstream options | View options relating to the branch's upstream e.g. setting/unsetting the upstream and resetting to the upstream. |
+| `` ud `` | View divergence from upstream | View options relating to the branch's upstream e.g. setting/unsetting the upstream and resetting to the upstream. |
+| `` uD `` | View divergence from base branch |  |
+| `` us `` | Stel in als upstream van uitgecheckte branch |  |
+| `` uu `` | Unset upstream of selected branch |  |
+| `` ugm `` | Mixed reset to upstream | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` ugs `` | Soft reset to upstream | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` ugh `` | Hard reset to upstream | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
+| `` urs `` | Simple rebase onto upstream |  |
+| `` uri `` | Interactive rebase onto upstream | Begin an interactive rebase with a break at the start, so you can update the TODO commits before continuing. |
+| `` urb `` | Rebase onto base branch | Rebase the checked out branch onto its base branch (i.e. the closest main branch). |
 | `` <ctrl+t> `` | Open external diff tool (git difftool) |  |
 | `` 0 `` | Focus main view |  |
 | `` <enter> `` | Bekijk commits |  |
@@ -136,6 +196,12 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 |-----|--------|-------------|
 | `` <ctrl+o> `` | Kopieer de bestandsnaam naar het klembord |  |
 | `` y `` | Copy to clipboard |  |
+| `` yn `` | File name |  |
+| `` yp `` | Relative path |  |
+| `` yP `` | Absolute path |  |
+| `` ys `` | Diff of selected file |  |
+| `` ya `` | Diff of all files |  |
+| `` yc `` | Content of selected file |  |
 | `` c `` | Uitchecken | Bestand uitchecken |
 | `` d `` | Bekijk 'veranderingen ongedaan maken' opties | Uitsluit deze commit zijn veranderingen aan dit bestand |
 | `` o `` | Open bestand | Open file in default application. |
@@ -157,8 +223,18 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | Copy abbreviated commit hash to clipboard |  |
 | `` <ctrl+r> `` | Reset cherry-picked (gekopieerde) commits selectie |  |
 | `` b `` | View bisect options |  |
+| `` bb `` | Mark commit as bad |  |
+| `` bg `` | Mark commit as good |  |
+| `` bs `` | Skip current bisect commit |  |
+| `` bS `` | Skip selected commit |  |
+| `` br `` | Reset bisect |  |
+| `` bb `` | Mark commit as bad (start bisect) |  |
+| `` bg `` | Mark commit as good (start bisect) |  |
+| `` bt `` | Choose bisect terms |  |
 | `` s `` | Squash | Squash the selected commit into the commit below it. The selected commit's message will be appended to the commit below it. |
 | `` f `` | Fixup | Meld the selected commit into the commit below it. Similar to squash, but the selected commit's message will be discarded. |
+| `` ff `` | Fixup | Meld the selected commit into the commit below it. Similar to squash, but the selected commit's message will be discarded. |
+| `` fc `` | Fixup and use this commit's message | Squash the selected commit into the commit below, using this commit's message, discarding the message of the commit below. |
 | `` c `` | Set fixup message | Set the message option for the fixup commit. The -C option means to use this commit's message instead of the target commit's message. |
 | `` r `` | Hernoem commit | Reword the selected commit's message. |
 | `` R `` | Hernoem commit met editor |  |
@@ -184,6 +260,9 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` n `` | Creëer nieuwe branch van commit |  |
 | `` N `` | Move commits to new branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
 | `` g `` | Bekijk reset opties | View reset options (soft/mixed/hard) for resetting onto selected item. |
+| `` gm `` | Mixed reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | Zacht reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | Harde reset | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` C `` | Kopieer commit (cherry-pick) | Mark commit as copied. Then, within the local commits view, you can press `V` to paste (cherry-pick) the copied commit(s) into your checked out branch. At any time you can press `<esc>` to cancel the selection. |
 | `` <ctrl+t> `` | Open external diff tool (git difftool) |  |
 | `` * `` | Select commits of current branch |  |
@@ -259,7 +338,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` o `` | Open commit in browser |  |
 | `` n `` | Creëer nieuwe branch van commit |  |
 | `` N `` | Move commits to new branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
-| `` g `` | Bekijk reset opties | View reset options (soft/mixed/hard) for resetting onto selected item. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | Zacht reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | Harde reset | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` C `` | Kopieer commit (cherry-pick) | Mark commit as copied. Then, within the local commits view, you can press `V` to paste (cherry-pick) the copied commit(s) into your checked out branch. At any time you can press `<esc>` to cancel the selection. |
 | `` <ctrl+r> `` | Reset cherry-picked (gekopieerde) commits selectie |  |
 | `` <ctrl+t> `` | Open external diff tool (git difftool) |  |
@@ -276,12 +358,23 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | Kopieer branch name naar klembord |  |
 | `` <space> `` | Uitchecken | Checkout a new local branch based on the selected remote branch, or the remote branch as a detached head. |
 | `` n `` | Nieuwe branch |  |
-| `` M `` | Merge in met huidige checked out branch | View options for merging the selected item into the current branch (regular merge, squash merge) |
-| `` r `` | Rebase branch | Rebase the checked-out branch onto the selected branch. |
+| `` M `` | Merge |  |
+| `` Mm `` | Merge in met huidige checked out branch | View options for merging the selected item into the current branch (regular merge, squash merge) |
+| `` Mn `` | Non-fast-forward merge | Merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}', creating a merge commit. |
+| `` Mf `` | Fast-forward only merge | Fast-forward '{{.checkedOutBranch}}' to '{{.selectedBranch}}' without creating a merge commit. |
+| `` Ms `` | Squash merge (uncommitted) | Squash merge '{{.selectedBranch}}' into the working tree. |
+| `` MS `` | Squash merge (committed) | Squash merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}' as a single commit. |
+| `` r `` | Rebase options |  |
+| `` rs `` | Rebase branch | Rebase the checked-out branch onto the selected branch. |
+| `` ri `` | Interactive rebase | Begin an interactive rebase with a break at the start, so you can update the TODO commits before continuing. |
+| `` rb `` | Rebase onto base branch | Rebase the checked out branch onto its base branch (i.e. the closest main branch). |
 | `` d `` | Delete | Delete the remote branch from the remote. |
-| `` u `` | Set as upstream | Stel in als upstream van uitgecheckte branch |
+| `` us `` | Set as upstream | Stel in als upstream van uitgecheckte branch |
 | `` s `` | Sort order |  |
-| `` g `` | Bekijk reset opties | View reset options (soft/mixed/hard) for resetting onto selected item. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | Zacht reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | Harde reset | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` <ctrl+t> `` | Open external diff tool (git difftool) |  |
 | `` 0 `` | Focus main view |  |
 | `` <enter> `` | Bekijk commits |  |
@@ -366,7 +459,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` o `` | Open commit in browser |  |
 | `` n `` | Creëer nieuwe branch van commit |  |
 | `` N `` | Move commits to new branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
-| `` g `` | Bekijk reset opties | View reset options (soft/mixed/hard) for resetting onto selected item. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | Zacht reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | Harde reset | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` C `` | Kopieer commit (cherry-pick) | Mark commit as copied. Then, within the local commits view, you can press `V` to paste (cherry-pick) the copied commit(s) into your checked out branch. At any time you can press `<esc>` to cancel the selection. |
 | `` <ctrl+r> `` | Reset cherry-picked (gekopieerde) commits selectie |  |
 | `` <ctrl+t> `` | Open external diff tool (git difftool) |  |
@@ -388,6 +484,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` e `` | Update submodule URL |  |
 | `` i `` | Initialize | Initialiseer submodule |
 | `` b `` | Bekijk bulk submodule opties |  |
+| `` bi `` | Bulk init submodules |  |
+| `` bu `` | Bulk update submodules |  |
+| `` br `` | Bulk init and update submodules recursively |  |
+| `` bd `` | Bulk deinit submodules |  |
 | `` / `` | Filter the current view by text |  |
 
 ## Tags
@@ -397,9 +497,15 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | Copy tag to clipboard |  |
 | `` <space> `` | Uitchecken | Checkout the selected tag as a detached HEAD. |
 | `` n `` | Creëer tag | Create new tag from current commit. You'll be prompted to enter a tag name and optional description. |
-| `` d `` | Delete | View delete options for local/remote tag. |
+| `` d `` | Delete |  |
+| `` dc `` | Delete local tag | View delete options for local/remote tag. |
+| `` dr `` | Delete remote tag | View delete options for local/remote tag. |
+| `` db `` | Delete local and remote tag | View delete options for local/remote tag. |
 | `` P `` | Push tag | Push the selected tag to a remote. You'll be prompted to select a remote. |
-| `` g `` | Reset | View reset options (soft/mixed/hard) for resetting onto selected item. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | Zacht reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | Harde reset | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` <ctrl+t> `` | Open external diff tool (git difftool) |  |
 | `` 0 `` | Focus main view |  |
 | `` <enter> `` | Bekijk commits |  |

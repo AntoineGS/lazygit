@@ -9,7 +9,7 @@ var Reset = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Hard reset to another branch",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig:  func(config *config.AppConfig) {},
+	SetupConfig: func(cfg *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		shell.NewBranch("current-branch")
 		shell.EmptyCommit("root commit")
@@ -33,10 +33,10 @@ var Reset = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("other-branch"),
 			).
 			SelectNextItem().
-			Press(keys.Commits.ViewResetOptions)
+			Press(keys.ChordPrefix.LocalBranches.ResetToRef)
 
 		t.ExpectPopup().Menu().
-			Title(Contains("Reset to other-branch")).
+			Title(Equals("Reset to ref")).
 			Select(Contains("Hard reset")).
 			Confirm()
 

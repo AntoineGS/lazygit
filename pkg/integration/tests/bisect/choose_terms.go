@@ -20,24 +20,24 @@ var ChooseTerms = NewIntegrationTest(NewIntegrationTestArgs{
 	Run: func(t *TestDriver, keys config.KeybindingConfig) {
 		markCommitAsFixed := func() {
 			t.Views().Commits().
-				Press(keys.Commits.ViewBisectOptions)
+				Press(keys.ChordPrefix.Commits.BisectOptions)
 
-			t.ExpectPopup().Menu().Title(Equals("Bisect")).Select(MatchesRegexp(`Mark .* as fixed`)).Confirm()
+			t.ExpectPopup().Menu().Title(Equals("Bisect options")).Select(MatchesRegexp(`Mark .* as fixed`)).Confirm()
 		}
 
 		markCommitAsBroken := func() {
 			t.Views().Commits().
-				Press(keys.Commits.ViewBisectOptions)
+				Press(keys.ChordPrefix.Commits.BisectOptions)
 
-			t.ExpectPopup().Menu().Title(Equals("Bisect")).Select(MatchesRegexp(`Mark .* as broken`)).Confirm()
+			t.ExpectPopup().Menu().Title(Equals("Bisect options")).Select(MatchesRegexp(`Mark .* as broken`)).Confirm()
 		}
 
 		t.Views().Commits().
 			Focus().
 			SelectedLine(Contains("CI commit 10")).
-			Press(keys.Commits.ViewBisectOptions).
+			Press(keys.ChordPrefix.Commits.BisectOptions).
 			Tap(func() {
-				t.ExpectPopup().Menu().Title(Equals("Bisect")).Select(Contains("Choose bisect terms")).Confirm()
+				t.ExpectPopup().Menu().Title(Equals("Bisect options")).Select(Contains("Choose bisect terms")).Confirm()
 				t.ExpectPopup().Prompt().Title(Equals("Term for old/good commit:")).Type("broken").Confirm()
 				t.ExpectPopup().Prompt().Title(Equals("Term for new/bad commit:")).Type("fixed").Confirm()
 			}).

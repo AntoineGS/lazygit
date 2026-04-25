@@ -8,6 +8,7 @@ import (
 	"github.com/jesseduffield/lazygit/pkg/commands/models"
 	"github.com/jesseduffield/lazygit/pkg/gocui"
 	"github.com/jesseduffield/lazygit/pkg/gui/context/traits"
+	"github.com/jesseduffield/lazygit/pkg/gui/style"
 	"github.com/jesseduffield/lazygit/pkg/gui/types"
 	"github.com/jesseduffield/lazygit/pkg/utils"
 	"github.com/samber/lo"
@@ -91,13 +92,28 @@ func (self *BasicCommitsController) GetKeybindings(opts types.KeybindingsOpts) [
 			Tooltip:           self.c.Tr.MoveCommitsToNewBranchTooltip,
 		},
 		{
-			Key:               opts.GetKey(opts.Config.Commits.ViewResetOptions),
-			Handler:           self.withItem(self.createResetMenu),
+			Key:               opts.GetKey(opts.Config.Commits.MixedResetToRef),
+			Handler:           self.withItem(self.gitMixedResetToRef),
 			GetDisabledReason: self.require(self.singleItemSelected()),
-			Description:       self.c.Tr.ViewResetOptions,
-			Tooltip:           self.c.Tr.ResetTooltip,
-			OpensMenu:         true,
-			DisplayOnScreen:   true,
+			Description:       "Mixed reset",
+			Tooltip:           self.c.Tr.ResetMixedTooltip,
+			ChordPopupExtra:   self.gitResetPreview(style.FgRed, "mixed"),
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Commits.SoftResetToRef),
+			Handler:           self.withItem(self.gitSoftResetToRef),
+			GetDisabledReason: self.require(self.singleItemSelected()),
+			Description:       self.c.Tr.SoftReset,
+			Tooltip:           self.c.Tr.ResetSoftTooltip,
+			ChordPopupExtra:   self.gitResetPreview(style.FgRed, "soft"),
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Commits.HardResetToRef),
+			Handler:           self.withItem(self.gitHardResetToRef),
+			GetDisabledReason: self.require(self.singleItemSelected()),
+			Description:       self.c.Tr.HardReset,
+			Tooltip:           self.c.Tr.ResetHardTooltip,
+			ChordPopupExtra:   self.gitResetPreview(style.FgRed, "hard"),
 		},
 		{
 			Key:               opts.GetKey(opts.Config.Commits.CherryPickCopy),
@@ -351,8 +367,27 @@ func (self *BasicCommitsController) newBranch(commit *models.Commit) error {
 	return self.c.Helpers().Refs.NewBranch(commit.RefName(), commit.Description(), "")
 }
 
-func (self *BasicCommitsController) createResetMenu(commit *models.Commit) error {
-	return self.c.Helpers().Refs.CreateGitResetMenu(commit.Hash(), commit.Hash())
+func (self *BasicCommitsController) gitMixedResetToRef(commit *models.Commit) error {
+	return self.c.Helpers().Refs.PerformGitReset(commit.Hash(), commit.Hash(), "mixed")
+}
+
+func (self *BasicCommitsController) gitSoftResetToRef(commit *models.Commit) error {
+	return self.c.Helpers().Refs.PerformGitReset(commit.Hash(), commit.Hash(), "soft")
+}
+
+func (self *BasicCommitsController) gitHardResetToRef(commit *models.Commit) error {
+	return self.c.Helpers().Refs.PerformGitReset(commit.Hash(), commit.Hash(), "hard")
+}
+
+func (self *BasicCommitsController) gitResetPreview(s style.TextStyle, strength string) string {
+	if self.c.Git() == nil {
+		return ""
+	}
+	commit := self.context.GetSelected()
+	if commit == nil {
+		return ""
+	}
+	return s.Sprintf("reset --%s %s", strength, commit.Hash())
 }
 
 func (self *BasicCommitsController) checkout(commit *models.Commit) error {

@@ -9,7 +9,7 @@ var ShowDivergenceFromUpstream = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Show divergence from upstream",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig:  func(config *config.AppConfig) {},
+	SetupConfig: func(cfg *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		shell.CreateFileAndAdd("file", "content1")
 		shell.Commit("one")
@@ -36,9 +36,12 @@ var ShowDivergenceFromUpstream = NewIntegrationTest(NewIntegrationTestArgs{
 		t.Views().Branches().
 			Focus().
 			Lines(Contains("master")).
-			Press(keys.Branches.SetUpstream)
+			Press(keys.ChordPrefix.LocalBranches.BranchUpstreamOptions)
 
-		t.ExpectPopup().Menu().Title(Contains("Upstream")).Select(Contains("View divergence from upstream")).Confirm()
+		t.ExpectPopup().Menu().
+			Title(Equals("Branch upstream options")).
+			Select(Contains("View divergence from upstream")).
+			Confirm()
 
 		t.Views().SubCommits().
 			IsFocused().

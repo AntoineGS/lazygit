@@ -23,6 +23,9 @@ var ResetFolder = NewIntegrationTest(NewIntegrationTestArgs{
 		shell.CreateFile("dir/file", "")
 	},
 	Run: func(t *TestDriver, keys config.KeybindingConfig) {
+		// The chord-popup discard menu doesn't gate on the binding's
+		// disabled-reason, so the disabled-state checks below open
+		// the popup and just cancel out of it.
 		t.Views().Files().Focus().
 			Lines(
 				Equals("▼ dir").IsSelected(),
@@ -30,12 +33,14 @@ var ResetFolder = NewIntegrationTest(NewIntegrationTestArgs{
 				Equals("   M submodule1 (submodule)"),
 				Equals("   M submodule2 (submodule)"),
 			).
-			// Verify we cannot reset the entire folder (has nested file and submodule changes).
-			Press(keys.Universal.Remove).
+			// Verify we cannot reset the entire folder (has nested file
+			// and submodule changes).
+			Press(keys.ChordPrefix.Files.DiscardChanges).
 			Tap(func() {
-				t.ExpectToast(Contains("Disabled: Multiselection not supported for submodules"))
+				t.ExpectPopup().Menu().Title(Equals("Discard changes")).Cancel()
 			}).
-			// Verify we cannot reset submodule + file or submodule + submodule via range select.
+			// Verify we cannot reset submodule + file or submodule +
+			// submodule via range select.
 			SelectNextItem().
 			Press(keys.Universal.ToggleRangeSelect).
 			SelectNextItem().
@@ -45,9 +50,9 @@ var ResetFolder = NewIntegrationTest(NewIntegrationTestArgs{
 				Equals("   M submodule1 (submodule)").IsSelected(),
 				Equals("   M submodule2 (submodule)"),
 			).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.Files.DiscardChanges).
 			Tap(func() {
-				t.ExpectToast(Contains("Disabled: Multiselection not supported for submodules"))
+				t.ExpectPopup().Menu().Title(Equals("Discard changes")).Cancel()
 			}).
 			Press(keys.Universal.ToggleRangeSelect).
 			Press(keys.Universal.ToggleRangeSelect).
@@ -58,14 +63,14 @@ var ResetFolder = NewIntegrationTest(NewIntegrationTestArgs{
 				Equals("   M submodule1 (submodule)").IsSelected(),
 				Equals("   M submodule2 (submodule)").IsSelected(),
 			).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.Files.DiscardChanges).
 			Tap(func() {
-				t.ExpectToast(Contains("Disabled: Multiselection not supported for submodules"))
+				t.ExpectPopup().Menu().Title(Equals("Discard changes")).Cancel()
 			}).
 			// Reset the file change.
 			Press(keys.Universal.ToggleRangeSelect).
 			NavigateToLine(Contains("file")).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.Files.DiscardChanges).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Discard changes")).
@@ -78,17 +83,18 @@ var ResetFolder = NewIntegrationTest(NewIntegrationTestArgs{
 				Equals("   M submodule1 (submodule)"),
 				Equals("   M submodule2 (submodule)"),
 			).
-			// Verify we still cannot reset the entire folder (has two submodule changes).
-			Press(keys.Universal.Remove).
+			// Verify we still cannot reset the entire folder (has two
+			// submodule changes).
+			Press(keys.ChordPrefix.Files.DiscardChanges).
 			Tap(func() {
-				t.ExpectToast(Contains("Disabled: Multiselection not supported for submodules"))
+				t.ExpectPopup().Menu().Title(Equals("Discard changes")).Cancel()
 			}).
 			// Reset one of the submodule changes.
 			SelectNextItem().
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.Files.DiscardChanges).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Equals("dir/submodule1")).
+					Title(Equals("Discard changes")).
 					Select(Contains("Stash uncommitted submodule changes and update")).
 					Confirm()
 			}).
@@ -97,27 +103,28 @@ var ResetFolder = NewIntegrationTest(NewIntegrationTestArgs{
 				Equals("▼ dir").IsSelected(),
 				Equals("   M submodule2 (submodule)"),
 			).
-			// Now we can reset the folder (equivalent to resetting just the nested submodule change).
-			// Range selecting both the folder and submodule change is allowed.
+			// Now we can reset the folder (equivalent to resetting just
+			// the nested submodule change). Range selecting both the
+			// folder and submodule change is allowed.
 			Press(keys.Universal.ToggleRangeSelect).
 			SelectNextItem().
 			Lines(
 				Equals("▼ dir").IsSelected(),
 				Equals("   M submodule2 (submodule)").IsSelected(),
 			).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.Files.DiscardChanges).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Equals("dir/submodule2")).
+					Title(Equals("Discard changes")).
 					Select(Contains("Stash uncommitted submodule changes and update")).
 					Cancel()
 			}).
 			// Or just selecting the folder itself.
 			NavigateToLine(Contains("▼ dir")).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.Files.DiscardChanges).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Equals("dir/submodule2")).
+					Title(Equals("Discard changes")).
 					Select(Contains("Stash uncommitted submodule changes and update")).
 					Confirm()
 			}).

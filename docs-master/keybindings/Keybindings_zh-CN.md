@@ -19,6 +19,9 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` : `` | 执行 Shell 命令 | 调出可输入shell命令执行的提示符。 |
 | `` <ctrl+p> `` | 查看自定义补丁选项 |  |
 | `` m `` | 查看合并/变基选项 | 查看当前合并或变基的中止、继续、跳过选项 |
+| `` mc `` | Continue rebase / merge | 查看当前合并或变基的中止、继续、跳过选项 |
+| `` ma `` | Abort rebase / merge | 查看当前合并或变基的中止、继续、跳过选项 |
+| `` ms `` | Skip current rebase commit | 查看当前合并或变基的中止、继续、跳过选项 |
 | `` R `` | 刷新 | 刷新Git状态（即在后台运行`git status`、`git branch`等命令以更新面板内容）。此操作不会执行`git fetch`。 |
 | `` + `` | 下一屏模式(正常/半屏/全屏) |  |
 | `` _ `` | 上一屏模式 |  |
@@ -61,7 +64,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` o `` | 在浏览器中打开提交 |  |
 | `` n `` | 从提交创建新分支 |  |
 | `` N `` | 移动提交至新分支 | 创建一个新分支，并将当前分支未推送的提交移动到该分支。如果您打算开始新工作但忘记先创建新分支，这会很有用。<br><br>请注意，此操作忽略选择，新分支总是从主分支创建或堆叠在当前分支之上（您可以选择哪种方式）。 |
-| `` g `` | 查看重置选项 | 查看重置选项 (soft/mixed/hard) 用于重置到选择项 |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | 将 HEAD 重置为所选提交，并将当前提交和所选提交之间的更改保留为未暂存的更改。 |
+| `` gs `` | 软重置 | 将 HEAD 重置为所选提交，并将当前提交和所选提交之间的更改保留为已暂存更改。 |
+| `` gh `` | 硬重置 | 将 HEAD 重置为所选提交，并丢弃当前提交和所选提交之间的所有更改，以及工作树中的所有当前修改。 |
 | `` C `` | 复制提交(拣选) | 标记提交为已复制。然后，在本地提交视图中，您可以按 `V` (Cherry-Pick) 将已复制的提交粘贴到已检出的分支中。任何时候都可以按 `<esc>` 来取消选择。 |
 | `` <ctrl+r> `` | 重置已拣选(复制)的提交 |  |
 | `` <ctrl+t> `` | 使用外部差异比较工具(git difftool) |  |
@@ -83,6 +89,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` e `` | 更新子模块 URL |  |
 | `` i `` | 初始化 | 初始化子模块 |
 | `` b `` | 查看批量子模块选项 |  |
+| `` bi `` | 批量初始化子模块 |  |
+| `` bu `` | 批量更新子模块 |  |
+| `` br `` | 批量递归初始化和更新子模块 |  |
+| `` bd `` | 批量反初始化子模块 |  |
 | `` / `` | 通过文本过滤当前视图 |  |
 
 ## 工作区
@@ -105,7 +115,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` o `` | 在浏览器中打开提交 |  |
 | `` n `` | 从提交创建新分支 |  |
 | `` N `` | 移动提交至新分支 | 创建一个新分支，并将当前分支未推送的提交移动到该分支。如果您打算开始新工作但忘记先创建新分支，这会很有用。<br><br>请注意，此操作忽略选择，新分支总是从主分支创建或堆叠在当前分支之上（您可以选择哪种方式）。 |
-| `` g `` | 查看重置选项 | 查看重置选项 (soft/mixed/hard) 用于重置到选择项 |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | 将 HEAD 重置为所选提交，并将当前提交和所选提交之间的更改保留为未暂存的更改。 |
+| `` gs `` | 软重置 | 将 HEAD 重置为所选提交，并将当前提交和所选提交之间的更改保留为已暂存更改。 |
+| `` gh `` | 硬重置 | 将 HEAD 重置为所选提交，并丢弃当前提交和所选提交之间的所有更改，以及工作树中的所有当前修改。 |
 | `` C `` | 复制提交(拣选) | 标记提交为已复制。然后，在本地提交视图中，您可以按 `V` (Cherry-Pick) 将已复制的提交粘贴到已检出的分支中。任何时候都可以按 `<esc>` 来取消选择。 |
 | `` <ctrl+r> `` | 重置已拣选(复制)的提交 |  |
 | `` <ctrl+t> `` | 使用外部差异比较工具(git difftool) |  |
@@ -122,8 +135,18 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | Copy abbreviated commit hash to clipboard |  |
 | `` <ctrl+r> `` | 重置已拣选(复制)的提交 |  |
 | `` b `` | 查看二分查找选项 |  |
+| `` bb `` | Mark commit as bad |  |
+| `` bg `` | Mark commit as good |  |
+| `` bs `` | Skip current bisect commit |  |
+| `` bS `` | Skip selected commit |  |
+| `` br `` | 重置二分查找 |  |
+| `` bb `` | Mark commit as bad (start bisect) |  |
+| `` bg `` | Mark commit as good (start bisect) |  |
+| `` bt `` | 二选一 |  |
 | `` s `` | 压缩(Squash) | 将已选提交压缩到该提交之下。这些选定的提交的消息会附加到该提交的消息之下。 |
 | `` f `` | 修正 （fixup） | 将选定的提交合并到其下面的提交中。与压缩类似，但所选提交的消息将被丢弃。 |
+| `` ff `` | 修正 （fixup） | 将选定的提交合并到其下面的提交中。与压缩类似，但所选提交的消息将被丢弃。 |
+| `` fc `` | Fixup and use this commit's message | Squash the selected commit into the commit below, using this commit's message, discarding the message of the commit below. |
 | `` c `` | Set fixup message | Set the message option for the fixup commit. The -C option means to use this commit's message instead of the target commit's message. |
 | `` r `` | 改写提交 | 重写所选提交的消息。 |
 | `` R `` | 使用编辑器重命名提交 |  |
@@ -149,6 +172,9 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` n `` | 从提交创建新分支 |  |
 | `` N `` | 移动提交至新分支 | 创建一个新分支，并将当前分支未推送的提交移动到该分支。如果您打算开始新工作但忘记先创建新分支，这会很有用。<br><br>请注意，此操作忽略选择，新分支总是从主分支创建或堆叠在当前分支之上（您可以选择哪种方式）。 |
 | `` g `` | 查看重置选项 | 查看重置选项 (soft/mixed/hard) 用于重置到选择项 |
+| `` gm `` | Mixed reset | 将 HEAD 重置为所选提交，并将当前提交和所选提交之间的更改保留为未暂存的更改。 |
+| `` gs `` | 软重置 | 将 HEAD 重置为所选提交，并将当前提交和所选提交之间的更改保留为已暂存更改。 |
+| `` gh `` | 硬重置 | 将 HEAD 重置为所选提交，并丢弃当前提交和所选提交之间的所有更改，以及工作树中的所有当前修改。 |
 | `` C `` | 复制提交(拣选) | 标记提交为已复制。然后，在本地提交视图中，您可以按 `V` (Cherry-Pick) 将已复制的提交粘贴到已检出的分支中。任何时候都可以按 `<esc>` 来取消选择。 |
 | `` <ctrl+t> `` | 使用外部差异比较工具(git difftool) |  |
 | `` * `` | 选择当前分支的提交 |  |
@@ -169,7 +195,13 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | Key | Action | Info |
 |-----|--------|-------------|
 | `` <ctrl+o> `` | 复制路径到剪贴板 |  |
-| `` y `` | 复制到剪贴板 |  |
+| `` y `` | Copy to clipboard |  |
+| `` yn `` | 文件名 |  |
+| `` yp `` | 相对路径 |  |
+| `` yP `` | 绝对路径 |  |
+| `` ys `` | 比较选中的文件 |  |
+| `` ya `` | 对比全部文件 |  |
+| `` yc `` | 所选文件内容 |  |
 | `` c `` | 检出 | 检出文件 |
 | `` d `` | 查看'放弃变更'选项 | 放弃对此文件的提交变更 |
 | `` o `` | 打开文件 | 使用默认程序打开该文件 |
@@ -191,7 +223,17 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | 复制路径到剪贴板 |  |
 | `` <space> `` | 切换暂存状态 | 为选定的文件切换暂存状态 |
 | `` <ctrl+b> `` | 通过状态过滤文件 |  |
+| `` <ctrl+b>s `` | 仅显示已暂存文件 |  |
+| `` <ctrl+b>u `` | 仅显示未暂存文件 |  |
+| `` <ctrl+b>t `` | 仅显示已跟踪的文件 |  |
+| `` <ctrl+b>T `` | 仅显示未跟踪的文件 |  |
+| `` <ctrl+b>r `` | 无过滤 |  |
 | `` y `` | 复制到剪贴板 |  |
+| `` yn `` | 文件名 |  |
+| `` yp `` | 相对路径 |  |
+| `` yP `` | 绝对路径 |  |
+| `` ys `` | 比较选中的文件 | 如果存在已暂存更改，该命令将仅作用于它们。否则将作用于所有未暂存更改。 |
+| `` ya `` | 对比全部文件 | 如果存在已暂存更改，该命令将仅作用于它们。否则将作用于所有未暂存更改。 |
 | `` c `` | 提交变更 | 提交暂存文件 |
 | `` w `` | 提交变更而无需预先提交钩子 |  |
 | `` A `` | 修补最后一次提交 |  |
@@ -200,14 +242,32 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` e `` | 编辑(Edit) | 使用外部编辑器打开文件 |
 | `` o `` | 打开文件 | 使用默认程序打开该文件 |
 | `` i `` | 忽略文件 |  |
+| `` ii `` | 添加到 .gitignore |  |
+| `` ie `` | 添加到 .git/info/exclude |  |
 | `` r `` | 刷新文件 |  |
 | `` s `` | 贮藏 | 贮藏所有变更.若要使用其他贮藏变体,请使用查看贮藏选项快捷键 |
 | `` S `` | 查看贮藏选项 | 查看贮藏选项（例如：贮藏所有、贮藏已暂存变更、贮藏未暂存变更） |
+| `` Si `` | 贮藏所有更改并保留暂存区 |  |
+| `` SU `` | 贮藏所有变更,包括未跟踪的文件 |  |
+| `` Ss `` | 贮藏已暂存变更 |  |
+| `` Su `` | 贮藏未暂存变更 |  |
 | `` a `` | 切换所有文件的暂存状态 | 切换工作区中所有文件的已暂存/未暂存状态 |
 | `` <enter> `` | 暂存单个 块/行 用于文件, 或 折叠/展开 目录 | 如果选中的是一个文件，则会进入到暂存视图，以便可以暂存单个代码块/行。如果选中的是一个目录，则会折叠/展开这个目录 |
-| `` d `` | 查看'放弃变更'选项 | 查看选中文件的放弃变更选项 |
-| `` g `` | 查看上游重置选项 |  |
+| `` d `` | Discard changes |  |
+| `` dc `` | 查看'放弃变更'选项 | 查看选中文件的放弃变更选项 |
+| `` du `` | 放弃未暂存的变更 |  |
+| `` g `` | Reset to upstream |  |
+| `` gm `` | Mixed reset to upstream | 将 HEAD 重置为所选提交，并将当前提交和所选提交之间的更改保留为未暂存的更改。 |
+| `` gs `` | Soft reset to upstream | 将 HEAD 重置为所选提交，并将当前提交和所选提交之间的更改保留为已暂存更改。 |
+| `` gh `` | Hard reset to upstream | 将 HEAD 重置为所选提交，并丢弃当前提交和所选提交之间的所有更改，以及工作树中的所有当前修改。 |
 | `` D `` | 重置 | 查看工作树的重置选项（例如：清除工作树）。 |
+| `` Dx `` | 清空工作区 | 如果您想让工作树中的所有更改消失，可以这样做。如果存在受污染的子模块更改，这会将这些更改贮藏在子模块中。 |
+| `` Du `` | 丢弃未暂存的变更 |  |
+| `` Dc `` | 丢弃未跟踪的文件 |  |
+| `` DS `` | 丢弃已暂存的变更 | 这将创建一个仅包含已暂存更改的新贮藏条目，然后这些更改删除，以便工作树仅保留未暂存的更改。 |
+| `` Ds `` | 软重置 |  |
+| `` Dm `` | mixed reset |  |
+| `` Dh `` | 硬重置 |  |
 | `` ` `` | 切换文件树视图 | 在平面布局和树布局之间切换文件视图。平面布局在单个列表中显示所有文件路径，树布局按目录分组文件。<br><br>可以在配置文件中使用 'gui.showFileTree' 键更改默认设置。 |
 | `` <ctrl+t> `` | 使用外部差异比较工具(git difftool) |  |
 | `` M `` | 查看合并冲突选项 | 查看用于解决合并冲突的选项。 |
@@ -223,6 +283,11 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 |-----|--------|-------------|
 | `` <ctrl+o> `` | 复制分支名称到剪贴板 |  |
 | `` i `` | 显示 git-flow 选项 |  |
+| `` iF `` | Finish git-flow branch |  |
+| `` if `` | Start git-flow feature |  |
+| `` ih `` | Start git-flow hotfix |  |
+| `` ib `` | Start git-flow bugfix |  |
+| `` ir `` | Start git-flow release |  |
 | `` <space> `` | 检出 | 检出选中的项目 |
 | `` n `` | 新分支 |  |
 | `` N `` | 移动提交至新分支 | 创建一个新分支，并将当前分支未推送的提交移动到该分支。如果您打算开始新工作但忘记先创建新分支，这会很有用。<br><br>请注意，此操作忽略选择，新分支总是从主分支创建或堆叠在当前分支之上（您可以选择哪种方式）。 |
@@ -234,14 +299,38 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` - `` | 签出上一个分支 |  |
 | `` F `` | 强制检出 | 强制检出所选分支。这将在检出所选分支之前放弃工作目录中的所有本地更改。 |
 | `` d `` | 删除 | 查看本地/远程分支的删除选项 |
+| `` dc `` | 删除本地分支 | 查看本地/远程分支的删除选项 |
+| `` dr `` | 删除远程分支 | 从远程删除远程分支。 |
+| `` db `` | 删除本地和远程分支 | 查看本地/远程分支的删除选项 |
 | `` r `` | 变基 | 将检出的分支变基到所选的分支上。 |
+| `` rs `` | Simple rebase | 将检出的分支变基到所选的分支上。 |
+| `` ri `` | Interactive rebase | 由于交互式变基被中断，所以您可以在继续变基之前更新TODO提交。 |
+| `` rb `` | Rebase onto base branch | 将已检出的分支变基到主分支上（例如最近的主分支）。 |
 | `` M `` | 合并到当前检出的分支 | 查看将选中项合并到当前分支的选项(正常合并，压缩合并) |
+| `` Mm `` | 合并到当前检出的分支 | 查看将选中项合并到当前分支的选项(正常合并，压缩合并) |
+| `` Mn `` | 常规合并（带合并提交） | 将 '{{.selectedBranch}}' 合并到 '{{.checkedOutBranch}}'，创建一个合并提交。 |
+| `` Mf `` | 常规合并（快进） | 将 '{{.checkedOutBranch}}' 快进到 '{{.selectedBranch}}'，不创建合并提交。 |
+| `` Ms `` | Squash merge (uncommitted) | 将 '{{.selectedBranch}}' 压缩合并到工作树中。 |
+| `` MS `` | Squash merge (committed) | 将 '{{.selectedBranch}}' 压缩合并到 '{{.checkedOutBranch}}' 作为一次提交。 |
 | `` f `` | 从上游快进此分支 | 将当前分支直接移动到远程追踪分支的最新提交 |
 | `` T `` | 创建标签 |  |
 | `` s `` | 排序 |  |
-| `` g `` | 查看重置选项 |  |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | 将 HEAD 重置为所选提交，并将当前提交和所选提交之间的更改保留为未暂存的更改。 |
+| `` gs `` | 软重置 | 将 HEAD 重置为所选提交，并将当前提交和所选提交之间的更改保留为已暂存更改。 |
+| `` gh `` | 硬重置 | 将 HEAD 重置为所选提交，并丢弃当前提交和所选提交之间的所有更改，以及工作树中的所有当前修改。 |
 | `` R `` | 重命名分支 |  |
 | `` u `` | 查看上游选项 | 查看与分支上游相关的选项，例如设置/取消设置上游和重置为上游。 |
+| `` ud `` | 查看与上游的差异 | 查看与分支上游相关的选项，例如设置/取消设置上游和重置为上游。 |
+| `` uD `` | View divergence from base branch |  |
+| `` us `` | 设置为检出分支的上游 |  |
+| `` uu `` | 取消已选分支的上游 |  |
+| `` ugm `` | Mixed reset to upstream | 将 HEAD 重置为所选提交，并将当前提交和所选提交之间的更改保留为未暂存的更改。 |
+| `` ugs `` | Soft reset to upstream | 将 HEAD 重置为所选提交，并将当前提交和所选提交之间的更改保留为已暂存更改。 |
+| `` ugh `` | Hard reset to upstream | 将 HEAD 重置为所选提交，并丢弃当前提交和所选提交之间的所有更改，以及工作树中的所有当前修改。 |
+| `` urs `` | Simple rebase onto upstream |  |
+| `` uri `` | Interactive rebase onto upstream | 由于交互式变基被中断，所以您可以在继续变基之前更新TODO提交。 |
+| `` urb `` | Rebase onto base branch | 将已检出的分支变基到主分支上（例如最近的主分支）。 |
 | `` <ctrl+t> `` | 使用外部差异比较工具(git difftool) |  |
 | `` 0 `` | 聚焦主视图 |  |
 | `` <enter> `` | 查看提交 |  |
@@ -271,9 +360,15 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | 复制标签到剪贴板 |  |
 | `` <space> `` | 检出 | 检出选择的标签作为分离的HEAD |
 | `` n `` | 创建标签 | 基于当前提交创建一个新标签。您将在弹窗中输入标签名称和描述(可选)。 |
-| `` d `` | 删除 | 查看本地/远程标签的删除选项 |
+| `` d `` | 删除 |  |
+| `` dc `` | 删除本地标签 | 查看本地/远程标签的删除选项 |
+| `` dr `` | 删除远程标签 | 查看本地/远程标签的删除选项 |
+| `` db `` | 删除本地和远程标签 | 查看本地/远程标签的删除选项 |
 | `` P `` | 推送标签 | 推送选择的标签到远端。您将在弹窗中选择一个远端。 |
-| `` g `` | 重置 | 查看重置选项 (soft/mixed/hard) 用于重置到选择项 |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | 将 HEAD 重置为所选提交，并将当前提交和所选提交之间的更改保留为未暂存的更改。 |
+| `` gs `` | 软重置 | 将 HEAD 重置为所选提交，并将当前提交和所选提交之间的更改保留为已暂存更改。 |
+| `` gh `` | 硬重置 | 将 HEAD 重置为所选提交，并丢弃当前提交和所选提交之间的所有更改，以及工作树中的所有当前修改。 |
 | `` <ctrl+t> `` | 使用外部差异比较工具(git difftool) |  |
 | `` 0 `` | 聚焦主视图 |  |
 | `` <enter> `` | 查看提交 |  |
@@ -404,12 +499,23 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | 复制分支名称到剪贴板 |  |
 | `` <space> `` | 检出 | 基于当前选中的远程分支检出一个新的本地分支，或者将远程分支作分离的HEAD。 |
 | `` n `` | 新分支 |  |
-| `` M `` | 合并到当前检出的分支 | 查看将选中项合并到当前分支的选项(正常合并，压缩合并) |
-| `` r `` | 变基 | 将检出的分支变基到所选的分支上。 |
+| `` M `` | Merge |  |
+| `` Mm `` | 合并到当前检出的分支 | 查看将选中项合并到当前分支的选项(正常合并，压缩合并) |
+| `` Mn `` | Non-fast-forward merge | 将 '{{.selectedBranch}}' 合并到 '{{.checkedOutBranch}}'，创建一个合并提交。 |
+| `` Mf `` | Fast-forward only merge | 将 '{{.checkedOutBranch}}' 快进到 '{{.selectedBranch}}'，不创建合并提交。 |
+| `` Ms `` | Squash merge (uncommitted) | 将 '{{.selectedBranch}}' 压缩合并到工作树中。 |
+| `` MS `` | Squash merge (committed) | 将 '{{.selectedBranch}}' 压缩合并到 '{{.checkedOutBranch}}' 作为一次提交。 |
+| `` r `` | Rebase options |  |
+| `` rs `` | 变基 | 将检出的分支变基到所选的分支上。 |
+| `` ri `` | Interactive rebase | 由于交互式变基被中断，所以您可以在继续变基之前更新TODO提交。 |
+| `` rb `` | Rebase onto base branch | 将已检出的分支变基到主分支上（例如最近的主分支）。 |
 | `` d `` | 删除 | 从远程删除远程分支。 |
-| `` u `` | 设置为上游 | 设置为检出分支的上游 |
+| `` us `` | 设置为上游 | 设置为检出分支的上游 |
 | `` s `` | 排序 |  |
-| `` g `` | 查看重置选项 | 查看重置选项 (soft/mixed/hard) 用于重置到选择项 |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | 将 HEAD 重置为所选提交，并将当前提交和所选提交之间的更改保留为未暂存的更改。 |
+| `` gs `` | 软重置 | 将 HEAD 重置为所选提交，并将当前提交和所选提交之间的更改保留为已暂存更改。 |
+| `` gh `` | 硬重置 | 将 HEAD 重置为所选提交，并丢弃当前提交和所选提交之间的所有更改，以及工作树中的所有当前修改。 |
 | `` <ctrl+t> `` | 使用外部差异比较工具(git difftool) |  |
 | `` 0 `` | 聚焦主视图 |  |
 | `` <enter> `` | 查看提交 |  |

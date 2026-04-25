@@ -6,7 +6,6 @@ import (
 
 	"github.com/jesseduffield/lazygit/pkg/commands/git_commands"
 	"github.com/jesseduffield/lazygit/pkg/commands/models"
-	"github.com/jesseduffield/lazygit/pkg/gocui"
 	"github.com/jesseduffield/lazygit/pkg/gui/context"
 	"github.com/jesseduffield/lazygit/pkg/gui/types"
 	"github.com/jesseduffield/lazygit/pkg/utils"
@@ -37,196 +36,294 @@ func NewBisectController(
 }
 
 func (self *BisectController) GetKeybindings(opts types.KeybindingsOpts) []*types.Binding {
-	bindings := []*types.Binding{
+	midDisabled := func() *types.DisabledReason {
+		if self.c.Git() == nil || !self.c.Git().Bisect.GetInfo().Started() {
+			return &types.DisabledReason{AllowFurtherDispatching: true}
+		}
+		return nil
+	}
+	startDisabled := func() *types.DisabledReason {
+		if self.c.Git() != nil && self.c.Git().Bisect.GetInfo().Started() {
+			return &types.DisabledReason{AllowFurtherDispatching: true}
+		}
+		return nil
+	}
+
+	return []*types.Binding{
 		{
-			Key:         opts.GetKey(opts.Config.Commits.ViewBisectOptions),
-			Handler:     opts.Guards.OutsideFilterMode(self.withItem(self.openMenu)),
-			Description: self.c.Tr.ViewBisectOptions,
-			OpensMenu:   true,
+			Key:               opts.GetKey(opts.Config.Commits.BisectMarkBad),
+			Handler:           opts.Guards.OutsideFilterMode(self.withItem(self.bisectMarkBad)),
+			Description:       self.c.Tr.BisectMarkBad,
+			DescriptionFunc:   self.bisectMarkBadLabel,
+			GetDisabledReason: self.bisectMarkDisabledReason(midDisabled),
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Commits.BisectMarkGood),
+			Handler:           opts.Guards.OutsideFilterMode(self.withItem(self.bisectMarkGood)),
+			Description:       self.c.Tr.BisectMarkGood,
+			DescriptionFunc:   self.bisectMarkGoodLabel,
+			GetDisabledReason: self.bisectMarkDisabledReason(midDisabled),
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Commits.BisectSkipCurrent),
+			Handler:           opts.Guards.OutsideFilterMode(self.withItem(self.bisectSkipCurrent)),
+			Description:       self.c.Tr.BisectSkipCurrent,
+			DescriptionFunc:   self.bisectSkipCurrentLabel,
+			GetDisabledReason: self.bisectMarkDisabledReason(midDisabled),
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Commits.BisectSkipSelected),
+			Handler:           opts.Guards.OutsideFilterMode(self.withItem(self.bisectSkipSelected)),
+			Description:       self.c.Tr.BisectSkipSelected,
+			DescriptionFunc:   self.bisectSkipSelectedLabel,
+			GetDisabledReason: self.bisectSkipSelectedDisabledReason,
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Commits.BisectReset),
+			Handler:           opts.Guards.OutsideFilterMode(self.bisectReset),
+			Description:       self.c.Tr.Bisect.ResetOption,
+			GetDisabledReason: midDisabled,
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Commits.BisectStartMarkBad),
+			Handler:           opts.Guards.OutsideFilterMode(self.withItem(self.bisectStartMarkBad)),
+			Description:       self.c.Tr.BisectStartMarkBad,
+			DescriptionFunc:   self.bisectStartMarkBadLabel,
+			GetDisabledReason: self.bisectStartMarkDisabledReason(startDisabled),
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Commits.BisectStartMarkGood),
+			Handler:           opts.Guards.OutsideFilterMode(self.withItem(self.bisectStartMarkGood)),
+			Description:       self.c.Tr.BisectStartMarkGood,
+			DescriptionFunc:   self.bisectStartMarkGoodLabel,
+			GetDisabledReason: self.bisectStartMarkDisabledReason(startDisabled),
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Commits.BisectChooseTerms),
+			Handler:           opts.Guards.OutsideFilterMode(self.bisectChooseTerms),
+			Description:       self.c.Tr.Bisect.ChooseTerms,
+			GetDisabledReason: startDisabled,
 		},
 	}
-
-	return bindings
 }
 
-func (self *BisectController) openMenu(commit *models.Commit) error {
-	// no shame in getting this directly rather than using the cached value
-	// given how cheap it is to obtain
-	info := self.c.Git().Bisect.GetInfo()
-	if info.Started() {
-		return self.openMidBisectMenu(info, commit)
+// modeReason returns AllowFurtherDispatching for mode mismatches; the
+// secondary single-item reason does NOT, so a wrong-selection produces
+// a toast rather than falling through.
+func (self *BisectController) bisectMarkDisabledReason(modeReason func() *types.DisabledReason) func() *types.DisabledReason {
+	return func() *types.DisabledReason {
+		if r := modeReason(); r != nil {
+			return r
+		}
+		info := self.c.Git().Bisect.GetInfo()
+		bisecting := info.GetCurrentHash() != ""
+		if !bisecting {
+			return self.require(self.singleItemSelected())()
+		}
+		return nil
 	}
-	return self.openStartBisectMenu(info, commit)
 }
 
-func (self *BisectController) openMidBisectMenu(info *git_commands.BisectInfo, commit *models.Commit) error {
-	// if there is not yet a 'current' bisect commit, or if we have
-	// selected the current commit, we need to jump to the next 'current' commit
-	// after we perform a bisect action. The reason we don't unconditionally jump
-	// is that sometimes the user will want to go and mark a few commits as skipped
-	// in a row and they wouldn't want to be jumped back to the current bisect
-	// commit each time.
-	// Originally we were allowing the user to, from the bisect menu, select whether
-	// they were talking about the selected commit or the current bisect commit,
-	// and that was a bit confusing (and required extra keypresses).
-	selectCurrentAfter := info.GetCurrentHash() == "" || info.GetCurrentHash() == commit.Hash()
-	// we need to wait to reselect if our bisect commits aren't ancestors of our 'start'
-	// ref, because we'll be reloading our commits in that case.
-	waitToReselect := selectCurrentAfter && !self.c.Git().Bisect.ReachableFromStart(info)
+func (self *BisectController) bisectStartMarkDisabledReason(modeReason func() *types.DisabledReason) func() *types.DisabledReason {
+	return func() *types.DisabledReason {
+		if r := modeReason(); r != nil {
+			return r
+		}
+		return self.require(self.singleItemSelected())()
+	}
+}
 
-	// If we have a current hash already, then we always want to use that one. If
-	// not, we're still picking the initial commits before we really start, so
-	// use the selected commit in that case.
+func (self *BisectController) bisectSkipSelectedDisabledReason() *types.DisabledReason {
+	if self.c.Git() == nil || !self.c.Git().Bisect.GetInfo().Started() {
+		return &types.DisabledReason{AllowFurtherDispatching: true}
+	}
+	info := self.c.Git().Bisect.GetInfo()
+	commit := self.context().GetSelected()
+	if commit == nil || info.GetCurrentHash() == "" || info.GetCurrentHash() == commit.Hash() {
+		return &types.DisabledReason{}
+	}
+	return self.require(self.singleItemSelected())()
+}
 
+func (self *BisectController) bisectMarkContext(info *git_commands.BisectInfo, commit *models.Commit) (selectCurrentAfter, waitToReselect bool, hashToMark string) {
+	// If there's no 'current' bisect commit, or the selected commit IS
+	// the current one, we need to jump to the next 'current' commit
+	// after the action.
+	selectCurrentAfter = info.GetCurrentHash() == "" || info.GetCurrentHash() == commit.Hash()
+	// Wait to reselect if our bisect commits aren't ancestors of the
+	// 'start' ref, because we'll be reloading commits in that case.
+	waitToReselect = selectCurrentAfter && !self.c.Git().Bisect.ReachableFromStart(info)
+	bisecting := info.GetCurrentHash() != ""
+	hashToMark = lo.Ternary(bisecting, info.GetCurrentHash(), commit.Hash())
+	return selectCurrentAfter, waitToReselect, hashToMark
+}
+
+func (self *BisectController) bisectMarkBad(commit *models.Commit) error {
+	info := self.c.Git().Bisect.GetInfo()
+	selectCurrentAfter, waitToReselect, hashToMark := self.bisectMarkContext(info, commit)
+	self.c.LogAction(self.c.Tr.Actions.BisectMark)
+	if err := self.c.Git().Bisect.Mark(hashToMark, info.NewTerm()); err != nil {
+		return err
+	}
+	return self.afterMark(selectCurrentAfter, waitToReselect)
+}
+
+func (self *BisectController) bisectMarkGood(commit *models.Commit) error {
+	info := self.c.Git().Bisect.GetInfo()
+	selectCurrentAfter, waitToReselect, hashToMark := self.bisectMarkContext(info, commit)
+	self.c.LogAction(self.c.Tr.Actions.BisectMark)
+	if err := self.c.Git().Bisect.Mark(hashToMark, info.OldTerm()); err != nil {
+		return err
+	}
+	return self.afterMark(selectCurrentAfter, waitToReselect)
+}
+
+func (self *BisectController) bisectSkipCurrent(commit *models.Commit) error {
+	info := self.c.Git().Bisect.GetInfo()
+	selectCurrentAfter, waitToReselect, hashToMark := self.bisectMarkContext(info, commit)
+	self.c.LogAction(self.c.Tr.Actions.BisectSkip)
+	if err := self.c.Git().Bisect.Skip(hashToMark); err != nil {
+		return err
+	}
+	return self.afterMark(selectCurrentAfter, waitToReselect)
+}
+
+func (self *BisectController) bisectSkipSelected(commit *models.Commit) error {
+	info := self.c.Git().Bisect.GetInfo()
+	selectCurrentAfter, waitToReselect, _ := self.bisectMarkContext(info, commit)
+	self.c.LogAction(self.c.Tr.Actions.BisectSkip)
+	if err := self.c.Git().Bisect.Skip(commit.Hash()); err != nil {
+		return err
+	}
+	return self.afterMark(selectCurrentAfter, waitToReselect)
+}
+
+func (self *BisectController) bisectReset() error {
+	return self.c.Helpers().Bisect.Reset()
+}
+
+func (self *BisectController) bisectStartMarkBad(commit *models.Commit) error {
+	info := self.c.Git().Bisect.GetInfo()
+	self.c.LogAction(self.c.Tr.Actions.StartBisect)
+	if err := self.c.Git().Bisect.Start(); err != nil {
+		return err
+	}
+	if err := self.c.Git().Bisect.Mark(commit.Hash(), info.NewTerm()); err != nil {
+		return err
+	}
+	self.c.Helpers().Bisect.PostBisectCommandRefresh()
+	return nil
+}
+
+func (self *BisectController) bisectStartMarkGood(commit *models.Commit) error {
+	info := self.c.Git().Bisect.GetInfo()
+	self.c.LogAction(self.c.Tr.Actions.StartBisect)
+	if err := self.c.Git().Bisect.Start(); err != nil {
+		return err
+	}
+	if err := self.c.Git().Bisect.Mark(commit.Hash(), info.OldTerm()); err != nil {
+		return err
+	}
+	self.c.Helpers().Bisect.PostBisectCommandRefresh()
+	return nil
+}
+
+func (self *BisectController) bisectChooseTerms() error {
+	self.c.Prompt(types.PromptOpts{
+		Title: self.c.Tr.Bisect.OldTermPrompt,
+		HandleConfirm: func(oldTerm string) error {
+			self.c.Prompt(types.PromptOpts{
+				Title: self.c.Tr.Bisect.NewTermPrompt,
+				HandleConfirm: func(newTerm string) error {
+					self.c.LogAction(self.c.Tr.Actions.StartBisect)
+					if err := self.c.Git().Bisect.StartWithTerms(oldTerm, newTerm); err != nil {
+						return err
+					}
+					self.c.Helpers().Bisect.PostBisectCommandRefresh()
+					return nil
+				},
+			})
+			return nil
+		},
+	})
+	return nil
+}
+
+func (self *BisectController) bisectMarkBadLabel() string {
+	if self.c.Git() == nil {
+		return self.c.Tr.BisectMarkBad
+	}
+	info := self.c.Git().Bisect.GetInfo()
+	commit := self.context().GetSelected()
+	if commit == nil {
+		return self.c.Tr.BisectMarkBad
+	}
 	bisecting := info.GetCurrentHash() != ""
 	hashToMark := lo.Ternary(bisecting, info.GetCurrentHash(), commit.Hash())
-	shortHashToMark := utils.ShortHash(hashToMark)
-
-	// For marking a commit as bad, when we're not already bisecting, we require
-	// a single item selected, but once we are bisecting, it doesn't matter because
-	// the action applies to the HEAD commit rather than the selected commit.
-	var singleItemIfNotBisecting *types.DisabledReason
-	if !bisecting {
-		singleItemIfNotBisecting = self.require(self.singleItemSelected())()
-	}
-
-	menuItems := []*types.MenuItem{
-		{
-			Label: fmt.Sprintf(self.c.Tr.Bisect.Mark, shortHashToMark, info.NewTerm()),
-			OnPress: func() error {
-				self.c.LogAction(self.c.Tr.Actions.BisectMark)
-				if err := self.c.Git().Bisect.Mark(hashToMark, info.NewTerm()); err != nil {
-					return err
-				}
-
-				return self.afterMark(selectCurrentAfter, waitToReselect)
-			},
-			DisabledReason: singleItemIfNotBisecting,
-			Key:            gocui.NewKeyRune('b'),
-		},
-		{
-			Label: fmt.Sprintf(self.c.Tr.Bisect.Mark, shortHashToMark, info.OldTerm()),
-			OnPress: func() error {
-				self.c.LogAction(self.c.Tr.Actions.BisectMark)
-				if err := self.c.Git().Bisect.Mark(hashToMark, info.OldTerm()); err != nil {
-					return err
-				}
-
-				return self.afterMark(selectCurrentAfter, waitToReselect)
-			},
-			DisabledReason: singleItemIfNotBisecting,
-			Key:            gocui.NewKeyRune('g'),
-		},
-		{
-			Label: fmt.Sprintf(self.c.Tr.Bisect.SkipCurrent, shortHashToMark),
-			OnPress: func() error {
-				self.c.LogAction(self.c.Tr.Actions.BisectSkip)
-				if err := self.c.Git().Bisect.Skip(hashToMark); err != nil {
-					return err
-				}
-
-				return self.afterMark(selectCurrentAfter, waitToReselect)
-			},
-			DisabledReason: singleItemIfNotBisecting,
-			Key:            gocui.NewKeyRune('s'),
-		},
-	}
-	if info.GetCurrentHash() != "" && info.GetCurrentHash() != commit.Hash() {
-		menuItems = append(menuItems, lo.ToPtr(types.MenuItem{
-			Label: fmt.Sprintf(self.c.Tr.Bisect.SkipSelected, commit.ShortHash()),
-			OnPress: func() error {
-				self.c.LogAction(self.c.Tr.Actions.BisectSkip)
-				if err := self.c.Git().Bisect.Skip(commit.Hash()); err != nil {
-					return err
-				}
-
-				return self.afterMark(selectCurrentAfter, waitToReselect)
-			},
-			DisabledReason: self.require(self.singleItemSelected())(),
-			Key:            gocui.NewKeyRune('S'),
-		}))
-	}
-	menuItems = append(menuItems, lo.ToPtr(types.MenuItem{
-		Label: self.c.Tr.Bisect.ResetOption,
-		OnPress: func() error {
-			return self.c.Helpers().Bisect.Reset()
-		},
-		Key: gocui.NewKeyRune('r'),
-	}))
-
-	return self.c.Menu(types.CreateMenuOptions{
-		Title: self.c.Tr.Bisect.BisectMenuTitle,
-		Items: menuItems,
-	})
+	return fmt.Sprintf(self.c.Tr.Bisect.Mark, utils.ShortHash(hashToMark), info.NewTerm())
 }
 
-func (self *BisectController) openStartBisectMenu(info *git_commands.BisectInfo, commit *models.Commit) error {
-	return self.c.Menu(types.CreateMenuOptions{
-		Title: self.c.Tr.Bisect.BisectMenuTitle,
-		Items: []*types.MenuItem{
-			{
-				Label: fmt.Sprintf(self.c.Tr.Bisect.MarkStart, commit.ShortHash(), info.NewTerm()),
-				OnPress: func() error {
-					self.c.LogAction(self.c.Tr.Actions.StartBisect)
-					if err := self.c.Git().Bisect.Start(); err != nil {
-						return err
-					}
+func (self *BisectController) bisectMarkGoodLabel() string {
+	if self.c.Git() == nil {
+		return self.c.Tr.BisectMarkGood
+	}
+	info := self.c.Git().Bisect.GetInfo()
+	commit := self.context().GetSelected()
+	if commit == nil {
+		return self.c.Tr.BisectMarkGood
+	}
+	bisecting := info.GetCurrentHash() != ""
+	hashToMark := lo.Ternary(bisecting, info.GetCurrentHash(), commit.Hash())
+	return fmt.Sprintf(self.c.Tr.Bisect.Mark, utils.ShortHash(hashToMark), info.OldTerm())
+}
 
-					if err := self.c.Git().Bisect.Mark(commit.Hash(), info.NewTerm()); err != nil {
-						return err
-					}
+func (self *BisectController) bisectSkipCurrentLabel() string {
+	if self.c.Git() == nil {
+		return self.c.Tr.BisectSkipCurrent
+	}
+	info := self.c.Git().Bisect.GetInfo()
+	commit := self.context().GetSelected()
+	if commit == nil {
+		return self.c.Tr.BisectSkipCurrent
+	}
+	bisecting := info.GetCurrentHash() != ""
+	hashToMark := lo.Ternary(bisecting, info.GetCurrentHash(), commit.Hash())
+	return fmt.Sprintf(self.c.Tr.Bisect.SkipCurrent, utils.ShortHash(hashToMark))
+}
 
-					self.c.Helpers().Bisect.PostBisectCommandRefresh()
-					return nil
-				},
-				DisabledReason: self.require(self.singleItemSelected())(),
-				Key:            gocui.NewKeyRune('b'),
-			},
-			{
-				Label: fmt.Sprintf(self.c.Tr.Bisect.MarkStart, commit.ShortHash(), info.OldTerm()),
-				OnPress: func() error {
-					self.c.LogAction(self.c.Tr.Actions.StartBisect)
-					if err := self.c.Git().Bisect.Start(); err != nil {
-						return err
-					}
+func (self *BisectController) bisectSkipSelectedLabel() string {
+	if self.c.Git() == nil {
+		return self.c.Tr.BisectSkipSelected
+	}
+	commit := self.context().GetSelected()
+	if commit == nil {
+		return self.c.Tr.BisectSkipSelected
+	}
+	return fmt.Sprintf(self.c.Tr.Bisect.SkipSelected, commit.ShortHash())
+}
 
-					if err := self.c.Git().Bisect.Mark(commit.Hash(), info.OldTerm()); err != nil {
-						return err
-					}
+func (self *BisectController) bisectStartMarkBadLabel() string {
+	if self.c.Git() == nil {
+		return self.c.Tr.BisectStartMarkBad
+	}
+	info := self.c.Git().Bisect.GetInfo()
+	commit := self.context().GetSelected()
+	if commit == nil {
+		return self.c.Tr.BisectStartMarkBad
+	}
+	return fmt.Sprintf(self.c.Tr.Bisect.MarkStart, commit.ShortHash(), info.NewTerm())
+}
 
-					self.c.Helpers().Bisect.PostBisectCommandRefresh()
-					return nil
-				},
-				DisabledReason: self.require(self.singleItemSelected())(),
-				Key:            gocui.NewKeyRune('g'),
-			},
-			{
-				Label: self.c.Tr.Bisect.ChooseTerms,
-				OnPress: func() error {
-					self.c.Prompt(types.PromptOpts{
-						Title: self.c.Tr.Bisect.OldTermPrompt,
-						HandleConfirm: func(oldTerm string) error {
-							self.c.Prompt(types.PromptOpts{
-								Title: self.c.Tr.Bisect.NewTermPrompt,
-								HandleConfirm: func(newTerm string) error {
-									self.c.LogAction(self.c.Tr.Actions.StartBisect)
-									if err := self.c.Git().Bisect.StartWithTerms(oldTerm, newTerm); err != nil {
-										return err
-									}
-
-									self.c.Helpers().Bisect.PostBisectCommandRefresh()
-									return nil
-								},
-							})
-							return nil
-						},
-					})
-					return nil
-				},
-				Key: gocui.NewKeyRune('t'),
-			},
-		},
-	})
+func (self *BisectController) bisectStartMarkGoodLabel() string {
+	if self.c.Git() == nil {
+		return self.c.Tr.BisectStartMarkGood
+	}
+	info := self.c.Git().Bisect.GetInfo()
+	commit := self.context().GetSelected()
+	if commit == nil {
+		return self.c.Tr.BisectStartMarkGood
+	}
+	return fmt.Sprintf(self.c.Tr.Bisect.MarkStart, commit.ShortHash(), info.OldTerm())
 }
 
 func (self *BisectController) showBisectCompleteMessage(candidateHashes []string) error {

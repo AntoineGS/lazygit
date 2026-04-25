@@ -9,7 +9,7 @@ var SquashMerge = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Squash merge a branch both with and without committing",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig:  func(config *config.AppConfig) {},
+	SetupConfig:  func(cfg *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		shell.NewBranch("original-branch").
 			EmptyCommit("one").
@@ -35,11 +35,11 @@ var SquashMerge = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("change-worktree-branch"),
 			).
 			SelectNextItem().
-			Press(keys.Branches.MergeIntoCurrentBranch)
+			Press(keys.ChordPrefix.LocalBranches.Merge)
 
 		t.ExpectPopup().Menu().
 			Title(Equals("Merge")).
-			Select(Contains("Squash merge and commit")).
+			Select(Contains("Squash merge (committed)")).
 			Confirm()
 
 		t.Views().Commits().TopLines(
@@ -50,11 +50,11 @@ var SquashMerge = NewIntegrationTest(NewIntegrationTestArgs{
 		t.Views().Branches().
 			Focus().
 			NavigateToLine(Contains("change-worktree-branch")).
-			Press(keys.Branches.MergeIntoCurrentBranch)
+			Press(keys.ChordPrefix.LocalBranches.Merge)
 
 		t.ExpectPopup().Menu().
 			Title(Equals("Merge")).
-			Select(Contains("Squash merge and leave uncommitted")).
+			Select(Contains("Squash merge (uncommitted)")).
 			Confirm()
 
 		t.Views().Files().Focus().Lines(

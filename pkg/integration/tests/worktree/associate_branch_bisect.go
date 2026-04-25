@@ -37,20 +37,20 @@ var AssociateBranchBisect = NewIntegrationTest(NewIntegrationTestArgs{
 		t.Views().Commits().
 			Focus().
 			SelectedLine(Contains("commit 3")).
-			Press(keys.Commits.ViewBisectOptions).
+			Press(keys.ChordPrefix.Commits.BisectOptions).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Equals("Bisect")).
+					Title(Equals("Bisect options")).
 					Select(MatchesRegexp(`Mark .* as bad`)).
 					Confirm()
 
 				t.Views().Information().Content(Contains("Bisecting"))
 			}).
 			NavigateToLine(Contains("initial commit")).
-			Press(keys.Commits.ViewBisectOptions).
+			Press(keys.ChordPrefix.Commits.BisectOptions).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Equals("Bisect")).
+					Title(Equals("Bisect options")).
 					Select(MatchesRegexp(`Mark .* as good`)).
 					Confirm()
 			})

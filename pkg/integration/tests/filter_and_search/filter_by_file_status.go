@@ -9,8 +9,7 @@ var FilterByFileStatus = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Filtering to show untracked files in repo that hides them by default",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig: func(config *config.AppConfig) {
-	},
+	SetupConfig: func(cfg *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		// need to set untracked files to not be displayed in git config
 		shell.SetConfig("status.showUntrackedFiles", "no")
@@ -33,21 +32,21 @@ var FilterByFileStatus = NewIntegrationTest(NewIntegrationTestArgs{
 				Equals("  A  file-staged-but-untracked"),
 				Equals("   M file-tracked"),
 			).
-			Press(keys.Files.OpenStatusFilter).
+			Press(keys.ChordPrefix.Files.FilterFiles).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Equals("Filtering")).
-					Select(Contains("Show only untracked files")).
+					Title(Equals("Filter files")).
+					Select(Contains("Show only untracked")).
 					Confirm()
 			}).
 			Lines(
 				Equals("?? file-untracked").IsSelected(),
 			).
-			Press(keys.Files.OpenStatusFilter).
+			Press(keys.ChordPrefix.Files.FilterFiles).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Equals("Filtering")).
-					Select(Contains("Show only tracked files")).
+					Title(Equals("Filter files")).
+					Select(Contains("Show only tracked")).
 					Confirm()
 			}).
 			Lines(
@@ -55,10 +54,10 @@ var FilterByFileStatus = NewIntegrationTest(NewIntegrationTestArgs{
 				Equals("  A  file-staged-but-untracked"),
 				Equals("   M file-tracked"),
 			).
-			Press(keys.Files.OpenStatusFilter).
+			Press(keys.ChordPrefix.Files.FilterFiles).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Equals("Filtering")).
+					Title(Equals("Filter files")).
 					Select(Contains("No filter")).
 					Confirm()
 			}).

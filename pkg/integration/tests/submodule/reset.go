@@ -79,9 +79,12 @@ var Reset = NewIntegrationTest(NewIntegrationTestArgs{
 				Equals("   M my_submodule_path (submodule)").IsSelected(),
 				Equals("  ?? other_file").IsSelected(),
 			).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.Files.DiscardChanges).
 			Tap(func() {
-				t.ExpectToast(Contains("Disabled: Multiselection not supported for submodules"))
+				// Chord popup doesn't gate on disabled-reason.
+				t.ExpectPopup().Menu().
+					Title(Equals("Discard changes")).
+					Cancel()
 			}).
 			Press(keys.Universal.ToggleRangeSelect).
 			Lines(
@@ -89,10 +92,10 @@ var Reset = NewIntegrationTest(NewIntegrationTestArgs{
 				Equals("   M my_submodule_path (submodule)").IsSelected(),
 				Equals("  ?? other_file"),
 			).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.Files.DiscardChanges).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Equals("my_submodule_path")).
+					Title(Equals("Discard changes")).
 					Select(Contains("Stash uncommitted submodule changes and update")).
 					Confirm()
 			}).

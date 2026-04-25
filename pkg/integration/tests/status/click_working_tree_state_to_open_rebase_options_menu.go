@@ -6,7 +6,7 @@ import (
 )
 
 var ClickWorkingTreeStateToOpenRebaseOptionsMenu = NewIntegrationTest(NewIntegrationTestArgs{
-	Description:  "Click on the working tree state in the status side panel to open the rebase options menu",
+	Description:  "Click on the working tree state in the status side panel to continue the rebase",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
 	SetupConfig:  func(config *config.AppConfig) {},
@@ -22,6 +22,9 @@ var ClickWorkingTreeStateToOpenRebaseOptionsMenu = NewIntegrationTest(NewIntegra
 			Content(Contains("(rebasing) repo")).
 			Click(1, 0)
 
-		t.ExpectPopup().Menu().Title(Equals("Rebase options"))
+		// After clicking the working-tree-state segment we should no
+		// longer be mid-rebase: the click handler continues the rebase
+		// to completion.
+		t.Views().Status().Content(DoesNotContain("(rebasing)"))
 	},
 })

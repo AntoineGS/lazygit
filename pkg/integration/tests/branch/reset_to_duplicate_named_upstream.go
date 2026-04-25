@@ -9,7 +9,7 @@ var ResetToDuplicateNamedUpstream = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Hard reset the current branch to an upstream branch when there is a competing tag name",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig:  func(config *config.AppConfig) {},
+	SetupConfig: func(cfg *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		shell.
 			CloneIntoRemote("origin").
@@ -31,9 +31,10 @@ var ResetToDuplicateNamedUpstream = NewIntegrationTest(NewIntegrationTestArgs{
 			PressEnter()
 		t.Views().RemoteBranches().IsFocused().
 			Lines(Contains("foo")).
-			Press(keys.Commits.ViewResetOptions)
+			Press(keys.ChordPrefix.RemoteBranches.ResetToRef)
+
 		t.ExpectPopup().Menu().
-			Title(Contains("Reset to origin/foo")).
+			Title(Equals("Reset to ref")).
 			Select(Contains("Hard reset")).
 			Confirm()
 
@@ -43,9 +44,10 @@ var ResetToDuplicateNamedUpstream = NewIntegrationTest(NewIntegrationTestArgs{
 
 		t.Views().Tags().Focus().
 			Lines(Contains("origin/foo")).
-			Press(keys.Commits.ViewResetOptions)
+			Press(keys.ChordPrefix.Tags.ResetToRef)
+
 		t.ExpectPopup().Menu().
-			Title(Contains("Reset to origin/foo")).
+			Title(Equals("Reset to ref")).
 			Select(Contains("Hard reset")).
 			Confirm()
 

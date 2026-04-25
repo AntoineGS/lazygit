@@ -9,8 +9,7 @@ var DiscardUnstagedFileChanges = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Discarding unstaged changes in a file",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig: func(config *config.AppConfig) {
-	},
+	SetupConfig: func(cfg *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		shell.CreateFileAndAdd("file-one", "original content\n")
 
@@ -31,7 +30,7 @@ var DiscardUnstagedFileChanges = NewIntegrationTest(NewIntegrationTestArgs{
 				Equals("  AM file-two"),
 			).
 			SelectNextItem().
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.Files.DiscardChanges).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Discard changes")).
@@ -49,7 +48,7 @@ var DiscardUnstagedFileChanges = NewIntegrationTest(NewIntegrationTestArgs{
 				Equals("  M  file-one"),
 				Equals("  AM file-two").IsSelected(),
 			).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.Files.DiscardChanges).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Discard changes")).

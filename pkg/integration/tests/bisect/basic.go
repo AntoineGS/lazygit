@@ -20,16 +20,16 @@ var Basic = NewIntegrationTest(NewIntegrationTestArgs{
 	Run: func(t *TestDriver, keys config.KeybindingConfig) {
 		markCommitAsBad := func() {
 			t.Views().Commits().
-				Press(keys.Commits.ViewBisectOptions)
+				Press(keys.ChordPrefix.Commits.BisectOptions)
 
-			t.ExpectPopup().Menu().Title(Equals("Bisect")).Select(MatchesRegexp(`Mark .* as bad`)).Confirm()
+			t.ExpectPopup().Menu().Title(Equals("Bisect options")).Select(MatchesRegexp(`Mark .* as bad`)).Confirm()
 		}
 
 		markCommitAsGood := func() {
 			t.Views().Commits().
-				Press(keys.Commits.ViewBisectOptions)
+				Press(keys.ChordPrefix.Commits.BisectOptions)
 
-			t.ExpectPopup().Menu().Title(Equals("Bisect")).Select(MatchesRegexp(`Mark .* as good`)).Confirm()
+			t.ExpectPopup().Menu().Title(Equals("Bisect options")).Select(MatchesRegexp(`Mark .* as good`)).Confirm()
 		}
 
 		t.Views().Commits().

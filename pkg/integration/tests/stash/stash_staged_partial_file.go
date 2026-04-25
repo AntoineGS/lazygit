@@ -33,9 +33,12 @@ var StashStagedPartialFile = NewIntegrationTest(NewIntegrationTestArgs{
 
 		t.Views().Files().
 			IsFocused().
-			Press(keys.Files.ViewStashOptions)
+			Press(keys.ChordPrefix.Files.StashOptions)
 
-		t.ExpectPopup().Menu().Title(Equals("Stash options")).Select(MatchesRegexp("Stash staged changes$")).Confirm()
+		t.ExpectPopup().Menu().
+			Title(Equals("Stash options")).
+			Select(Contains("Stash staged changes")).
+			Confirm()
 
 		t.ExpectPopup().Prompt().Title(Equals("Stash changes")).Type("my stashed file").Confirm()
 

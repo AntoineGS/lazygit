@@ -139,8 +139,9 @@ type Gui struct {
 
 	Updating bool
 
-	c       *helpers.HelperCommon
-	helpers *helpers.Helpers
+	c             *helpers.HelperCommon
+	helpers       *helpers.Helpers
+	optionsMapMgr *OptionsMapMgr
 
 	previousLanguageConfig string
 
@@ -255,6 +256,9 @@ type GuiRepoState struct {
 	CurrentPopupOpts *types.CreatePopupPanelOpts
 
 	LastBackgroundFetchTime time.Time
+
+	// Mirrors gocui's chord state so the options footer can render it.
+	PendingChord []gocui.Key
 }
 
 var _ types.IRepoStateAccessor = new(GuiRepoState)
@@ -305,6 +309,10 @@ func (self *GuiRepoState) SetSplitMainPanel(value bool) {
 
 func (self *GuiRepoState) GetSplitMainPanel() bool {
 	return self.SplitMainPanel
+}
+
+func (self *GuiRepoState) GetPendingChord() []gocui.Key {
+	return self.PendingChord
 }
 
 func (gui *Gui) onSwitchToNewRepo(startArgs appTypes.StartArgs, contextKey types.ContextKey) error {
@@ -918,6 +926,22 @@ func (gui *Gui) Run(startArgs appTypes.StartArgs) error {
 	deadlock.Opts.Disable = !gui.Debug || os.Getenv(components.WAIT_FOR_DEBUGGER_ENV_VAR) != ""
 
 	gui.g.OnSearchEscape = func() error { gui.helpers.Search.Cancel(); return nil }
+
+	gui.optionsMapMgr = &OptionsMapMgr{c: gui.c}
+	gui.g.SetChordStateCallback(func(prefix []gocui.Key) {
+		if gui.State != nil {
+			// Defensive copy: gocui passes its internal slice.
+			gui.State.PendingChord = append([]gocui.Key(nil), prefix...)
+		}
+		gui.helpers.ChordMenu.OnChordStateChange(prefix)
+		gui.onUIThread(func() error { return nil })
+	})
+	gui.g.SetAllowChordStartsCallback(func(*gocui.View) bool {
+		popupKeys := lo.Map(gui.c.Context().CurrentPopup(), func(ctx types.Context, _ int) types.ContextKey {
+			return ctx.GetKey()
+		})
+		return chordStartsEnabled(popupKeys, gui.helpers.ChordMenu.IsOpen())
+	})
 
 	gui.g.SetManager(gocui.ManagerFunc(gui.layout))
 

@@ -58,31 +58,28 @@ var DeleteMultiple = NewIntegrationTest(NewIntegrationTestArgs{
 			).
 			Press(keys.Universal.RangeSelectDown).
 
-			// Deleting a range that includes the current branch is not possible
-			Press(keys.Universal.Remove).
+			// Disabled: range includes the current branch.
+			Press(keys.ChordPrefix.LocalBranches.DeleteBranch).
 			Tap(func() {
 				t.ExpectPopup().
 					Menu().
-					Tooltip(Contains("You cannot delete the checked out branch!")).
-					Title(Equals("Delete selected branches?")).
-					Select(Contains("Delete local branches")).
-					Confirm().
-					Tap(func() {
-						t.ExpectToast(Contains("You cannot delete the checked out branch!"))
-					}).
-					Cancel()
+					Title(Equals("Delete branch")).
+					Select(Contains("Delete local branch")).
+					Confirm()
+				t.ExpectToast(Contains("You cannot delete the checked out branch"))
+				t.Views().Menu().PressEscape()
 			}).
 
 			// Delete branch-03 and branch-04. 04 is not fully merged, so we get
 			// a confirmation popup.
 			NavigateToLine(Contains("branch-03")).
 			Press(keys.Universal.RangeSelectDown).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.LocalBranches.DeleteBranch).
 			Tap(func() {
 				t.ExpectPopup().
 					Menu().
-					Title(Equals("Delete selected branches?")).
-					Select(Contains("Delete local branches")).
+					Title(Equals("Delete branch")).
+					Select(Contains("Delete local branch")).
 					Confirm()
 				t.ExpectPopup().
 					Confirmation().
@@ -102,15 +99,13 @@ var DeleteMultiple = NewIntegrationTest(NewIntegrationTestArgs{
 			// Delete remote branches of branch-05 and branch-06. They are on different remotes.
 			NavigateToLine(Contains("branch-05")).
 			Press(keys.Universal.RangeSelectDown).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.LocalBranches.DeleteBranch).
 			Tap(func() {
 				t.ExpectPopup().
 					Menu().
-					Title(Equals("Delete selected branches?")).
-					Select(Contains("Delete remote branches")).
+					Title(Equals("Delete branch")).
+					Select(Contains("Delete remote branch")).
 					Confirm()
-			}).
-			Tap(func() {
 				t.ExpectPopup().
 					Confirmation().
 					Title(Equals("Delete selected branches?")).
@@ -136,31 +131,29 @@ var DeleteMultiple = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("master"),
 			).
 
-			// Try to delete both local and remote branches of branch-02 and
-			// branch-05; not possible because branch-05's upstream is gone
-			Press(keys.Universal.Remove).
+			// Try to delete local+remote of branch-02 and branch-05.
+			// branch-05's upstream is gone, so the binding is disabled.
+			Press(keys.ChordPrefix.LocalBranches.DeleteBranch).
 			Tap(func() {
 				t.ExpectPopup().
 					Menu().
-					Title(Equals("Delete selected branches?")).
-					Select(Contains("Delete local and remote branches")).
-					Confirm().
-					Tap(func() {
-						t.ExpectToast(Contains("Some of the selected branches have no upstream (or the upstream is not stored locally)"))
-					}).
-					Cancel()
+					Title(Equals("Delete branch")).
+					Select(Contains("Delete local and remote branch")).
+					Confirm()
+				t.ExpectToast(Contains("Some of the selected branches have no upstream"))
+				t.Views().Menu().PressEscape()
 			}).
 
 			// Delete both local and remote branches of branch-01 and branch-02. We get
 			// the force-delete warning because branch-01 it is not fully merged.
 			NavigateToLine(Contains("branch-01")).
 			Press(keys.Universal.RangeSelectDown).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.LocalBranches.DeleteBranch).
 			Tap(func() {
 				t.ExpectPopup().
 					Menu().
-					Title(Equals("Delete selected branches?")).
-					Select(Contains("Delete local and remote branches")).
+					Title(Equals("Delete branch")).
+					Select(Contains("Delete local and remote branch")).
 					Confirm()
 				t.ExpectPopup().
 					Confirmation().

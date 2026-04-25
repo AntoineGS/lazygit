@@ -665,7 +665,9 @@ keybinding:
     scrollUpMain-alt2: <ctrl+u>
     scrollDownMain-alt2: <ctrl+d>
     executeShellCommand: ':'
-    createRebaseOptionsMenu: m
+    rebaseContinue: mc
+    rebaseAbort: ma
+    rebaseSkip: ms
 
     # 'Files' appended for legacy reasons
     pushFiles: P
@@ -705,18 +707,38 @@ keybinding:
     amendLastCommit: A
     commitChangesWithEditor: C
     findBaseCommitForFixup: <ctrl+f>
+    discardAllChanges: dc
+    discardUnstagedFile: du
+    nukeWorkingTree: Dx
+    discardUnstagedChanges: Du
+    discardUntrackedFiles: Dc
+    discardStagedChanges: DS
+    softReset: Ds
+    mixedReset: Dm
+    hardReset: Dh
     confirmDiscard: x
-    ignoreFile: i
+    ignore: ii
+    exclude: ie
     refreshFiles: r
+    stashAllChangesKeepIndex: Si
+    stashIncludeUntrackedChanges: SU
+    stashStagedChanges: Ss
+    stashUnstagedChanges: Su
     stashAllChanges: s
-    viewStashOptions: S
     toggleStagedAll: a
-    viewResetOptions: D
     fetch: f
     toggleTreeView: '`'
     openMergeOptions: M
-    openStatusFilter: <ctrl+b>
-    copyFileInfoToClipboard: "y"
+    filterStaged: <ctrl+b>s
+    filterUnstaged: <ctrl+b>u
+    filterTracked: <ctrl+b>t
+    filterUntracked: <ctrl+b>T
+    noFilter: <ctrl+b>r
+    copyFileName: yn
+    copyRelativeFilePath: yp
+    copyAbsoluteFilePath: yP
+    copyFileDiff: ys
+    copyAllFilesDiff: ya
     collapseAll: '-'
     expandAll: =
   branches:
@@ -727,15 +749,40 @@ keybinding:
     checkoutBranchByName: c
     forceCheckoutBranch: F
     checkoutPreviousBranch: '-'
-    rebaseBranch: r
-    renameBranch: R
-    mergeIntoCurrentBranch: M
-    moveCommitsToNewBranch: "N"
-    viewGitFlowOptions: i
+    rebaseBranchSimple: rs
+    rebaseBranchInteractive: ri
+    rebaseBranchOntoBase: rb
+    mergeRegular: Mm
+    mergeNonFFwd: Mn
+    mergeFastForward: Mf
+    mergeSquash: Ms
+    mergeSquashCommitted: MS
     fastForward: f
+    deleteLocalBranch: dc
+    deleteRemoteBranch: dr
+    deleteLocalAndRemoteBranch: db
+    deleteLocalTag: dc
+    deleteRemoteTag: dr
+    deleteLocalAndRemoteTag: db
     createTag: T
     pushTag: P
-    setUpstream: u
+    gitFlowFinish: iF
+    gitFlowStartFeature: if
+    gitFlowStartHotfix: ih
+    gitFlowStartBugfix: ib
+    gitFlowStartRelease: ir
+    viewDivergenceFromUpstream: ud
+    viewDivergenceFromBase: uD
+    setUpstream: us
+    unsetUpstream: uu
+    resetUpstreamMixed: ugm
+    resetUpstreamSoft: ugs
+    resetUpstreamHard: ugh
+    rebaseUpstreamSimple: urs
+    rebaseUpstreamInteractive: uri
+    rebaseUpstreamOntoBase: urb
+    renameBranch: R
+    moveCommitsToNewBranch: "N"
     fetchRemote: f
     addForkRemote: F
     sortOrder: s
@@ -745,8 +792,11 @@ keybinding:
     squashDown: s
     renameCommit: r
     renameCommitWithEditor: R
-    viewResetOptions: g
-    markCommitAsFixup: f
+    mixedResetToRef: gm
+    softResetToRef: gs
+    hardResetToRef: gh
+    markCommitAsFixup: ff
+    fixupCommitKeepMessage: fc
     setFixupMessage: c
     createFixupCommit: F
     squashAboveCommits: S
@@ -766,7 +816,14 @@ keybinding:
     openLogMenu: <ctrl+l>
     openInBrowser: o
     openPullRequestInBrowser: G
-    viewBisectOptions: b
+    bisectMarkBad: bb
+    bisectMarkGood: bg
+    bisectSkipCurrent: bs
+    bisectSkipSelected: bS
+    bisectReset: br
+    bisectStartMarkBad: bb
+    bisectStartMarkGood: bg
+    bisectChooseTerms: bt
     startInteractiveRebase: i
     selectCommitsOfCurrentBranch: '*'
   amendAttribute:
@@ -778,6 +835,7 @@ keybinding:
     renameStash: r
   commitFiles:
     checkoutCommitFile: c
+    copyFileContent: yc
   main:
     toggleSelectHunk: a
     pickBothHunks: b
@@ -785,9 +843,26 @@ keybinding:
   submodules:
     init: i
     update: u
-    bulkMenu: b
+    bulkInit: bi
+    bulkUpdate: bu
+    bulkUpdateRecursive: br
+    bulkDeinit: bd
   commitMessage:
     commitMenu: <ctrl+o>
+
+# Keybinding groups, nested by context name.
+# Outer key is a context name (e.g. "files", "branches", "localBranches",
+# "global"); inner key is the chord-prefix label (e.g. "i", "<ctrl+b>").
+# Lookup at popup-open time first checks the originating view's context,
+# then falls back to "global".
+#
+# Legacy flat configs (a single map keyed by chord-prefix label) are
+# migrated under the "global" outer key by UnmarshalYAML.
+keybindingGroups: {}
+
+# Delay in milliseconds before the chord-continuation popup appears.
+# 0 = instant; negative = popup disabled.
+chordPopupDelayMs: 0
 ```
 <!-- END CONFIG YAML -->
 

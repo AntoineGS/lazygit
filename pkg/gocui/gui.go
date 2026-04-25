@@ -191,6 +191,14 @@ type Gui struct {
 	taskManager *TaskManager
 
 	lastHoverView *View
+
+	pendingChord       []Key
+	pendingChordView   string
+	onChordStateChange func([]Key)
+	// allowChordStarts gates whether a new chord may start from the
+	// currently focused view. It only applies to the initial keypress;
+	// existing pending chords are not affected.
+	allowChordStarts func(*View) bool
 }
 
 type NewGuiOpts struct {
@@ -555,6 +563,65 @@ func (g *Gui) SetKeybinding(viewname string, key Key, mod Modifier, handler func
 	return nil
 }
 
+// SetKeybindingKeys creates a chord keybinding. Sequence must contain at
+// least two keys; otherwise it returns an error.
+func (g *Gui) SetKeybindingKeys(viewname string, keys []Key, handler func(*Gui, *View) error) error {
+	if len(keys) < 2 {
+		return errors.New("SetKeybindingKeys requires a sequence of length >= 2")
+	}
+	kb := newChordKeybinding(viewname, keys, handler)
+	g.keybindings = append(g.keybindings, kb)
+	return nil
+}
+
+// ClearPendingChord always fires the state-change callback (if any), so
+// observers can converge on the cleared state regardless of whether a
+// prefix was actually pending.
+func (g *Gui) ClearPendingChord() {
+	g.pendingChord = nil
+	g.pendingChordView = ""
+	if g.onChordStateChange != nil {
+		g.onChordStateChange(nil)
+	}
+}
+
+func (g *Gui) SetChordStateCallback(cb func([]Key)) {
+	g.onChordStateChange = cb
+}
+
+func (g *Gui) SetAllowChordStartsCallback(cb func(*View) bool) {
+	g.allowChordStarts = cb
+}
+
+func (g *Gui) PendingChord() []Key {
+	if len(g.pendingChord) == 0 {
+		return nil
+	}
+	out := make([]Key, len(g.pendingChord))
+	copy(out, g.pendingChord)
+	return out
+}
+
+func (g *Gui) PendingChordView() string {
+	return g.pendingChordView
+}
+
+// SetPendingChord overwrites the chord state without firing an
+// intermediate clear callback. Empty prefix routes through
+// ClearPendingChord so observers never see "empty prefix but non-empty
+// view name".
+func (g *Gui) SetPendingChord(prefix []Key, viewName string) {
+	if len(prefix) == 0 {
+		g.ClearPendingChord()
+		return
+	}
+	g.pendingChord = append([]Key(nil), prefix...)
+	g.pendingChordView = viewName
+	if g.onChordStateChange != nil {
+		g.onChordStateChange(g.pendingChord)
+	}
+}
+
 // DeleteKeybinding deletes a keybinding.
 func (g *Gui) DeleteKeybinding(viewname string, key Key, mod Modifier) error {
 	for i, kb := range g.keybindings {
@@ -819,6 +886,11 @@ func (g *Gui) handleEvent(ev *GocuiEvent) error {
 	case eventFocus:
 		return g.onFocus(ev)
 	case eventPaste:
+		// Drop any pending chord on paste START so pasted bytes don't get
+		// fed to the chord dispatcher.
+		if ev.Start && len(g.pendingChord) > 0 {
+			g.ClearPendingChord()
+		}
 		g.IsPasting = ev.Start
 		return nil
 	default:
@@ -1501,6 +1573,86 @@ func (g *Gui) execKeybindings(v *View, ev *GocuiEvent) error {
 		}
 	}
 
+	// Chord dispatch runs AFTER the IsPasting bypass and the search-active
+	// block, and BEFORE single-key dispatch — chord wins for any key that
+	// isn't search-reserved.
+	if len(g.pendingChord) > 0 {
+		if ev.Key.KeyName() == KeyName(tcell.KeyEscape) {
+			g.ClearPendingChord()
+			return nil
+		}
+
+		candidate := append([]Key(nil), g.pendingChord...)
+		candidate = append(candidate, ev.Key)
+
+		chordView := g.pendingChordView
+		startView := g.viewByName(chordView)
+		// Exact-match dispatch is single-shot: handlers may mutate chord
+		// state (e.g. SetPendingChord from a group-extension handler),
+		// and fall-through would dispatch against the mutated state.
+		for _, kb := range g.keybindings {
+			if !kb.isChord() {
+				continue
+			}
+			if !chordViewMatches(chordView, kb.viewName) {
+				continue
+			}
+			if !keysEqual(kb.keys, candidate) {
+				continue
+			}
+			g.ClearPendingChord()
+			if startView == nil {
+				// View destroyed mid-chord; silent-cancel rather than
+				// fire a handler against an arbitrary current view.
+				return nil
+			}
+			return g.execKeybinding(startView, kb)
+		}
+
+		for _, kb := range g.keybindings {
+			if !kb.isChord() {
+				continue
+			}
+			if !chordViewMatches(g.pendingChordView, kb.viewName) {
+				continue
+			}
+			if keysHasPrefix(kb.keys, candidate) {
+				g.pendingChord = candidate
+				if g.onChordStateChange != nil {
+					g.onChordStateChange(g.pendingChord)
+				}
+				return nil
+			}
+		}
+
+		g.ClearPendingChord()
+		return nil
+	}
+
+	if g.allowChordStarts == nil || g.allowChordStarts(v) {
+		for _, kb := range g.keybindings {
+			if !kb.isChord() {
+				continue
+			}
+			if !kb.keys[0].Equals(ev.Key) {
+				continue
+			}
+			currentViewName := ""
+			if v != nil {
+				currentViewName = v.Name()
+			}
+			if !chordViewMatches(currentViewName, kb.viewName) {
+				continue
+			}
+			g.pendingChord = []Key{ev.Key}
+			g.pendingChordView = currentViewName
+			if g.onChordStateChange != nil {
+				g.onChordStateChange(g.pendingChord)
+			}
+			return nil
+		}
+	}
+
 	var err error
 
 	for _, kb := range g.keybindings {
@@ -1635,4 +1787,48 @@ func (g *Gui) SetEditKeybindings(moveWordLeft, moveWordRight, backspaceWord, for
 	moveWordRightKeybinding = moveWordRight
 	backspaceWordKeybinding = backspaceWord
 	forwardDeleteWordKeybinding = forwardDeleteWord
+}
+
+// Empty bindingView means "global" and matches any chord-start view.
+func chordViewMatches(chordView string, bindingView string) bool {
+	if bindingView == "" {
+		return true
+	}
+	return bindingView == chordView
+}
+
+func keysEqual(a, b []Key) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !a[i].Equals(b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func keysHasPrefix(seq, prefix []Key) bool {
+	if len(prefix) > len(seq) {
+		return false
+	}
+	for i := range prefix {
+		if !seq[i].Equals(prefix[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+func (g *Gui) viewByName(name string) *View {
+	if name == "" {
+		return g.currentView
+	}
+	for _, v := range g.views {
+		if v.Name() == name {
+			return v
+		}
+	}
+	return nil
 }

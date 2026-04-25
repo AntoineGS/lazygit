@@ -9,7 +9,7 @@ var DiscardUnstagedRangeSelect = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Discard unstaged changed in a range of files using range select",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig: func(config *config.AppConfig) {
+	SetupConfig: func(cfg *config.AppConfig) {
 	},
 	SetupRepo: func(shell *Shell) {
 		shell.CreateFileAndAdd("dir2/file-d", "old content")
@@ -51,11 +51,11 @@ var DiscardUnstagedRangeSelect = NewIntegrationTest(NewIntegrationTestArgs{
 				Equals("  ?? file-f"),
 			).
 			// Discard
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.Files.DiscardChanges).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Discard changes")).
-					Select(Contains("Discard unstaged changes")).
+					Select(Contains("Discard unstaged")).
 					Confirm()
 			}).
 			// file-b is gone because it was selected and contained no staged changes.

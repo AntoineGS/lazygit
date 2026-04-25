@@ -80,7 +80,13 @@ var Rebase = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("initial commit"),
 			).
 			SelectPreviousItem().
-			Press(keys.Commits.MarkCommitAsFixup).
+			Press(keys.ChordPrefix.Commits.FixupCommitOptions).
+			Tap(func() {
+				t.ExpectPopup().Menu().
+					Title(Equals("Fixup commit options")).
+					Select(Contains("Fixup").DoesNotContain("message")).
+					Confirm()
+			}).
 			Lines(
 				Contains("--- Pending rebase todos ---"),
 				MatchesRegexp("fixup.*commit to fixup").IsSelected(),

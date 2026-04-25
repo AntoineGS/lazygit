@@ -57,29 +57,27 @@ var Delete = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("branch-one ↑1"),
 			).
 
-			// Deleting the current branch is not possible
-			Press(keys.Universal.Remove).
+			// Disabled: can't delete the current branch.
+			Press(keys.ChordPrefix.LocalBranches.DeleteBranch).
 			Tap(func() {
 				t.ExpectPopup().
 					Menu().
-					Tooltip(Contains("You cannot delete the checked out branch!")).
-					Title(Equals("Delete branch 'current-head'?")).
+					Title(Equals("Delete branch")).
 					Select(Contains("Delete local branch")).
-					Confirm().
-					Tap(func() {
-						t.ExpectToast(Contains("You cannot delete the checked out branch!"))
-					}).
-					Cancel()
+					Confirm()
+
+				t.ExpectToast(Contains("You cannot delete the checked out branch"))
+				t.Views().Menu().PressEscape()
 			}).
 
 			// Delete branch-four. This is the only branch that is not fully merged, so we get
 			// a confirmation popup.
 			NavigateToLine(Contains("branch-four")).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.LocalBranches.DeleteBranch).
 			Tap(func() {
 				t.ExpectPopup().
 					Menu().
-					Title(Equals("Delete branch 'branch-four'?")).
+					Title(Equals("Delete branch")).
 					Select(Contains("Delete local branch")).
 					Confirm()
 				t.ExpectPopup().
@@ -100,11 +98,11 @@ var Delete = NewIntegrationTest(NewIntegrationTestArgs{
 
 			// Delete branch-three. This branch is contained in the current head, so this just works
 			// without any confirmation.
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.LocalBranches.DeleteBranch).
 			Tap(func() {
 				t.ExpectPopup().
 					Menu().
-					Title(Equals("Delete branch 'branch-three'?")).
+					Title(Equals("Delete branch")).
 					Select(Contains("Delete local branch")).
 					Confirm()
 			}).
@@ -119,11 +117,11 @@ var Delete = NewIntegrationTest(NewIntegrationTestArgs{
 
 			// Delete branch-two. This branch is contained in its own upstream, so this just works
 			// without any confirmation.
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.LocalBranches.DeleteBranch).
 			Tap(func() {
 				t.ExpectPopup().
 					Menu().
-					Title(Equals("Delete branch 'branch-two'?")).
+					Title(Equals("Delete branch")).
 					Select(Contains("Delete local branch")).
 					Confirm()
 			}).
@@ -137,15 +135,13 @@ var Delete = NewIntegrationTest(NewIntegrationTestArgs{
 
 			// Delete remote branch of branch-one. We only get the normal remote branch confirmation for this one.
 			SelectNextItem().
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.LocalBranches.DeleteBranch).
 			Tap(func() {
 				t.ExpectPopup().
 					Menu().
-					Title(Equals("Delete branch 'branch-one'?")).
+					Title(Equals("Delete branch")).
 					Select(Contains("Delete remote branch")).
 					Confirm()
-			}).
-			Tap(func() {
 				t.ExpectPopup().
 					Confirmation().
 					Title(Equals("Delete branch 'branch-one'?")).
@@ -170,11 +166,11 @@ var Delete = NewIntegrationTest(NewIntegrationTestArgs{
 
 			// Delete local branch of branch-one. Even though its upstream is gone, we don't get a confirmation
 			// because it is contained in master.
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.LocalBranches.DeleteBranch).
 			Tap(func() {
 				t.ExpectPopup().
 					Menu().
-					Title(Equals("Delete branch 'branch-one'?")).
+					Title(Equals("Delete branch")).
 					Select(Contains("Delete local branch")).
 					Confirm()
 			}).
@@ -187,11 +183,11 @@ var Delete = NewIntegrationTest(NewIntegrationTestArgs{
 
 			// Delete both local and remote branch of branch-six. We get the force-delete warning because it is not fully merged.
 			NavigateToLine(Contains("branch-six")).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.LocalBranches.DeleteBranch).
 			Tap(func() {
 				t.ExpectPopup().
 					Menu().
-					Title(Equals("Delete branch 'branch-six'?")).
+					Title(Equals("Delete branch")).
 					Select(Contains("Delete local and remote branch")).
 					Confirm()
 				t.ExpectPopup().
@@ -207,13 +203,13 @@ var Delete = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("master"),
 			).
 
-			// Delete both local and remote branch of branch-five. We get the same popups, but the confirmation
+			// Delete both local and remote branch of branch-five. We get the same popup, but the confirmation
 			// doesn't contain the force-delete warning.
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.LocalBranches.DeleteBranch).
 			Tap(func() {
 				t.ExpectPopup().
 					Menu().
-					Title(Equals("Delete branch 'branch-five'?")).
+					Title(Equals("Delete branch")).
 					Select(Contains("Delete local and remote branch")).
 					Confirm()
 				t.ExpectPopup().

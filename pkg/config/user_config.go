@@ -1,9 +1,11 @@
 package config
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/karimkhaleel/jsonschema"
+	"gopkg.in/yaml.v3"
 )
 
 type UserConfig struct {
@@ -38,6 +40,16 @@ type UserConfig struct {
 	PromptToReturnFromSubprocess bool `yaml:"promptToReturnFromSubprocess"`
 	// Keybindings
 	Keybinding KeybindingConfig `yaml:"keybinding"`
+	// Keybinding groups, nested by context name. Outer key is a context
+	// name (e.g. "files", "global"); inner key is the chord-prefix label
+	// (e.g. "i", "<ctrl+b>"). Lookup at popup-open time checks the
+	// originating view's context first, then falls back to "global".
+	// Legacy flat configs (a single map keyed by chord-prefix label) are
+	// migrated under "global" by UnmarshalYAML.
+	KeybindingGroups map[string]map[string]KeybindingGroupConfig `yaml:"keybindingGroups,omitempty"`
+	// Delay in milliseconds before the chord-continuation popup appears.
+	// 0 = instant; negative = popup disabled.
+	ChordPopupDelayMs int `yaml:"chordPopupDelayMs" jsonschema:"default=0"`
 }
 
 type RefresherConfig struct {
@@ -418,6 +430,26 @@ type KeybindingConfig struct {
 	Main           KeybindingMainConfig           `yaml:"main"`
 	Submodules     KeybindingSubmodulesConfig     `yaml:"submodules"`
 	CommitMessage  KeybindingCommitMessageConfig  `yaml:"commitMessage"`
+	// ChordPrefix is a derived view over KeybindingGroups, populated by
+	// ResolveChordPrefixes after the YAML is loaded. Not part of the
+	// schema.
+	ChordPrefix ChordPrefixConfig `yaml:"-"`
+}
+
+type KeybindingGroupConfig struct {
+	// Short label shown in the chord-continuation popup row.
+	Name string `yaml:"name"`
+	// Overrides the cheatsheet row description for the synthetic group
+	// header. Falls back to a built-in translated string, then to Name.
+	Description string `yaml:"description,omitempty"`
+	// Overrides the cheatsheet row tooltip for the synthetic group
+	// header. Falls back to a built-in translated string, then empty.
+	Tooltip string `yaml:"tooltip,omitempty"`
+	// If true, surfaces the chord prefix in the bottom-of-screen options
+	// bar.
+	DisplayOnScreen bool `yaml:"displayOnScreen,omitempty"`
+	// Overrides Name for the bottom options bar only. Falls back to Name.
+	ShortName string `yaml:"shortName,omitempty"`
 }
 
 // damn looks like we have some inconsistencies here with -alt and -alt1
@@ -478,7 +510,9 @@ type KeybindingUniversalConfig struct {
 	ScrollUpMainAlt2                  string   `yaml:"scrollUpMain-alt2"`
 	ScrollDownMainAlt2                string   `yaml:"scrollDownMain-alt2"`
 	ExecuteShellCommand               string   `yaml:"executeShellCommand"`
-	CreateRebaseOptionsMenu           string   `yaml:"createRebaseOptionsMenu"`
+	RebaseContinue                    string   `yaml:"rebaseContinue"`
+	RebaseAbort                       string   `yaml:"rebaseAbort"`
+	RebaseSkip                        string   `yaml:"rebaseSkip"`
 	Push                              string   `yaml:"pushFiles"` // 'Files' appended for legacy reasons
 	Pull                              string   `yaml:"pullFiles"` // 'Files' appended for legacy reasons
 	Refresh                           string   `yaml:"refresh"`
@@ -518,20 +552,48 @@ type KeybindingFilesConfig struct {
 	AmendLastCommit          string `yaml:"amendLastCommit"`
 	CommitChangesWithEditor  string `yaml:"commitChangesWithEditor"`
 	FindBaseCommitForFixup   string `yaml:"findBaseCommitForFixup"`
-	ConfirmDiscard           string `yaml:"confirmDiscard"`
-	IgnoreFile               string `yaml:"ignoreFile"`
-	RefreshFiles             string `yaml:"refreshFiles"`
-	StashAllChanges          string `yaml:"stashAllChanges"`
-	ViewStashOptions         string `yaml:"viewStashOptions"`
-	ToggleStagedAll          string `yaml:"toggleStagedAll"`
-	ViewResetOptions         string `yaml:"viewResetOptions"`
-	Fetch                    string `yaml:"fetch"`
-	ToggleTreeView           string `yaml:"toggleTreeView"`
-	OpenMergeOptions         string `yaml:"openMergeOptions"`
-	OpenStatusFilter         string `yaml:"openStatusFilter"`
-	CopyFileInfoToClipboard  string `yaml:"copyFileInfoToClipboard"`
-	CollapseAll              string `yaml:"collapseAll"`
-	ExpandAll                string `yaml:"expandAll"`
+
+	DiscardAllChanges      string `yaml:"discardAllChanges"`
+	DiscardUnstagedFile    string `yaml:"discardUnstagedFile"`
+	NukeWorkingTree        string `yaml:"nukeWorkingTree"`
+	DiscardUnstagedChanges string `yaml:"discardUnstagedChanges"`
+	DiscardUntrackedFiles  string `yaml:"discardUntrackedFiles"`
+	DiscardStagedChanges   string `yaml:"discardStagedChanges"`
+	SoftReset              string `yaml:"softReset"`
+	MixedReset             string `yaml:"mixedReset"`
+	HardReset              string `yaml:"hardReset"`
+	ConfirmDiscard         string `yaml:"confirmDiscard"`
+
+	Ignore  string `yaml:"ignore"`
+	Exclude string `yaml:"exclude"`
+
+	RefreshFiles string `yaml:"refreshFiles"`
+
+	StashAllChangesKeepIndex     string `yaml:"stashAllChangesKeepIndex"`
+	StashIncludeUntrackedChanges string `yaml:"stashIncludeUntrackedChanges"`
+	StashStagedChanges           string `yaml:"stashStagedChanges"`
+	StashUnstagedChanges         string `yaml:"stashUnstagedChanges"`
+	StashAllChanges              string `yaml:"stashAllChanges"`
+
+	ToggleStagedAll  string `yaml:"toggleStagedAll"`
+	Fetch            string `yaml:"fetch"`
+	ToggleTreeView   string `yaml:"toggleTreeView"`
+	OpenMergeOptions string `yaml:"openMergeOptions"`
+
+	FilterStaged    string `yaml:"filterStaged"`
+	FilterUnstaged  string `yaml:"filterUnstaged"`
+	FilterTracked   string `yaml:"filterTracked"`
+	FilterUntracked string `yaml:"filterUntracked"`
+	NoFilter        string `yaml:"noFilter"`
+
+	CopyFileName         string `yaml:"copyFileName"`
+	CopyRelativeFilePath string `yaml:"copyRelativeFilePath"`
+	CopyAbsoluteFilePath string `yaml:"copyAbsoluteFilePath"`
+	CopyFileDiff         string `yaml:"copyFileDiff"`
+	CopyAllFilesDiff     string `yaml:"copyAllFilesDiff"`
+
+	CollapseAll string `yaml:"collapseAll"`
+	ExpandAll   string `yaml:"expandAll"`
 }
 
 type KeybindingBranchesConfig struct {
@@ -539,21 +601,54 @@ type KeybindingBranchesConfig struct {
 	ViewPullRequestOptions   string `yaml:"viewPullRequestOptions"`
 	OpenPullRequestInBrowser string `yaml:"openPullRequestInBrowser"`
 	CopyPullRequestURL       string `yaml:"copyPullRequestURL"`
-	CheckoutBranchByName     string `yaml:"checkoutBranchByName"`
-	ForceCheckoutBranch      string `yaml:"forceCheckoutBranch"`
-	CheckoutPreviousBranch   string `yaml:"checkoutPreviousBranch"`
-	RebaseBranch             string `yaml:"rebaseBranch"`
-	RenameBranch             string `yaml:"renameBranch"`
-	MergeIntoCurrentBranch   string `yaml:"mergeIntoCurrentBranch"`
-	MoveCommitsToNewBranch   string `yaml:"moveCommitsToNewBranch"`
-	ViewGitFlowOptions       string `yaml:"viewGitFlowOptions"`
-	FastForward              string `yaml:"fastForward"`
-	CreateTag                string `yaml:"createTag"`
-	PushTag                  string `yaml:"pushTag"`
-	SetUpstream              string `yaml:"setUpstream"`
-	FetchRemote              string `yaml:"fetchRemote"`
-	AddForkRemote            string `yaml:"addForkRemote"`
-	SortOrder                string `yaml:"sortOrder"`
+
+	CheckoutBranchByName   string `yaml:"checkoutBranchByName"`
+	ForceCheckoutBranch    string `yaml:"forceCheckoutBranch"`
+	CheckoutPreviousBranch string `yaml:"checkoutPreviousBranch"`
+
+	RebaseBranchSimple      string `yaml:"rebaseBranchSimple"`
+	RebaseBranchInteractive string `yaml:"rebaseBranchInteractive"`
+	RebaseBranchOntoBase    string `yaml:"rebaseBranchOntoBase"`
+
+	MergeRegular         string `yaml:"mergeRegular"`
+	MergeNonFFwd         string `yaml:"mergeNonFFwd"`
+	MergeFastForward     string `yaml:"mergeFastForward"`
+	MergeSquash          string `yaml:"mergeSquash"`
+	MergeSquashCommitted string `yaml:"mergeSquashCommitted"`
+	FastForward          string `yaml:"fastForward"`
+
+	DeleteLocalBranch          string `yaml:"deleteLocalBranch"`
+	DeleteRemoteBranch         string `yaml:"deleteRemoteBranch"`
+	DeleteLocalAndRemoteBranch string `yaml:"deleteLocalAndRemoteBranch"`
+
+	DeleteLocalTag          string `yaml:"deleteLocalTag"`
+	DeleteRemoteTag         string `yaml:"deleteRemoteTag"`
+	DeleteLocalAndRemoteTag string `yaml:"deleteLocalAndRemoteTag"`
+	CreateTag               string `yaml:"createTag"`
+	PushTag                 string `yaml:"pushTag"`
+
+	GitFlowFinish       string `yaml:"gitFlowFinish"`
+	GitFlowStartFeature string `yaml:"gitFlowStartFeature"`
+	GitFlowStartHotfix  string `yaml:"gitFlowStartHotfix"`
+	GitFlowStartBugfix  string `yaml:"gitFlowStartBugfix"`
+	GitFlowStartRelease string `yaml:"gitFlowStartRelease"`
+
+	ViewDivergenceFromUpstream string `yaml:"viewDivergenceFromUpstream"`
+	ViewDivergenceFromBase     string `yaml:"viewDivergenceFromBase"`
+	SetUpstream                string `yaml:"setUpstream"`
+	UnsetUpstream              string `yaml:"unsetUpstream"`
+	ResetUpstreamMixed         string `yaml:"resetUpstreamMixed"`
+	ResetUpstreamSoft          string `yaml:"resetUpstreamSoft"`
+	ResetUpstreamHard          string `yaml:"resetUpstreamHard"`
+	RebaseUpstreamSimple       string `yaml:"rebaseUpstreamSimple"`
+	RebaseUpstreamInteractive  string `yaml:"rebaseUpstreamInteractive"`
+	RebaseUpstreamOntoBase     string `yaml:"rebaseUpstreamOntoBase"`
+
+	RenameBranch           string `yaml:"renameBranch"`
+	MoveCommitsToNewBranch string `yaml:"moveCommitsToNewBranch"`
+	FetchRemote            string `yaml:"fetchRemote"`
+	AddForkRemote          string `yaml:"addForkRemote"`
+	SortOrder              string `yaml:"sortOrder"`
 }
 
 type KeybindingWorktreesConfig struct {
@@ -564,8 +659,11 @@ type KeybindingCommitsConfig struct {
 	SquashDown                     string `yaml:"squashDown"`
 	RenameCommit                   string `yaml:"renameCommit"`
 	RenameCommitWithEditor         string `yaml:"renameCommitWithEditor"`
-	ViewResetOptions               string `yaml:"viewResetOptions"`
+	MixedResetToRef                string `yaml:"mixedResetToRef"`
+	SoftResetToRef                 string `yaml:"softResetToRef"`
+	HardResetToRef                 string `yaml:"hardResetToRef"`
 	MarkCommitAsFixup              string `yaml:"markCommitAsFixup"`
+	FixupCommitKeepMessage         string `yaml:"fixupCommitKeepMessage"`
 	SetFixupMessage                string `yaml:"setFixupMessage"`
 	CreateFixupCommit              string `yaml:"createFixupCommit"`
 	SquashAboveCommits             string `yaml:"squashAboveCommits"`
@@ -585,7 +683,14 @@ type KeybindingCommitsConfig struct {
 	OpenLogMenu                    string `yaml:"openLogMenu"`
 	OpenInBrowser                  string `yaml:"openInBrowser"`
 	OpenPullRequestInBrowser       string `yaml:"openPullRequestInBrowser"`
-	ViewBisectOptions              string `yaml:"viewBisectOptions"`
+	BisectMarkBad       string `yaml:"bisectMarkBad"`
+	BisectMarkGood      string `yaml:"bisectMarkGood"`
+	BisectSkipCurrent   string `yaml:"bisectSkipCurrent"`
+	BisectSkipSelected  string `yaml:"bisectSkipSelected"`
+	BisectReset         string `yaml:"bisectReset"`
+	BisectStartMarkBad  string `yaml:"bisectStartMarkBad"`
+	BisectStartMarkGood string `yaml:"bisectStartMarkGood"`
+	BisectChooseTerms   string `yaml:"bisectChooseTerms"`
 	StartInteractiveRebase         string `yaml:"startInteractiveRebase"`
 	SelectCommitsOfCurrentBranch   string `yaml:"selectCommitsOfCurrentBranch"`
 }
@@ -603,6 +708,7 @@ type KeybindingStashConfig struct {
 
 type KeybindingCommitFilesConfig struct {
 	CheckoutCommitFile string `yaml:"checkoutCommitFile"`
+	CopyFileContent    string `yaml:"copyFileContent"`
 }
 
 type KeybindingMainConfig struct {
@@ -612,9 +718,12 @@ type KeybindingMainConfig struct {
 }
 
 type KeybindingSubmodulesConfig struct {
-	Init     string `yaml:"init"`
-	Update   string `yaml:"update"`
-	BulkMenu string `yaml:"bulkMenu"`
+	Init                string `yaml:"init"`
+	Update              string `yaml:"update"`
+	BulkInit            string `yaml:"bulkInit"`
+	BulkUpdate          string `yaml:"bulkUpdate"`
+	BulkUpdateRecursive string `yaml:"bulkUpdateRecursive"`
+	BulkDeinit          string `yaml:"bulkDeinit"`
 }
 
 type KeybindingCommitMessageConfig struct {
@@ -776,6 +885,12 @@ func GetDefaultConfig() *UserConfig {
 }
 
 func GetDefaultConfigForPlatform(platform string) *UserConfig {
+	cfg := defaultConfigForPlatform(platform)
+	cfg.ResolveChordPrefixes()
+	return cfg
+}
+
+func defaultConfigForPlatform(platform string) *UserConfig {
 	return &UserConfig{
 		Gui: GuiConfig{
 			ScrollHeight:             2,
@@ -962,7 +1077,9 @@ func GetDefaultConfigForPlatform(platform string) *UserConfig {
 				ScrollUpMainAlt2:                  "<ctrl+u>",
 				ScrollDownMainAlt2:                "<ctrl+d>",
 				ExecuteShellCommand:               ":",
-				CreateRebaseOptionsMenu:           "m",
+				RebaseContinue:                    "mc",
+				RebaseAbort:                       "ma",
+				RebaseSkip:                        "ms",
 				Push:                              "P",
 				Pull:                              "p",
 				Refresh:                           "R",
@@ -994,25 +1111,45 @@ func GetDefaultConfigForPlatform(platform string) *UserConfig {
 				AllBranchesLogGraphReverse: "A",
 			},
 			Files: KeybindingFilesConfig{
-				CommitChanges:            "c",
-				CommitChangesWithoutHook: "w",
-				AmendLastCommit:          "A",
-				CommitChangesWithEditor:  "C",
-				FindBaseCommitForFixup:   "<ctrl+f>",
-				IgnoreFile:               "i",
-				RefreshFiles:             "r",
-				StashAllChanges:          "s",
-				ViewStashOptions:         "S",
-				ToggleStagedAll:          "a",
-				ViewResetOptions:         "D",
-				Fetch:                    "f",
-				ToggleTreeView:           "`",
-				OpenMergeOptions:         "M",
-				OpenStatusFilter:         "<ctrl+b>",
-				ConfirmDiscard:           "x",
-				CopyFileInfoToClipboard:  "y",
-				CollapseAll:              "-",
-				ExpandAll:                "=",
+				CommitChanges:                "c",
+				CommitChangesWithoutHook:     "w",
+				AmendLastCommit:              "A",
+				CommitChangesWithEditor:      "C",
+				FindBaseCommitForFixup:       "<ctrl+f>",
+				Ignore:                       "ii",
+				Exclude:                      "ie",
+				RefreshFiles:                 "r",
+				StashAllChanges:              "s",
+				StashAllChangesKeepIndex:     "Si",
+				StashIncludeUntrackedChanges: "SU",
+				StashStagedChanges:           "Ss",
+				StashUnstagedChanges:         "Su",
+				ToggleStagedAll:              "a",
+				NukeWorkingTree:              "Dx",
+				DiscardUnstagedChanges:       "Du",
+				DiscardUntrackedFiles:        "Dc",
+				DiscardStagedChanges:         "DS",
+				DiscardAllChanges:            "dc",
+				DiscardUnstagedFile:          "du",
+				SoftReset:                    "Ds",
+				MixedReset:                   "Dm",
+				HardReset:                    "Dh",
+				Fetch:                        "f",
+				ToggleTreeView:               "`",
+				OpenMergeOptions:             "M",
+				FilterStaged:                 "<ctrl+b>s",
+				FilterUnstaged:               "<ctrl+b>u",
+				FilterTracked:                "<ctrl+b>t",
+				FilterUntracked:              "<ctrl+b>T",
+				NoFilter:                     "<ctrl+b>r",
+				ConfirmDiscard:               "x",
+				CopyFileName:                 "yn",
+				CopyRelativeFilePath:         "yp",
+				CopyAbsoluteFilePath:         "yP",
+				CopyFileDiff:                 "ys",
+				CopyAllFilesDiff:             "ya",
+				CollapseAll:                  "-",
+				ExpandAll:                    "=",
 			},
 			Branches: KeybindingBranchesConfig{
 				CopyPullRequestURL:       "<ctrl+y>",
@@ -1022,18 +1159,46 @@ func GetDefaultConfigForPlatform(platform string) *UserConfig {
 				CheckoutBranchByName:     "c",
 				ForceCheckoutBranch:      "F",
 				CheckoutPreviousBranch:   "-",
-				RebaseBranch:             "r",
+				RebaseBranchSimple:       "rs",
+				RebaseBranchInteractive:  "ri",
+				RebaseBranchOntoBase:     "rb",
 				RenameBranch:             "R",
-				MergeIntoCurrentBranch:   "M",
+				MergeRegular:             "Mm",
+				MergeNonFFwd:             "Mn",
+				MergeFastForward:         "Mf",
+				MergeSquash:              "Ms",
+				MergeSquashCommitted:     "MS",
 				MoveCommitsToNewBranch:   "N",
-				ViewGitFlowOptions:       "i",
+				GitFlowFinish:            "iF",
+				GitFlowStartFeature:      "if",
+				GitFlowStartHotfix:       "ih",
+				GitFlowStartBugfix:       "ib",
+				GitFlowStartRelease:      "ir",
 				FastForward:              "f",
 				CreateTag:                "T",
 				PushTag:                  "P",
-				SetUpstream:              "u",
 				FetchRemote:              "f",
 				AddForkRemote:            "F",
 				SortOrder:                "s",
+
+				DeleteLocalBranch:          "dc",
+				DeleteRemoteBranch:         "dr",
+				DeleteLocalAndRemoteBranch: "db",
+
+				DeleteLocalTag:          "dc",
+				DeleteRemoteTag:         "dr",
+				DeleteLocalAndRemoteTag: "db",
+
+				ViewDivergenceFromUpstream: "ud",
+				ViewDivergenceFromBase:     "uD",
+				SetUpstream:                "us",
+				UnsetUpstream:              "uu",
+				ResetUpstreamMixed:         "ugm",
+				ResetUpstreamSoft:          "ugs",
+				ResetUpstreamHard:          "ugh",
+				RebaseUpstreamSimple:       "urs",
+				RebaseUpstreamInteractive:  "uri",
+				RebaseUpstreamOntoBase:     "urb",
 			},
 			Worktrees: KeybindingWorktreesConfig{
 				ViewWorktreeOptions: "w",
@@ -1042,8 +1207,11 @@ func GetDefaultConfigForPlatform(platform string) *UserConfig {
 				SquashDown:                     "s",
 				RenameCommit:                   "r",
 				RenameCommitWithEditor:         "R",
-				ViewResetOptions:               "g",
-				MarkCommitAsFixup:              "f",
+				MixedResetToRef:                "gm",
+				SoftResetToRef:                 "gs",
+				HardResetToRef:                 "gh",
+				MarkCommitAsFixup:              "ff",
+				FixupCommitKeepMessage:         "fc",
 				SetFixupMessage:                "c",
 				CreateFixupCommit:              "F",
 				SquashAboveCommits:             "S",
@@ -1063,7 +1231,14 @@ func GetDefaultConfigForPlatform(platform string) *UserConfig {
 				OpenLogMenu:                    "<ctrl+l>",
 				OpenInBrowser:                  "o",
 				OpenPullRequestInBrowser:       "G",
-				ViewBisectOptions:              "b",
+				BisectMarkBad:                  "bb",
+				BisectMarkGood:                 "bg",
+				BisectSkipCurrent:              "bs",
+				BisectSkipSelected:             "bS",
+				BisectReset:                    "br",
+				BisectStartMarkBad:             "bb",
+				BisectStartMarkGood:            "bg",
+				BisectChooseTerms:              "bt",
 				StartInteractiveRebase:         "i",
 				SelectCommitsOfCurrentBranch:   "*",
 			},
@@ -1078,6 +1253,7 @@ func GetDefaultConfigForPlatform(platform string) *UserConfig {
 			},
 			CommitFiles: KeybindingCommitFilesConfig{
 				CheckoutCommitFile: "c",
+				CopyFileContent:    "yc",
 			},
 			Main: KeybindingMainConfig{
 				ToggleSelectHunk: "a",
@@ -1085,12 +1261,65 @@ func GetDefaultConfigForPlatform(platform string) *UserConfig {
 				EditSelectHunk:   "E",
 			},
 			Submodules: KeybindingSubmodulesConfig{
-				Init:     "i",
-				Update:   "u",
-				BulkMenu: "b",
+				Init:                "i",
+				Update:              "u",
+				BulkInit:            "bi",
+				BulkUpdate:          "bu",
+				BulkUpdateRecursive: "br",
+				BulkDeinit:          "bd",
 			},
 			CommitMessage: KeybindingCommitMessageConfig{
 				CommitMenu: "<ctrl+o>",
+			},
+		},
+		ChordPopupDelayMs: 0,
+		KeybindingGroups: map[string]map[string]KeybindingGroupConfig{
+			"files": {
+				"<ctrl+b>": {Name: "Filter files"},
+				"D":        {Name: "Discard / reset options", ShortName: "Reset", DisplayOnScreen: true},
+				"S":        {Name: "Stash options"},
+				"i":        {Name: "Ignore options"},
+				"y":        {Name: "Copy to clipboard"},
+				"g":        {Name: "Reset to upstream"},
+				"d":        {Name: "Discard changes"},
+			},
+			"localBranches": {
+				"M": {Name: "Merge"},
+				"d": {Name: "Delete branch"},
+				"i": {Name: "Git flow options"},
+				"r": {Name: "Rebase options"},
+				"u": {Name: "Branch upstream options", ShortName: "Upstream", DisplayOnScreen: true},
+				"g": {Name: "Reset to ref", ShortName: "Reset", DisplayOnScreen: true},
+			},
+			"remoteBranches": {
+				"d": {Name: "Delete remote branch"},
+				"M": {Name: "Merge"},
+				"r": {Name: "Rebase options"},
+				"g": {Name: "Reset to ref", ShortName: "Reset", DisplayOnScreen: true},
+			},
+			"tags": {
+				"d": {Name: "Delete tag"},
+				"g": {Name: "Reset to ref", ShortName: "Reset", DisplayOnScreen: true},
+			},
+			"commits": {
+				"b": {Name: "Bisect options"},
+				"f": {Name: "Fixup commit options"},
+				"g": {Name: "Reset to ref", ShortName: "Reset", DisplayOnScreen: true},
+			},
+			"reflogCommits": {
+				"g": {Name: "Reset to ref", ShortName: "Reset", DisplayOnScreen: true},
+			},
+			"subCommits": {
+				"g": {Name: "Reset to ref", ShortName: "Reset", DisplayOnScreen: true},
+			},
+			"commitFiles": {
+				"y": {Name: "Copy to clipboard"},
+			},
+			"submodules": {
+				"b": {Name: "Bulk options"},
+			},
+			"global": {
+				"m": {Name: "Rebase options"},
 			},
 		},
 	}
@@ -1101,4 +1330,90 @@ func platformKeyBinding(platform string, bindingByPlatform map[string]string, fa
 		return binding
 	}
 	return fallback
+}
+
+// UnmarshalYAML migrates a legacy flat keybindingGroups map (label →
+// group) under the "global" outer key.
+//
+// The alias-type pattern below is used to delegate to the default
+// struct-decoder without recursing back into UnmarshalYAML.
+func (c *UserConfig) UnmarshalYAML(value *yaml.Node) error {
+	if value.Kind == 0 {
+		return nil
+	}
+
+	if value.Kind != yaml.MappingNode {
+		type rawConfig UserConfig
+		return value.Decode((*rawConfig)(c))
+	}
+
+	// Detach keybindingGroups so the alias decoder doesn't trip on a
+	// flat-vs-nested shape mismatch.
+	var groupsNode *yaml.Node
+	filtered := make([]*yaml.Node, 0, len(value.Content))
+	for i := 0; i < len(value.Content); i += 2 {
+		key := value.Content[i]
+		val := value.Content[i+1]
+		if key.Value == "keybindingGroups" {
+			groupsNode = val
+			continue
+		}
+		filtered = append(filtered, key, val)
+	}
+
+	stripped := *value
+	stripped.Content = filtered
+
+	type rawConfig UserConfig
+	if err := stripped.Decode((*rawConfig)(c)); err != nil {
+		return err
+	}
+
+	if groupsNode == nil {
+		c.ResolveChordPrefixes()
+		return nil
+	}
+
+	if looksNested(groupsNode) {
+		var nested map[string]map[string]KeybindingGroupConfig
+		if err := groupsNode.Decode(&nested); err != nil {
+			return fmt.Errorf("keybindingGroups (nested shape): %w", err)
+		}
+		c.KeybindingGroups = nested
+		c.ResolveChordPrefixes()
+		return nil
+	}
+
+	var flat map[string]KeybindingGroupConfig
+	if err := groupsNode.Decode(&flat); err != nil {
+		return fmt.Errorf("keybindingGroups (flat shape): %w", err)
+	}
+	c.KeybindingGroups = map[string]map[string]KeybindingGroupConfig{
+		"global": flat,
+	}
+	c.ResolveChordPrefixes()
+	return nil
+}
+
+// looksNested distinguishes the nested shape (context → prefix → group)
+// from the legacy flat shape (prefix → group). In the flat shape, each
+// inner value is a KeybindingGroupConfig with a "name" key; in the nested
+// shape, "name" only appears one level deeper. Empty maps are treated as
+// nested.
+func looksNested(node *yaml.Node) bool {
+	if node.Kind != yaml.MappingNode {
+		return false
+	}
+	for i := 1; i < len(node.Content); i += 2 {
+		v := node.Content[i]
+		if v.Kind != yaml.MappingNode {
+			return false
+		}
+		for j := 0; j < len(v.Content); j += 2 {
+			if v.Content[j].Value == "name" {
+				return false
+			}
+		}
+	}
+	return true
 }

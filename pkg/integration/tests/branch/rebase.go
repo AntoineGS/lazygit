@@ -30,10 +30,10 @@ var Rebase = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("original-branch"),
 			).
 			SelectNextItem().
-			Press(keys.Branches.RebaseBranch)
+			Press(keys.ChordPrefix.LocalBranches.RebaseOptions)
 
 		t.ExpectPopup().Menu().
-			Title(Equals("Rebase 'first-change-branch'")).
+			Title(Equals("Rebase options")).
 			Select(Contains("Simple rebase")).
 			Confirm()
 

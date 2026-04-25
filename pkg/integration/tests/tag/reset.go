@@ -9,7 +9,7 @@ var Reset = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Hard reset to a tag",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig:  func(config *config.AppConfig) {},
+	SetupConfig: func(cfg *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		shell.EmptyCommit("one")
 		shell.EmptyCommit("two")
@@ -26,10 +26,10 @@ var Reset = NewIntegrationTest(NewIntegrationTestArgs{
 			Lines(
 				Contains("tag").IsSelected(),
 			).
-			Press(keys.Commits.ViewResetOptions)
+			Press(keys.ChordPrefix.Tags.ResetToRef)
 
 		t.ExpectPopup().Menu().
-			Title(Contains("Reset to tag")).
+			Title(Equals("Reset to ref")).
 			Select(Contains("Hard reset")).
 			Confirm()
 

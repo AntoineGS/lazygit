@@ -9,7 +9,7 @@ var DiscardUnstagedDirChangesWhenFiltering = NewIntegrationTest(NewIntegrationTe
 	Description:  "Discarding unstaged changes in a directory when filtering by path",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig: func(config *config.AppConfig) {
+	SetupConfig: func(cfg *config.AppConfig) {
 	},
 	SetupRepo: func(shell *Shell) {
 		shell.CreateDir("dir")
@@ -47,11 +47,11 @@ var DiscardUnstagedDirChangesWhenFiltering = NewIntegrationTest(NewIntegrationTe
 				Equals("  MM file-one"),
 				Equals("  ?? unstaged-file-one"),
 			).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.Files.DiscardChanges).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Discard changes")).
-					Select(Contains("Discard unstaged changes")).
+					Select(Contains("Discard unstaged")).
 					Confirm()
 			}).
 			Press(keys.Universal.Return). // Cancel filtering

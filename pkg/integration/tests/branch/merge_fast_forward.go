@@ -9,8 +9,8 @@ var MergeFastForward = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Merge a branch into another using fast-forward merge",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig: func(config *config.AppConfig) {
-		config.GetUserConfig().Git.LocalBranchSortOrder = "alphabetical"
+	SetupConfig: func(cfg *config.AppConfig) {
+		cfg.GetUserConfig().Git.LocalBranchSortOrder = "alphabetical"
 	},
 	SetupRepo: func(shell *Shell) {
 		shell.NewBranch("original-branch").
@@ -31,15 +31,11 @@ var MergeFastForward = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("branch2"),
 			).
 			SelectNextItem().
-			Press(keys.Branches.MergeIntoCurrentBranch)
+			Press(keys.ChordPrefix.LocalBranches.Merge)
 
 		t.ExpectPopup().Menu().
 			Title(Equals("Merge")).
-			TopLines(
-				Contains("Regular merge (fast-forward)"),
-				Contains("Regular merge (with merge commit)"),
-			).
-			Select(Contains("Regular merge (fast-forward)")).
+			Select(Equals("m Merge")).
 			Confirm()
 
 		t.Views().Commits().
@@ -52,17 +48,16 @@ var MergeFastForward = NewIntegrationTest(NewIntegrationTestArgs{
 		t.Views().Branches().
 			Focus().
 			NavigateToLine(Contains("branch2")).
-			Press(keys.Branches.MergeIntoCurrentBranch)
+			Press(keys.ChordPrefix.LocalBranches.Merge)
 
 		t.ExpectPopup().Menu().
 			Title(Equals("Merge")).
-			TopLines(
-				Contains("Regular merge (with merge commit)"),
-				Contains("Regular merge (fast-forward)"),
-			).
-			Select(Contains("Regular merge (fast-forward)")).
+			Select(Contains("fast-forward")).
 			Confirm()
 
-		t.ExpectToast(Contains("Cannot fast-forward 'original-branch' to 'branch2'"))
+		t.ExpectPopup().Confirmation().
+			Title(Equals("Error")).
+			Content(Contains("Cannot fast-forward 'original-branch' to 'branch2'")).
+			Confirm()
 	},
 })

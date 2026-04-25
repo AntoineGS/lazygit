@@ -19,6 +19,9 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` : `` | Execute shell command | Bring up a prompt where you can enter a shell command to execute. |
 | `` <ctrl+p> `` | Wyświetl opcje niestandardowej łatki |  |
 | `` m `` | Pokaż opcje scalania/rebase | Pokaż opcje do przerwania/kontynuowania/pominięcia bieżącego scalania/rebase. |
+| `` mc `` | Continue rebase / merge | Pokaż opcje do przerwania/kontynuowania/pominięcia bieżącego scalania/rebase. |
+| `` ma `` | Abort rebase / merge | Pokaż opcje do przerwania/kontynuowania/pominięcia bieżącego scalania/rebase. |
+| `` ms `` | Skip current rebase commit | Pokaż opcje do przerwania/kontynuowania/pominięcia bieżącego scalania/rebase. |
 | `` R `` | Odśwież | Odśwież stan git (tj. uruchom `git status`, `git branch`, itp. w tle, aby zaktualizować zawartość paneli). To nie uruchamia `git fetch`. |
 | `` + `` | Następny tryb ekranu (normalny/półpełny/pełnoekranowy) |  |
 | `` _ `` | Poprzedni tryb ekranu |  |
@@ -58,8 +61,18 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | Copy abbreviated commit hash to clipboard |  |
 | `` <ctrl+r> `` | Resetuj wybrane (cherry-picked) commity |  |
 | `` b `` | Zobacz opcje bisect |  |
+| `` bb `` | Mark commit as bad |  |
+| `` bg `` | Mark commit as good |  |
+| `` bs `` | Skip current bisect commit |  |
+| `` bS `` | Skip selected commit |  |
+| `` br `` | Resetuj bisect |  |
+| `` bb `` | Mark commit as bad (start bisect) |  |
+| `` bg `` | Mark commit as good (start bisect) |  |
+| `` bt `` | Wybierz terminy bisect |  |
 | `` s `` | Scal | Scal wybrany commit z commitami poniżej. Wiadomość wybranego commita zostanie dołączona do commita poniżej. |
 | `` f `` | Poprawka | Włącz wybrany commit do commita poniżej. Podobnie do fixup, ale wiadomość wybranego commita zostanie odrzucona. |
+| `` ff `` | Poprawka | Włącz wybrany commit do commita poniżej. Podobnie do fixup, ale wiadomość wybranego commita zostanie odrzucona. |
+| `` fc `` | Fixup and use this commit's message | Squash the selected commit into the commit below, using this commit's message, discarding the message of the commit below. |
 | `` c `` | Set fixup message | Set the message option for the fixup commit. The -C option means to use this commit's message instead of the target commit's message. |
 | `` r `` | Przeformułuj | Przeformułuj wiadomość wybranego commita. |
 | `` R `` | Przeformułuj za pomocą edytora |  |
@@ -85,6 +98,9 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` n `` | Utwórz nową gałąź z commita |  |
 | `` N `` | Move commits to new branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
 | `` g `` | Reset | Wyświetl opcje resetu (miękki/mieszany/twardy) do wybranego elementu. |
+| `` gm `` | Mixed reset | Resetuj HEAD do wybranego commita, zachowując zmiany między bieżącym a wybranym commit jako zmiany niezatwierdzone. |
+| `` gs `` | Miękki reset | Resetuj HEAD do wybranego commita, zachowując zmiany między bieżącym a wybranym commit jako zmiany zatwierdzone. |
+| `` gh `` | Twardy reset | Resetuj HEAD do wybranego commita, odrzucając wszystkie zmiany między bieżącym a wybranym commit, jak również wszystkie bieżące modyfikacje w drzewie roboczym. |
 | `` C `` | Kopiuj (cherry-pick) | Oznacz commit jako skopiowany. Następnie, w widoku lokalnych commitów, możesz nacisnąć `V`, aby wkleić (cherry-pick) skopiowane commity do sprawdzonej gałęzi. W dowolnym momencie możesz nacisnąć `<esc>`, aby anulować zaznaczenie. |
 | `` <ctrl+t> `` | Otwórz zewnętrzne narzędzie różnic (git difftool) |  |
 | `` * `` | Select commits of current branch |  |
@@ -140,6 +156,11 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 |-----|--------|-------------|
 | `` <ctrl+o> `` | Kopiuj nazwę gałęzi do schowka |  |
 | `` i `` | Pokaż opcje git-flow |  |
+| `` iF `` | Finish git-flow branch |  |
+| `` if `` | Start git-flow feature |  |
+| `` ih `` | Start git-flow hotfix |  |
+| `` ib `` | Start git-flow bugfix |  |
+| `` ir `` | Start git-flow release |  |
 | `` <space> `` | Przełącz | Przełącz wybrany element. |
 | `` n `` | Nowa gałąź |  |
 | `` N `` | Move commits to new branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
@@ -151,14 +172,38 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` - `` | Checkout previous branch |  |
 | `` F `` | Wymuś przełączenie | Wymuś przełączenie wybranej gałęzi. To spowoduje odrzucenie wszystkich lokalnych zmian w drzewie roboczym przed przełączeniem na wybraną gałąź. |
 | `` d `` | Usuń | Wyświetl opcje usuwania lokalnej/odległej gałęzi. |
+| `` dc `` | Usuń lokalną gałąź | Wyświetl opcje usuwania lokalnej/odległej gałęzi. |
+| `` dr `` | Usuń gałąź zdalną | Usuń gałąź zdalną ze zdalnego. |
+| `` db `` | Delete local and remote branch | Wyświetl opcje usuwania lokalnej/odległej gałęzi. |
 | `` r `` | Przebazuj | Przebazuj przełączoną gałąź na wybraną gałąź. |
+| `` rs `` | Simple rebase | Przebazuj przełączoną gałąź na wybraną gałąź. |
+| `` ri `` | Interactive rebase | Rozpocznij interaktywny rebase z przerwaniem na początku, abyś mógł zaktualizować commity TODO przed kontynuacją. |
+| `` rb `` | Rebase onto base branch | Rebase the checked out branch onto its base branch (i.e. the closest main branch). |
 | `` M `` | Scal | Scal wybraną gałąź z aktualnie sprawdzoną gałęzią. |
+| `` Mm `` | Scal | Scal wybraną gałąź z aktualnie sprawdzoną gałęzią. |
+| `` Mn `` | Regular merge (with merge commit) | Merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}', creating a merge commit. |
+| `` Mf `` | Regular merge (fast-forward) | Fast-forward '{{.checkedOutBranch}}' to '{{.selectedBranch}}' without creating a merge commit. |
+| `` Ms `` | Squash merge (uncommitted) | Squash merge '{{.selectedBranch}}' into the working tree. |
+| `` MS `` | Squash merge (committed) | Squash merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}' as a single commit. |
 | `` f `` | Szybkie przewijanie | Szybkie przewijanie wybranej gałęzi z jej źródła. |
 | `` T `` | Nowy tag |  |
 | `` s `` | Kolejność sortowania |  |
-| `` g `` | Reset |  |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Resetuj HEAD do wybranego commita, zachowując zmiany między bieżącym a wybranym commit jako zmiany niezatwierdzone. |
+| `` gs `` | Miękki reset | Resetuj HEAD do wybranego commita, zachowując zmiany między bieżącym a wybranym commit jako zmiany zatwierdzone. |
+| `` gh `` | Twardy reset | Resetuj HEAD do wybranego commita, odrzucając wszystkie zmiany między bieżącym a wybranym commit, jak również wszystkie bieżące modyfikacje w drzewie roboczym. |
 | `` R `` | Zmień nazwę gałęzi |  |
 | `` u `` | Pokaż opcje upstream | Pokaż opcje dotyczące upstream gałęzi, np. ustawianie/usuwanie upstream i resetowanie do upstream. |
+| `` ud `` | Wyświetl rozbieżność od upstream | Pokaż opcje dotyczące upstream gałęzi, np. ustawianie/usuwanie upstream i resetowanie do upstream. |
+| `` uD `` | View divergence from base branch |  |
+| `` us `` | Ustaw upstream wybranej gałęzi |  |
+| `` uu `` | Usuń upstream wybranej gałęzi |  |
+| `` ugm `` | Mixed reset to upstream | Resetuj HEAD do wybranego commita, zachowując zmiany między bieżącym a wybranym commit jako zmiany niezatwierdzone. |
+| `` ugs `` | Soft reset to upstream | Resetuj HEAD do wybranego commita, zachowując zmiany między bieżącym a wybranym commit jako zmiany zatwierdzone. |
+| `` ugh `` | Hard reset to upstream | Resetuj HEAD do wybranego commita, odrzucając wszystkie zmiany między bieżącym a wybranym commit, jak również wszystkie bieżące modyfikacje w drzewie roboczym. |
+| `` urs `` | Simple rebase onto upstream |  |
+| `` uri `` | Interactive rebase onto upstream | Rozpocznij interaktywny rebase z przerwaniem na początku, abyś mógł zaktualizować commity TODO przed kontynuacją. |
+| `` urb `` | Rebase onto base branch | Rebase the checked out branch onto its base branch (i.e. the closest main branch). |
 | `` <ctrl+t> `` | Otwórz zewnętrzne narzędzie różnic (git difftool) |  |
 | `` 0 `` | Focus main view |  |
 | `` <enter> `` | Pokaż commity |  |
@@ -236,7 +281,17 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | Kopiuj ścieżkę do schowka |  |
 | `` <space> `` | Zatwierdź | Przełącz zatwierdzenie dla wybranego pliku. |
 | `` <ctrl+b> `` | Filtruj pliki według statusu |  |
+| `` <ctrl+b>s `` | Pokaż tylko zatwierdzone pliki |  |
+| `` <ctrl+b>u `` | Pokaż tylko niezatwierdzone pliki |  |
+| `` <ctrl+b>t `` | Show only tracked files |  |
+| `` <ctrl+b>T `` | Show only untracked files |  |
+| `` <ctrl+b>r `` | No filter |  |
 | `` y `` | Kopiuj do schowka |  |
+| `` yn `` | Nazwa pliku |  |
+| `` yp `` | Relative path |  |
+| `` yP `` | Absolute path |  |
+| `` ys `` | Różnice wybranego pliku | Jeśli istnieją zatwierdzone elementy, ta komenda bierze pod uwagę tylko je. W przeciwnym razie bierze pod uwagę wszystkie niezatwierdzone. |
+| `` ya `` | Różnice wszystkich plików | Jeśli istnieją zatwierdzone elementy, ta komenda bierze pod uwagę tylko je. W przeciwnym razie bierze pod uwagę wszystkie niezatwierdzone. |
 | `` c `` | Commit | Zatwierdź zmiany zatwierdzone. |
 | `` w `` | Zatwierdź zmiany bez hooka pre-commit |  |
 | `` A `` | Popraw ostatni commit |  |
@@ -245,14 +300,32 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` e `` | Edytuj | Otwórz plik w zewnętrznym edytorze. |
 | `` o `` | Otwórz plik | Otwórz plik w domyślnej aplikacji. |
 | `` i `` | Ignoruj lub wyklucz plik |  |
+| `` ii `` | Dodaj do .gitignore |  |
+| `` ie `` | Dodaj do .git/info/exclude |  |
 | `` r `` | Odśwież pliki |  |
 | `` s `` | Schowaj | Schowaj wszystkie zmiany. Dla innych wariantów schowania, użyj klawisza wyświetlania opcji schowka. |
 | `` S `` | Wyświetl opcje schowka | Wyświetl opcje schowka (np. schowaj wszystko, schowaj zatwierdzone, schowaj niezatwierdzone). |
+| `` Si `` | Schowaj wszystkie zmiany i zachowaj indeks |  |
+| `` SU `` | Schowaj wszystkie zmiany włącznie z nieśledzonymi plikami |  |
+| `` Ss `` | Schowaj zatwierdzone zmiany |  |
+| `` Su `` | Schowaj niezatwierdzone zmiany |  |
 | `` a `` | Zatwierdź wszystko | Przełącz zatwierdzenie/odznaczenie dla wszystkich plików w drzewie roboczym. |
 | `` <enter> `` | Zatwierdź linie / Zwiń katalog | Jeśli wybrany element jest plikiem, skup się na widoku zatwierdzania, aby móc zatwierdzać poszczególne fragmenty/linie. Jeśli wybrany element jest katalogiem, zwiń/rozwiń go. |
-| `` d `` | Odrzuć | Wyświetl opcje odrzucania zmian w wybranym pliku. |
-| `` g `` | Pokaż opcje resetowania do upstream |  |
+| `` d `` | Discard changes |  |
+| `` dc `` | Odrzuć | Wyświetl opcje odrzucania zmian w wybranym pliku. |
+| `` du `` | Odrzuć niezatwierdzone zmiany |  |
+| `` g `` | Reset to upstream |  |
+| `` gm `` | Mixed reset to upstream | Resetuj HEAD do wybranego commita, zachowując zmiany między bieżącym a wybranym commit jako zmiany niezatwierdzone. |
+| `` gs `` | Soft reset to upstream | Resetuj HEAD do wybranego commita, zachowując zmiany między bieżącym a wybranym commit jako zmiany zatwierdzone. |
+| `` gh `` | Hard reset to upstream | Resetuj HEAD do wybranego commita, odrzucając wszystkie zmiany między bieżącym a wybranym commit, jak również wszystkie bieżące modyfikacje w drzewie roboczym. |
 | `` D `` | Reset | Wyświetl opcje resetu dla drzewa roboczego (np. zniszczenie drzewa roboczego). |
+| `` Dx `` | Zniszcz drzewo robocze | Jeśli chcesz, aby wszystkie zmiany w drzewie pracy zniknęły, to jest sposób na to. Jeśli są brudne zmiany w submodule, to zostaną one zapisane w submodule(s). |
+| `` Du `` | Odrzuć niezatwierdzone zmiany |  |
+| `` Dc `` | Odrzuć nieśledzone pliki |  |
+| `` DS `` | Odrzuć zatwierdzone zmiany | To stworzy nowy wpis stash zawierający tylko pliki w stanie staged, a następnie go usunie, tak że drzewo pracy zostanie tylko ze zmianami niezatwierdzonymi |
+| `` Ds `` | Miękki reset |  |
+| `` Dm `` | mixed reset |  |
+| `` Dh `` | Twardy reset |  |
 | `` ` `` | Przełącz widok drzewa plików | Toggle file view between flat and tree layout. Flat layout shows all file paths in a single list, tree layout groups files by directory.<br><br>The default can be changed in the config file with the key 'gui.showFileTree'. |
 | `` <ctrl+t> `` | Otwórz zewnętrzne narzędzie różnic (git difftool) |  |
 | `` M `` | View merge conflict options | View options for resolving merge conflicts. |
@@ -267,7 +340,13 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | Key | Action | Info |
 |-----|--------|-------------|
 | `` <ctrl+o> `` | Kopiuj ścieżkę do schowka |  |
-| `` y `` | Kopiuj do schowka |  |
+| `` y `` | Copy to clipboard |  |
+| `` yn `` | Nazwa pliku |  |
+| `` yp `` | Relative path |  |
+| `` yP `` | Absolute path |  |
+| `` ys `` | Różnice wybranego pliku |  |
+| `` ya `` | Różnice wszystkich plików |  |
+| `` yc `` | Content of selected file |  |
 | `` c `` | Przełącz | Przełącz plik. Zastępuje plik w twoim drzewie roboczym wersją z wybranego commita. |
 | `` d `` | Odrzuć | Odrzuć zmiany w tym pliku z tego commita. Uruchamia interaktywny rebase w tle, więc możesz otrzymać konflikt scalania, jeśli późniejszy commit również zmienia ten plik. |
 | `` o `` | Otwórz plik | Otwórz plik w domyślnej aplikacji. |
@@ -299,7 +378,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` o `` | Otwórz commit w przeglądarce |  |
 | `` n `` | Utwórz nową gałąź z commita |  |
 | `` N `` | Move commits to new branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
-| `` g `` | Reset | Wyświetl opcje resetu (miękki/mieszany/twardy) do wybranego elementu. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Resetuj HEAD do wybranego commita, zachowując zmiany między bieżącym a wybranym commit jako zmiany niezatwierdzone. |
+| `` gs `` | Miękki reset | Resetuj HEAD do wybranego commita, zachowując zmiany między bieżącym a wybranym commit jako zmiany zatwierdzone. |
+| `` gh `` | Twardy reset | Resetuj HEAD do wybranego commita, odrzucając wszystkie zmiany między bieżącym a wybranym commit, jak również wszystkie bieżące modyfikacje w drzewie roboczym. |
 | `` C `` | Kopiuj (cherry-pick) | Oznacz commit jako skopiowany. Następnie, w widoku lokalnych commitów, możesz nacisnąć `V`, aby wkleić (cherry-pick) skopiowane commity do sprawdzonej gałęzi. W dowolnym momencie możesz nacisnąć `<esc>`, aby anulować zaznaczenie. |
 | `` <ctrl+r> `` | Resetuj wybrane (cherry-picked) commity |  |
 | `` <ctrl+t> `` | Otwórz zewnętrzne narzędzie różnic (git difftool) |  |
@@ -345,7 +427,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` o `` | Otwórz commit w przeglądarce |  |
 | `` n `` | Utwórz nową gałąź z commita |  |
 | `` N `` | Move commits to new branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
-| `` g `` | Reset | Wyświetl opcje resetu (miękki/mieszany/twardy) do wybranego elementu. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Resetuj HEAD do wybranego commita, zachowując zmiany między bieżącym a wybranym commit jako zmiany niezatwierdzone. |
+| `` gs `` | Miękki reset | Resetuj HEAD do wybranego commita, zachowując zmiany między bieżącym a wybranym commit jako zmiany zatwierdzone. |
+| `` gh `` | Twardy reset | Resetuj HEAD do wybranego commita, odrzucając wszystkie zmiany między bieżącym a wybranym commit, jak również wszystkie bieżące modyfikacje w drzewie roboczym. |
 | `` C `` | Kopiuj (cherry-pick) | Oznacz commit jako skopiowany. Następnie, w widoku lokalnych commitów, możesz nacisnąć `V`, aby wkleić (cherry-pick) skopiowane commity do sprawdzonej gałęzi. W dowolnym momencie możesz nacisnąć `<esc>`, aby anulować zaznaczenie. |
 | `` <ctrl+r> `` | Resetuj wybrane (cherry-picked) commity |  |
 | `` <ctrl+t> `` | Otwórz zewnętrzne narzędzie różnic (git difftool) |  |
@@ -367,6 +452,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` e `` | Zaktualizuj URL submodułu |  |
 | `` i `` | Zainicjuj | Zainicjuj wybrany submoduł, aby przygotować do pobrania. Prawdopodobnie chcesz to kontynuować, wywołując akcję 'update', aby pobrać submoduł. |
 | `` b `` | Pokaż opcje masowych operacji na submodułach |  |
+| `` bi `` | Masowe inicjowanie submodułów |  |
+| `` bu `` | Masowa aktualizacja submodułów |  |
+| `` br `` | Bulk init and update submodules recursively |  |
+| `` bd `` | Masowe wyłączanie submodułów |  |
 | `` / `` | Filtruj bieżący widok po tekście |  |
 
 ## Tagi
@@ -376,9 +465,15 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | Copy tag to clipboard |  |
 | `` <space> `` | Przełącz | Przełącz wybrany tag jako odłączoną głowę (detached HEAD). |
 | `` n `` | Nowy tag | Utwórz nowy tag z bieżącego commita. Zostaniesz poproszony o wprowadzenie nazwy tagu i opcjonalnego opisu. |
-| `` d `` | Usuń | Wyświetl opcje usuwania lokalnego/odległego tagu. |
+| `` d `` | Usuń |  |
+| `` dc `` | Usuń lokalny tag | Wyświetl opcje usuwania lokalnego/odległego tagu. |
+| `` dr `` | Usuń zdalny tag | Wyświetl opcje usuwania lokalnego/odległego tagu. |
+| `` db `` | Delete local and remote tag | Wyświetl opcje usuwania lokalnego/odległego tagu. |
 | `` P `` | Wyślij tag | Wyślij wybrany tag do zdalnego. Zostaniesz poproszony o wybranie zdalnego. |
-| `` g `` | Reset | Wyświetl opcje resetu (miękki/mieszany/twardy) do wybranego elementu. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Resetuj HEAD do wybranego commita, zachowując zmiany między bieżącym a wybranym commit jako zmiany niezatwierdzone. |
+| `` gs `` | Miękki reset | Resetuj HEAD do wybranego commita, zachowując zmiany między bieżącym a wybranym commit jako zmiany zatwierdzone. |
+| `` gh `` | Twardy reset | Resetuj HEAD do wybranego commita, odrzucając wszystkie zmiany między bieżącym a wybranym commit, jak również wszystkie bieżące modyfikacje w drzewie roboczym. |
 | `` <ctrl+t> `` | Otwórz zewnętrzne narzędzie różnic (git difftool) |  |
 | `` 0 `` | Focus main view |  |
 | `` <enter> `` | Pokaż commity |  |
@@ -404,12 +499,23 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | Kopiuj nazwę gałęzi do schowka |  |
 | `` <space> `` | Przełącz | Przełącz na nową lokalną gałąź na podstawie wybranej gałęzi zdalnej. Nowa gałąź będzie śledzić gałąź zdalną. |
 | `` n `` | Nowa gałąź |  |
-| `` M `` | Scal | Scal wybraną gałąź z aktualnie sprawdzoną gałęzią. |
-| `` r `` | Przebazuj | Przebazuj przełączoną gałąź na wybraną gałąź. |
+| `` M `` | Merge |  |
+| `` Mm `` | Scal | Scal wybraną gałąź z aktualnie sprawdzoną gałęzią. |
+| `` Mn `` | Non-fast-forward merge | Merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}', creating a merge commit. |
+| `` Mf `` | Fast-forward only merge | Fast-forward '{{.checkedOutBranch}}' to '{{.selectedBranch}}' without creating a merge commit. |
+| `` Ms `` | Squash merge (uncommitted) | Squash merge '{{.selectedBranch}}' into the working tree. |
+| `` MS `` | Squash merge (committed) | Squash merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}' as a single commit. |
+| `` r `` | Rebase options |  |
+| `` rs `` | Przebazuj | Przebazuj przełączoną gałąź na wybraną gałąź. |
+| `` ri `` | Interactive rebase | Rozpocznij interaktywny rebase z przerwaniem na początku, abyś mógł zaktualizować commity TODO przed kontynuacją. |
+| `` rb `` | Rebase onto base branch | Rebase the checked out branch onto its base branch (i.e. the closest main branch). |
 | `` d `` | Usuń | Usuń gałąź zdalną ze zdalnego. |
-| `` u `` | Ustaw jako upstream | Ustaw wybraną gałąź zdalną jako upstream sprawdzonej gałęzi. |
+| `` us `` | Ustaw jako upstream | Ustaw wybraną gałąź zdalną jako upstream sprawdzonej gałęzi. |
 | `` s `` | Kolejność sortowania |  |
-| `` g `` | Reset | Wyświetl opcje resetu (miękki/mieszany/twardy) do wybranego elementu. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Resetuj HEAD do wybranego commita, zachowując zmiany między bieżącym a wybranym commit jako zmiany niezatwierdzone. |
+| `` gs `` | Miękki reset | Resetuj HEAD do wybranego commita, zachowując zmiany między bieżącym a wybranym commit jako zmiany zatwierdzone. |
+| `` gh `` | Twardy reset | Resetuj HEAD do wybranego commita, odrzucając wszystkie zmiany między bieżącym a wybranym commit, jak również wszystkie bieżące modyfikacje w drzewie roboczym. |
 | `` <ctrl+t> `` | Otwórz zewnętrzne narzędzie różnic (git difftool) |  |
 | `` 0 `` | Focus main view |  |
 | `` <enter> `` | Pokaż commity |  |

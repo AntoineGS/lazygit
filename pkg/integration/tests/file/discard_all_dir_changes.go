@@ -9,7 +9,7 @@ var DiscardAllDirChanges = NewIntegrationTest(NewIntegrationTestArgs{
 	Description:  "Discarding all changes in a directory",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig: func(config *config.AppConfig) {
+	SetupConfig: func(cfg *config.AppConfig) {
 	},
 	SetupRepo: func(shell *Shell) {
 		// typically we would use more bespoke shell methods here, but I struggled to find a way to do that,
@@ -85,24 +85,19 @@ var DiscardAllDirChanges = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("UD").Contains("deleted-them.txt"),
 				Contains("DU").Contains("deleted-us.txt"),
 			).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.Files.DiscardChanges).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Discard changes")).
-					Select(Contains("Discard all changes")).
+					Select(Contains("Discard").DoesNotContain("unstaged")).
 					Confirm()
-			}).
-			Tap(func() {
+
 				t.Common().ContinueOnConflictsResolved("merge")
 				t.ExpectPopup().Confirmation().
 					Title(Equals("Continue")).
 					Content(Contains("Files have been modified since conflicts were resolved. Auto-stage them and continue?")).
 					Cancel()
-				t.GlobalPress(keys.Universal.CreateRebaseOptionsMenu)
-				t.ExpectPopup().Menu().
-					Title(Equals("Merge options")).
-					Select(Contains("continue")).
-					Confirm()
+				t.Common().ContinueRebase()
 			}).
 			Lines(
 				Contains("dir").IsSelected(),
@@ -114,11 +109,11 @@ var DiscardAllDirChanges = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains(" M").Contains("modded.txt"),
 				Contains("??").Contains("new.txt"),
 			).
-			Press(keys.Universal.Remove).
+			Press(keys.ChordPrefix.Files.DiscardChanges).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Discard changes")).
-					Select(Contains("Discard all changes")).
+					Select(Contains("Discard").DoesNotContain("unstaged")).
 					Confirm()
 			}).
 			IsEmpty()

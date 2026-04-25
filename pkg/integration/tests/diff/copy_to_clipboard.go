@@ -57,77 +57,71 @@ var CopyToClipboard = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("file2"),
 			).
 			NavigateToLine(Contains("file1")).
-			Press(keys.Files.CopyFileInfoToClipboard).
+			Press(keys.ChordPrefix.CommitFiles.CopyToClipboard).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Copy to clipboard")).
 					Select(Contains("File name")).
-					Confirm().
-					Tap(func() {
-						t.ExpectToast(Equals("File name copied to clipboard"))
-						expectClipboard(t, Equals("file1"))
-					})
+					Confirm()
+
+				t.ExpectToast(Equals("File name copied to clipboard"))
+				expectClipboard(t, Equals("file1"))
 			}).
-			Press(keys.Files.CopyFileInfoToClipboard).
+			Press(keys.ChordPrefix.CommitFiles.CopyToClipboard).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Copy to clipboard")).
 					Select(Contains("Relative path")).
-					Confirm().
-					Tap(func() {
-						t.ExpectToast(Equals("File path copied to clipboard"))
-						expectClipboard(t, Equals("dir/file1"))
-					})
+					Confirm()
+
+				t.ExpectToast(Equals("File path copied to clipboard"))
+				expectClipboard(t, Equals("dir/file1"))
 			}).
-			Press(keys.Files.CopyFileInfoToClipboard).
+			Press(keys.ChordPrefix.CommitFiles.CopyToClipboard).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Copy to clipboard")).
 					Select(Contains("Absolute path")).
-					Confirm().
-					Tap(func() {
-						t.ExpectToast(Equals("File path copied to clipboard"))
-						worktreeDir, _ := os.Getwd()
-						// On windows the following path would have backslashes, but we don't run integration tests on windows yet.
-						expectClipboard(t, Equals(worktreeDir+"/dir/file1"))
-					})
+					Confirm()
+
+				t.ExpectToast(Equals("File path copied to clipboard"))
+				worktreeDir, _ := os.Getwd()
+				// On windows the following path would have backslashes, but we don't run integration tests on windows yet.
+				expectClipboard(t, Equals(worktreeDir+"/dir/file1"))
 			}).
-			Press(keys.Files.CopyFileInfoToClipboard).
+			Press(keys.ChordPrefix.CommitFiles.CopyToClipboard).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Copy to clipboard")).
 					Select(Contains("Diff of selected file")).
-					Confirm().
-					Tap(func() {
-						t.ExpectToast(Equals("File diff copied to clipboard"))
-						expectClipboard(t,
-							Contains("diff --git a/dir/file1 b/dir/file1").Contains("+2nd line").DoesNotContain("+1st line").
-								DoesNotContain("diff --git a/dir/file2 b/dir/file2").DoesNotContain("+file2"))
-					})
+					Confirm()
+
+				t.ExpectToast(Equals("File diff copied to clipboard"))
+				expectClipboard(t,
+					Contains("diff --git a/dir/file1 b/dir/file1").Contains("+2nd line").DoesNotContain("+1st line").
+						DoesNotContain("diff --git a/dir/file2 b/dir/file2").DoesNotContain("+file2"))
 			}).
-			Press(keys.Files.CopyFileInfoToClipboard).
+			Press(keys.ChordPrefix.CommitFiles.CopyToClipboard).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Copy to clipboard")).
 					Select(Contains("Diff of all files")).
-					Confirm().
-					Tap(func() {
-						t.ExpectToast(Equals("All files diff copied to clipboard"))
-						expectClipboard(t,
-							Contains("diff --git a/dir/file1 b/dir/file1").Contains("+2nd line").DoesNotContain("+1st line").
-								Contains("diff --git a/dir/file2 b/dir/file2").Contains("+file2"))
-					})
+					Confirm()
+
+				t.ExpectToast(Equals("All files diff copied to clipboard"))
+				expectClipboard(t,
+					Contains("diff --git a/dir/file1 b/dir/file1").Contains("+2nd line").DoesNotContain("+1st line").
+						Contains("diff --git a/dir/file2 b/dir/file2").Contains("+file2"))
 			}).
-			Press(keys.Files.CopyFileInfoToClipboard).
+			Press(keys.ChordPrefix.CommitFiles.CopyToClipboard).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Copy to clipboard")).
 					Select(Contains("Content of selected file")).
-					Confirm().
-					Tap(func() {
-						t.ExpectToast(Equals("File content copied to clipboard"))
-						expectClipboard(t, Equals("1st line\n2nd line\n"))
-					})
+					Confirm()
+
+				t.ExpectToast(Equals("File content copied to clipboard"))
+				expectClipboard(t, Equals("1st line\n2nd line\n"))
 			})
 
 		t.Views().Commits().
@@ -144,28 +138,26 @@ var CopyToClipboard = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("file2"),
 			).
 			NavigateToLine(Contains("file1")).
-			Press(keys.Files.CopyFileInfoToClipboard).
+			Press(keys.ChordPrefix.CommitFiles.CopyToClipboard).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Copy to clipboard")).
 					Select(Contains("Diff of selected file")).
-					Confirm().
-					Tap(func() {
-						t.ExpectToast(Equals("File diff copied to clipboard"))
-						expectClipboard(t,
-							Contains("diff --git a/dir/file1 b/dir/file1").Contains("+1st line").Contains("+2nd line"))
-					})
+					Confirm()
+
+				t.ExpectToast(Equals("File diff copied to clipboard"))
+				expectClipboard(t,
+					Contains("diff --git a/dir/file1 b/dir/file1").Contains("+1st line").Contains("+2nd line"))
 			}).
-			Press(keys.Files.CopyFileInfoToClipboard).
+			Press(keys.ChordPrefix.CommitFiles.CopyToClipboard).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Copy to clipboard")).
 					Select(Contains("Content of selected file")).
-					Confirm().
-					Tap(func() {
-						t.ExpectToast(Equals("File content copied to clipboard"))
-						expectClipboard(t, Equals("1st line\n2nd line\n"))
-					})
+					Confirm()
+
+				t.ExpectToast(Equals("File content copied to clipboard"))
+				expectClipboard(t, Equals("1st line\n2nd line\n"))
 			})
 	},
 })

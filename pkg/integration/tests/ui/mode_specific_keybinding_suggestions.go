@@ -10,7 +10,7 @@ var ModeSpecificKeybindingSuggestions = NewIntegrationTest(NewIntegrationTestArg
 	Description:  "When in various modes, we should corresponding keybinding suggestions onscreen",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig:  func(config *config.AppConfig) {},
+	SetupConfig: func(cfg *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		shell.CreateNCommits(2)
 		shell.NewBranch("base-branch")
@@ -64,11 +64,11 @@ var ModeSpecificKeybindingSuggestions = NewIntegrationTest(NewIntegrationTestArg
 
 				t.Views().Options().Content(DoesNotContain(rebaseSuggestion))
 			}).
-			Press(keys.Commits.ViewBisectOptions).
+			Press(keys.ChordPrefix.Commits.BisectOptions).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Equals("Bisect")).
-					Select(MatchesRegexp("Mark.* as bad")).
+					Title(Equals("Bisect options")).
+					Select(MatchesRegexp(`Mark .* as bad`)).
 					Confirm()
 
 				t.Views().Options().Content(Contains(bisectSuggestion))
@@ -99,11 +99,13 @@ var ModeSpecificKeybindingSuggestions = NewIntegrationTest(NewIntegrationTestArg
 			NavigateToLine(Contains("first-change-branch")).
 			Press(keys.Universal.Select).
 			NavigateToLine(Contains("second-change-branch")).
-			Press(keys.Branches.MergeIntoCurrentBranch).
+			Press(keys.ChordPrefix.LocalBranches.Merge).
 			Tap(func() {
+				// Pick plain "Merge"; non-ff / ff-only variants can be
+				// disabled depending on git config and branch state.
 				t.ExpectPopup().Menu().
 					Title(Equals("Merge")).
-					Select(Contains("Regular merge (with merge commit)")).
+					Select(MatchesRegexp(`^m\s+Merge$`)).
 					Confirm()
 
 				t.Common().AcknowledgeConflicts()

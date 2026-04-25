@@ -30,9 +30,9 @@ var FromOtherBranch = NewIntegrationTest(NewIntegrationTestArgs{
 				MatchesRegexp(`<-- good.*commit 05`),
 			).
 			SelectNextItem().
-			Press(keys.Commits.ViewBisectOptions).
+			Press(keys.ChordPrefix.Commits.BisectOptions).
 			Tap(func() {
-				t.ExpectPopup().Menu().Title(Equals("Bisect")).Select(MatchesRegexp(`Mark .* as good`)).Confirm()
+				t.ExpectPopup().Menu().Title(Equals("Bisect options")).Select(MatchesRegexp(`Mark .* as good`)).Confirm()
 
 				t.ExpectPopup().Alert().Title(Equals("Bisect complete")).Content(MatchesRegexp("(?s)commit 08.*Do you want to reset")).Confirm()
 

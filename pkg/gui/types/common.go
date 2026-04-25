@@ -392,6 +392,7 @@ type IRepoStateAccessor interface {
 	GetSearchState() *SearchState
 	SetSplitMainPanel(bool)
 	GetSplitMainPanel() bool
+	GetPendingChord() []gocui.Key
 }
 
 // startup stages so we don't need to load everything at once

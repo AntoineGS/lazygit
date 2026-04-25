@@ -32,12 +32,13 @@ func doTheRebaseForAmendTests(t *TestDriver, keys config.KeybindingConfig) {
 	t.Views().Branches().
 		Focus().
 		NavigateToLine(Contains("master")).
-		Press(keys.Branches.RebaseBranch).
+		Press(keys.ChordPrefix.LocalBranches.RebaseOptions).
 		Tap(func() {
 			t.ExpectPopup().Menu().
-				Title(Equals("Rebase 'branch'")).
+				Title(Equals("Rebase options")).
 				Select(Contains("Simple rebase")).
 				Confirm()
+
 			t.Common().AcknowledgeConflicts()
 		})
 
