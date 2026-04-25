@@ -54,6 +54,25 @@ func TestKeyFromLabel_Chord_Deep(t *testing.T) {
 	assert.Equal(t, "c", rest[1].Str())
 }
 
+func TestKeyFromLabel_LiteralLessThan(t *testing.T) {
+	// default Universal.GotoTop binding is "<"; unterminated-bracket
+	// tokenization must fall back to single-key parse.
+	key, ok := KeyFromLabel("<")
+	assert.True(t, ok)
+	assert.True(t, key.IsSet())
+	assert.Equal(t, "<", key.Str())
+	assert.Empty(t, key.Rest())
+}
+
+func TestKeyFromLabel_EscAsSingleKey(t *testing.T) {
+	// Esc is only reserved in non-first positions of a chord; a lone
+	// <esc> binding must remain valid.
+	key, ok := KeyFromLabel("<esc>")
+	assert.True(t, ok)
+	assert.True(t, key.IsSet())
+	assert.Empty(t, key.Rest())
+}
+
 func TestKeyFromLabel_Empty(t *testing.T) {
 	key, ok := KeyFromLabel("")
 	assert.True(t, ok)
