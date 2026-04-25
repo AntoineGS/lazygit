@@ -191,6 +191,14 @@ type Gui struct {
 	taskManager *TaskManager
 
 	lastHoverView *View
+
+	// pendingChord is the chord prefix pressed so far (empty if none).
+	pendingChord []Key
+	// pendingChordView is the view that was current when the chord started.
+	pendingChordView string
+	// onChordStateChange is called whenever pendingChord changes. Fired
+	// with the new prefix (possibly empty) so the caller can update UI.
+	onChordStateChange func([]Key)
 }
 
 type NewGuiOpts struct {
@@ -566,6 +574,39 @@ func (g *Gui) SetKeybindingKeys(viewname string, keys []Key, handler func(*Gui, 
 	kb := newChordKeybinding(viewname, keys, ModNone, handler)
 	g.keybindings = append(g.keybindings, kb)
 	return nil
+}
+
+// ClearPendingChord resets any pending chord state. Safe to call when no
+// chord is pending. Always fires the state-change callback if set.
+func (g *Gui) ClearPendingChord() {
+	if g.pendingChord == nil && g.pendingChordView == "" {
+		if g.onChordStateChange != nil {
+			g.onChordStateChange(nil)
+		}
+		return
+	}
+	g.pendingChord = nil
+	g.pendingChordView = ""
+	if g.onChordStateChange != nil {
+		g.onChordStateChange(nil)
+	}
+}
+
+// SetChordStateCallback registers a callback fired on chord state changes.
+// The callback receives the current pending prefix (empty means no chord
+// pending).
+func (g *Gui) SetChordStateCallback(cb func([]Key)) {
+	g.onChordStateChange = cb
+}
+
+// PendingChord returns a copy of the currently pending chord prefix.
+func (g *Gui) PendingChord() []Key {
+	if len(g.pendingChord) == 0 {
+		return nil
+	}
+	out := make([]Key, len(g.pendingChord))
+	copy(out, g.pendingChord)
+	return out
 }
 
 // DeleteKeybinding deletes a keybinding.
