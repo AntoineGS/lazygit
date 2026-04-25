@@ -291,3 +291,17 @@ func TestUserConfigValidate_enums(t *testing.T) {
 		})
 	}
 }
+
+func TestKeybindingGroup_PrefixMustParse(t *testing.T) {
+	cfg := GetDefaultConfig()
+	cfg.KeybindingGroups = map[string]KeybindingGroupConfig{
+		"<bogus": {Name: "Bad"},
+	}
+	err := cfg.Validate()
+	if err == nil {
+		t.Fatal("expected validation error for unparsable prefix")
+	}
+	if !strings.Contains(err.Error(), "<bogus") {
+		t.Fatalf("error should cite the offending prefix, got: %v", err)
+	}
+}
