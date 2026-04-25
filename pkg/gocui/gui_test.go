@@ -20,3 +20,15 @@ func TestSuppressChordClear_BlocksClearWhenSet(t *testing.T) {
 		t.Fatal("ClearPendingChord should clear once suppress is off")
 	}
 }
+
+func TestSetPendingChordView_UpdatesViewName(t *testing.T) {
+	g := &Gui{}
+	g.pendingChord = []Key{NewKeyRune('b')}
+	g.pendingChordView = "files"
+
+	g.SetPendingChordView("localBranches")
+
+	if g.pendingChordView != "localBranches" {
+		t.Fatalf("expected pendingChordView=localBranches, got %q", g.pendingChordView)
+	}
+}

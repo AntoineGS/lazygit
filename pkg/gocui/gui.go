@@ -604,6 +604,13 @@ func (g *Gui) SuppressChordClear(suppress bool) {
 	g.suppressChordClear = suppress
 }
 
+// SetPendingChordView updates the view scope used for matching chord
+// continuations. The auto-switch handler calls this after Push so view-scoped
+// bindings under the new context become eligible.
+func (g *Gui) SetPendingChordView(viewName string) {
+	g.pendingChordView = viewName
+}
+
 // SetChordStateCallback registers a callback fired on chord state changes.
 // The callback receives the current pending prefix (empty means no chord
 // pending).
