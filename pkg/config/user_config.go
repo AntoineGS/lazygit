@@ -844,7 +844,7 @@ func GetDefaultConfigForPlatform(platform string) *UserConfig {
 			FilterMode:                          "substring",
 			Spinner: SpinnerConfig{
 				Frames: []string{"|", "/", "-", "\\"},
-				Rate:   50,
+				Rate:   200,
 			},
 			StatusPanelView:              "dashboard",
 			SwitchToFilesAfterStashPop:   true,

@@ -96,7 +96,7 @@ func (self *AppStatusHelper) renderAppStatus() {
 		for range ticker.C {
 			appStatus, color := self.statusMgr().GetStatusString(self.c.UserConfig())
 			self.c.Views().AppStatus.FgColor = color
-			self.c.OnUIThread(func() error {
+			self.c.OnUIThreadContentOnly(func() error {
 				self.c.SetViewContent(self.c.Views().AppStatus, appStatus)
 				return nil
 			})
@@ -111,7 +111,7 @@ func (self *AppStatusHelper) renderAppStatus() {
 
 func (self *AppStatusHelper) renderAppStatusSync(stop chan struct{}) {
 	go func() {
-		ticker := time.NewTicker(time.Millisecond * 50)
+		ticker := time.NewTicker(time.Millisecond * time.Duration(self.c.UserConfig().Gui.Spinner.Rate))
 		defer ticker.Stop()
 
 		// Forcing a re-layout and redraw after we added the waiting status;
