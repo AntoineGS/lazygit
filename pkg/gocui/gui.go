@@ -1556,6 +1556,14 @@ func (g *Gui) execKeybindings(v *View, ev *GocuiEvent) error {
 	}
 
 	// --- chord dispatch ---
+	// Placed AFTER the IsPasting bypass (bracketed paste must stay
+	// byte-faithful to editable views) and AFTER the search-active
+	// block (which intercepts only NextSearchMatchKey, PrevSearchMatchKey,
+	// and SearchEscapeKey). Consequence: a chord whose FIRST key is one
+	// of those three configured keys will not start while a search is
+	// active. For non-search-reserved keys, chord dispatch still wins
+	// over single-key dispatch (Rule C) as the chord block precedes the
+	// main keybindings loop below.
 	if len(g.pendingChord) > 0 {
 		// Esc cancels the chord unconditionally.
 		if ev.Key.KeyName() == KeyName(tcell.KeyEscape) {
