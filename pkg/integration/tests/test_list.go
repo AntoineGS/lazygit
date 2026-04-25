@@ -18,6 +18,7 @@ import (
 	"github.com/jesseduffield/lazygit/pkg/integration/tests/filter_by_author"
 	"github.com/jesseduffield/lazygit/pkg/integration/tests/filter_by_path"
 	"github.com/jesseduffield/lazygit/pkg/integration/tests/interactive_rebase"
+	"github.com/jesseduffield/lazygit/pkg/integration/tests/keybindings"
 	"github.com/jesseduffield/lazygit/pkg/integration/tests/misc"
 	"github.com/jesseduffield/lazygit/pkg/integration/tests/patch_building"
 	"github.com/jesseduffield/lazygit/pkg/integration/tests/reflog"
@@ -330,6 +331,13 @@ var tests = []*components.IntegrationTest{
 	interactive_rebase.SwapInRebaseWithConflictAndEdit,
 	interactive_rebase.SwapWithConflict,
 	interactive_rebase.ViewFilesOfTodoEntries,
+	keybindings.ChordBasic,
+	keybindings.ChordDeep,
+	keybindings.ChordEscCancels,
+	keybindings.ChordFooterShowsContinuations,
+	keybindings.ChordShadowsSingleKey,
+	keybindings.ChordUnboundCancels,
+	keybindings.ChordViewSwitchCancels,
 	misc.ConfirmOnQuit,
 	misc.CopyConfirmationMessageToClipboard,
 	misc.CopyToClipboard,
