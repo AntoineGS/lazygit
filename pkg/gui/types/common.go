@@ -396,6 +396,10 @@ type IRepoStateAccessor interface {
 	GetSearchState() *SearchState
 	SetSplitMainPanel(bool)
 	GetSplitMainPanel() bool
+	// GetPendingChord returns the currently pending chord prefix mirrored
+	// from gocui. Empty when no chord is in progress. Used by the options
+	// footer to render chord continuations.
+	GetPendingChord() []gocui.Key
 }
 
 // startup stages so we don't need to load everything at once

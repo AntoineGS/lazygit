@@ -255,6 +255,10 @@ type GuiRepoState struct {
 	CurrentPopupOpts *types.CreatePopupPanelOpts
 
 	LastBackgroundFetchTime time.Time
+
+	// PendingChord mirrors gocui's chord state so the options footer
+	// can render continuations. Empty when no chord is pending.
+	PendingChord []gocui.Key
 }
 
 var _ types.IRepoStateAccessor = new(GuiRepoState)
@@ -305,6 +309,10 @@ func (self *GuiRepoState) SetSplitMainPanel(value bool) {
 
 func (self *GuiRepoState) GetSplitMainPanel() bool {
 	return self.SplitMainPanel
+}
+
+func (self *GuiRepoState) GetPendingChord() []gocui.Key {
+	return self.PendingChord
 }
 
 func (gui *Gui) onSwitchToNewRepo(startArgs appTypes.StartArgs, contextKey types.ContextKey) error {
@@ -918,6 +926,14 @@ func (gui *Gui) Run(startArgs appTypes.StartArgs) error {
 	deadlock.Opts.Disable = !gui.Debug || os.Getenv(components.WAIT_FOR_DEBUGGER_ENV_VAR) != ""
 
 	gui.g.OnSearchEscape = func() error { gui.helpers.Search.Cancel(); return nil }
+
+	gui.g.SetChordStateCallback(func(prefix []gocui.Key) {
+		if gui.State != nil {
+			gui.State.PendingChord = prefix
+		}
+		// Schedule a redraw so the options footer repaints.
+		gui.onUIThread(func() error { return nil })
+	})
 
 	gui.g.SetManager(gocui.ManagerFunc(gui.layout))
 

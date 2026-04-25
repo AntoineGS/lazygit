@@ -191,6 +191,14 @@ type Gui struct {
 	taskManager *TaskManager
 
 	lastHoverView *View
+
+	// pendingChord is the chord prefix pressed so far (empty if none).
+	pendingChord []Key
+	// pendingChordView is the view that was current when the chord started.
+	pendingChordView string
+	// onChordStateChange is called whenever pendingChord changes. Fired
+	// with the new prefix (possibly empty) so the caller can update UI.
+	onChordStateChange func([]Key)
 }
 
 type NewGuiOpts struct {
@@ -553,6 +561,52 @@ func (g *Gui) SetKeybinding(viewname string, key Key, mod Modifier, handler func
 	kb := newKeybinding(viewname, key, mod, handler)
 	g.keybindings = append(g.keybindings, kb)
 	return nil
+}
+
+// SetKeybindingKeys creates a new chord keybinding. The sequence must
+// contain at least two keys. Dispatch treats the sequence as "press key0,
+// then key1, then ..., then keyN-1 to trigger". If sequence has length
+// less than 2 this is treated as a programmer error.
+func (g *Gui) SetKeybindingKeys(viewname string, keys []Key, handler func(*Gui, *View) error) error {
+	if len(keys) < 2 {
+		return errors.New("SetKeybindingKeys requires a sequence of length >= 2")
+	}
+	kb := newChordKeybinding(viewname, keys, ModNone, handler)
+	g.keybindings = append(g.keybindings, kb)
+	return nil
+}
+
+// ClearPendingChord resets any pending chord state. Safe to call when no
+// chord is pending. Always fires the state-change callback if set.
+func (g *Gui) ClearPendingChord() {
+	if g.pendingChord == nil && g.pendingChordView == "" {
+		if g.onChordStateChange != nil {
+			g.onChordStateChange(nil)
+		}
+		return
+	}
+	g.pendingChord = nil
+	g.pendingChordView = ""
+	if g.onChordStateChange != nil {
+		g.onChordStateChange(nil)
+	}
+}
+
+// SetChordStateCallback registers a callback fired on chord state changes.
+// The callback receives the current pending prefix (empty means no chord
+// pending).
+func (g *Gui) SetChordStateCallback(cb func([]Key)) {
+	g.onChordStateChange = cb
+}
+
+// PendingChord returns a copy of the currently pending chord prefix.
+func (g *Gui) PendingChord() []Key {
+	if len(g.pendingChord) == 0 {
+		return nil
+	}
+	out := make([]Key, len(g.pendingChord))
+	copy(out, g.pendingChord)
+	return out
 }
 
 // DeleteKeybinding deletes a keybinding.
@@ -1537,6 +1591,87 @@ func (g *Gui) execKeybindings(v *View, ev *GocuiEvent) error {
 		}
 	}
 
+	// --- chord dispatch ---
+	// Placed AFTER the IsPasting bypass (bracketed paste must stay
+	// byte-faithful to editable views) and AFTER the search-active
+	// block (which intercepts only NextSearchMatchKey, PrevSearchMatchKey,
+	// and SearchEscapeKey). Consequence: a chord whose FIRST key is one
+	// of those three configured keys will not start while a search is
+	// active. For non-search-reserved keys, chord dispatch still wins
+	// over single-key dispatch (Rule C) as the chord block precedes the
+	// main keybindings loop below.
+	if len(g.pendingChord) > 0 {
+		// Esc cancels the chord unconditionally.
+		if ev.Key.KeyName() == KeyName(tcell.KeyEscape) {
+			g.ClearPendingChord()
+			return nil
+		}
+
+		candidate := append([]Key(nil), g.pendingChord...)
+		candidate = append(candidate, ev.Key)
+
+		// 1) Exact match in the chord-start view scope -> fire.
+		for _, kb := range g.keybindings {
+			if !kb.isChord() {
+				continue
+			}
+			if !chordViewMatches(g.pendingChordView, kb.viewName) {
+				continue
+			}
+			if keysEqual(kb.keys, candidate) {
+				g.ClearPendingChord()
+				return g.execKeybinding(g.viewByName(g.pendingChordView), kb)
+			}
+		}
+
+		// 2) Candidate is a proper prefix of some binding -> extend and wait.
+		for _, kb := range g.keybindings {
+			if !kb.isChord() {
+				continue
+			}
+			if !chordViewMatches(g.pendingChordView, kb.viewName) {
+				continue
+			}
+			if keysHasPrefix(kb.keys, candidate) {
+				g.pendingChord = candidate
+				if g.onChordStateChange != nil {
+					g.onChordStateChange(g.pendingChord)
+				}
+				return nil
+			}
+		}
+
+		// 3) No match: silent cancel (per design Q4 answer A).
+		g.ClearPendingChord()
+		return nil
+	}
+
+	// No chord pending: check whether ev.Key starts any chord binding in
+	// the current view scope. If so, enter chord-pending mode and stop
+	// before the single-key dispatch (per design Rule C: chord wins).
+	for _, kb := range g.keybindings {
+		if !kb.isChord() {
+			continue
+		}
+		if !kb.keys[0].Equals(ev.Key) {
+			continue
+		}
+		currentViewName := ""
+		if v != nil {
+			currentViewName = v.Name()
+		}
+		if !chordViewMatches(currentViewName, kb.viewName) {
+			continue
+		}
+		g.pendingChord = []Key{ev.Key}
+		g.pendingChordView = currentViewName
+		if g.onChordStateChange != nil {
+			g.onChordStateChange(g.pendingChord)
+		}
+		return nil
+	}
+	// --- end chord dispatch ---
+
 	var err error
 
 	for _, kb := range g.keybindings {
@@ -1671,4 +1806,54 @@ func (g *Gui) SetEditKeybindings(moveWordLeft, moveWordRight, backspaceWord, for
 	moveWordRightKeybinding = moveWordRight
 	backspaceWordKeybinding = backspaceWord
 	forwardDeleteWordKeybinding = forwardDeleteWord
+}
+
+// chordViewMatches reports whether a binding registered for bindingView
+// should apply when chord state is scoped to chordView. Empty binding
+// view name means "global" and always matches.
+func chordViewMatches(chordView string, bindingView string) bool {
+	if bindingView == "" {
+		return true
+	}
+	return bindingView == chordView
+}
+
+// keysEqual reports whether two key sequences are identical.
+func keysEqual(a, b []Key) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !a[i].Equals(b[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+// keysHasPrefix reports whether prefix is a strict or equal prefix of seq.
+func keysHasPrefix(seq, prefix []Key) bool {
+	if len(prefix) > len(seq) {
+		return false
+	}
+	for i := range prefix {
+		if !seq[i].Equals(prefix[i]) {
+			return false
+		}
+	}
+	return true
+}
+
+// viewByName returns the named view, or nil if not found. Used when
+// firing a chord handler whose scope was captured when the chord began.
+func (g *Gui) viewByName(name string) *View {
+	if name == "" {
+		return g.currentView
+	}
+	for _, v := range g.views {
+		if v.Name() == name {
+			return v
+		}
+	}
+	return g.currentView
 }

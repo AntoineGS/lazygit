@@ -88,11 +88,83 @@ func LabelForKey(key gocui.Key) string {
 	return label
 }
 
+// KeyFromLabel parses a keybinding label, which may be a single token
+// ("p", "<c-g>") or a sequence of tokens ("bp", "<c-g>p", "<c-g><c-p>", "abc").
+// For sequences it returns a Key whose first token is the head and whose
+// Rest() contains the remaining tokens.
 func KeyFromLabel(label string) (gocui.Key, bool) {
 	if label == "" || label == "<disabled>" {
 		return gocui.Key{}, true
 	}
 
+	tokens, ok := tokenizeSequence(label)
+	if !ok {
+		// Tokenization can fail on inputs like a literal "<" used as a
+		// single-key binding (the default for Universal.GotoTop). Fall back
+		// to the single-key parser so backward compatibility is preserved.
+		if k, ok := singleKeyFromLabel(label); ok {
+			return k, true
+		}
+		return gocui.Key{}, false
+	}
+
+	// Disallow <disabled> inside a longer sequence.
+	if len(tokens) > 1 {
+		for _, t := range tokens {
+			if t == "<disabled>" {
+				return gocui.Key{}, false
+			}
+		}
+	}
+
+	keys := make([]gocui.Key, 0, len(tokens))
+	for i, tok := range tokens {
+		k, ok := singleKeyFromLabel(tok)
+		if !ok {
+			return gocui.Key{}, false
+		}
+		// Esc is reserved for chord cancel; disallow in non-first positions.
+		if i > 0 && k.KeyName() == gocui.KeyName(tcell.KeyEscape) {
+			return gocui.Key{}, false
+		}
+		keys = append(keys, k)
+	}
+
+	if len(keys) == 1 {
+		return keys[0], true
+	}
+	return keys[0].WithRest(keys[1:]), true
+}
+
+// tokenizeSequence splits a label into its constituent key tokens.
+// A token is either a single rune or a <...>-bracketed group.
+func tokenizeSequence(label string) ([]string, bool) {
+	var tokens []string
+	i := 0
+	for i < len(label) {
+		if label[i] == '<' {
+			end := strings.Index(label[i:], ">")
+			if end == -1 {
+				return nil, false
+			}
+			tokens = append(tokens, label[i:i+end+1])
+			i += end + 1
+			continue
+		}
+		// Consume one rune.
+		_, size := utf8.DecodeRuneInString(label[i:])
+		tokens = append(tokens, label[i:i+size])
+		i += size
+	}
+	if len(tokens) == 0 {
+		return nil, false
+	}
+	return tokens, true
+}
+
+// singleKeyFromLabel parses a single token (never a sequence) into a Key.
+// This is the original KeyFromLabel logic, unchanged in semantics.
+func singleKeyFromLabel(label string) (gocui.Key, bool) {
 	if strings.HasPrefix(label, "<") && strings.HasSuffix(label, ">") {
 		label = label[1 : len(label)-1]
 	}

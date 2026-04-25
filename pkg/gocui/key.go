@@ -11,6 +11,12 @@ type Key struct {
 	str     string
 
 	mod Modifier
+
+	// rest is the tail of a chord sequence, or nil for single-key bindings.
+	// Stored as a pointer so Key remains comparable (slices are not); two
+	// independently-parsed chord keys therefore have distinct identities,
+	// which is the desired behavior.
+	rest *[]Key
 }
 
 func NewKey(keyName KeyName, str string, mod Modifier) Key {
@@ -63,4 +69,38 @@ func (k Key) IsSet() bool {
 
 func (k Key) Equals(otherKey Key) bool {
 	return k.keyName == otherKey.keyName && k.str == otherKey.str && k.mod == otherKey.mod
+}
+
+// Rest returns the tail of a chord sequence, or nil for single-key bindings.
+func (k Key) Rest() []Key {
+	if k.rest == nil {
+		return nil
+	}
+	return *k.rest
+}
+
+// HasRest reports whether this Key carries a chord tail.
+func (k Key) HasRest() bool {
+	return k.rest != nil && len(*k.rest) > 0
+}
+
+// Sequence returns the full chord sequence starting with k itself.
+// For single-key bindings it returns a one-element slice containing k
+// with its rest cleared. Note: returned elements always have empty
+// rest — callers must not rely on Sequence()[i].HasRest() to recover
+// the original chord shape; iterate the slice instead.
+func (k Key) Sequence() []Key {
+	head := k
+	head.rest = nil
+	if k.rest == nil {
+		return []Key{head}
+	}
+	return append([]Key{head}, (*k.rest)...)
+}
+
+// WithRest returns a copy of k with the given rest appended (replacing any
+// existing rest). Used by the parser to build chord keys.
+func (k Key) WithRest(rest []Key) Key {
+	k.rest = &rest
+	return k
 }
