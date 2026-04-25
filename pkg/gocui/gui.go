@@ -199,6 +199,8 @@ type Gui struct {
 	// onChordStateChange is called whenever pendingChord changes. Fired
 	// with the new prefix (possibly empty) so the caller can update UI.
 	onChordStateChange func([]Key)
+	// suppressChordClear prevents ClearPendingChord from clearing when true.
+	suppressChordClear bool
 }
 
 type NewGuiOpts struct {
@@ -579,6 +581,9 @@ func (g *Gui) SetKeybindingKeys(viewname string, keys []Key, handler func(*Gui, 
 // ClearPendingChord resets any pending chord state. Safe to call when no
 // chord is pending. Always fires the state-change callback if set.
 func (g *Gui) ClearPendingChord() {
+	if g.suppressChordClear {
+		return
+	}
 	if g.pendingChord == nil && g.pendingChordView == "" {
 		if g.onChordStateChange != nil {
 			g.onChordStateChange(nil)
@@ -590,6 +595,13 @@ func (g *Gui) ClearPendingChord() {
 	if g.onChordStateChange != nil {
 		g.onChordStateChange(nil)
 	}
+}
+
+// SuppressChordClear toggles whether ClearPendingChord is a no-op. Used by
+// the chord auto-switch handler so a ContextMgr.Push triggered by entering
+// a group prefix doesn't blow away the chord state we just set.
+func (g *Gui) SuppressChordClear(suppress bool) {
+	g.suppressChordClear = suppress
 }
 
 // SetChordStateCallback registers a callback fired on chord state changes.
