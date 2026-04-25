@@ -196,6 +196,9 @@ func validateKeybindingGroups(groups map[string]KeybindingGroupConfig, keybindin
 			return fmt.Errorf("Unrecognized chord prefix '%s' in keybindingGroups. For permitted values see %s",
 				prefix, constants.Links.Docs.CustomKeybindings)
 		}
+		if strings.TrimSpace(group.Name) == "" {
+			return fmt.Errorf("keybindingGroups[%s] must have a non-empty name", prefix)
+		}
 		allowedSwitchTo := []string{
 			"status", "files",
 			"localBranches", "remotes", "tags",

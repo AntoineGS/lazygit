@@ -306,6 +306,18 @@ func TestKeybindingGroup_PrefixMustParse(t *testing.T) {
 	}
 }
 
+func TestKeybindingGroup_NameMustNotBeEmpty(t *testing.T) {
+	cfg := GetDefaultConfig()
+	cfg.Keybinding.Universal.Pull = "<X><p>"
+	cfg.KeybindingGroups = map[string]KeybindingGroupConfig{
+		"<X>": {Name: "", SwitchTo: "localBranches"},
+	}
+	err := cfg.Validate()
+	if err == nil || !strings.Contains(err.Error(), "non-empty name") {
+		t.Fatalf("expected validation error for empty name, got: %v", err)
+	}
+}
+
 func TestKeybindingGroup_SwitchToMustBeKnown(t *testing.T) {
 	cfg := GetDefaultConfig()
 	cfg.Keybinding.Universal.Pull = "<b><p>" // give the prefix a binding so rule 4 doesn't fire first
