@@ -201,6 +201,12 @@ type Gui struct {
 	onChordStateChange func([]Key)
 	// suppressChordClear prevents ClearPendingChord from clearing when true.
 	suppressChordClear bool
+	// globalChordPrefixes is a list of single-key prefixes that should be
+	// treated as chord starters in every view, regardless of which view a
+	// matching chord binding is registered under. Populated by callers that
+	// have a side-effect (e.g. context auto-switch) tied to the prefix even
+	// when its sub-bindings are view-scoped.
+	globalChordPrefixes []Key
 }
 
 type NewGuiOpts struct {
@@ -616,6 +622,16 @@ func (g *Gui) SetPendingChordView(viewName string) {
 // pending).
 func (g *Gui) SetChordStateCallback(cb func([]Key)) {
 	g.onChordStateChange = cb
+}
+
+// SetGlobalChordPrefixes replaces the list of single-key prefixes that act
+// as chord starters in every view. Use this when a prefix has a side-effect
+// (such as switching context) that should fire even when its sub-bindings
+// are scoped to other views.
+func (g *Gui) SetGlobalChordPrefixes(keys []Key) {
+	out := make([]Key, len(keys))
+	copy(out, keys)
+	g.globalChordPrefixes = out
 }
 
 // PendingChord returns a copy of the currently pending chord prefix.
@@ -1668,6 +1684,10 @@ func (g *Gui) execKeybindings(v *View, ev *GocuiEvent) error {
 	// No chord pending: check whether ev.Key starts any chord binding in
 	// the current view scope. If so, enter chord-pending mode and stop
 	// before the single-key dispatch (per design Rule C: chord wins).
+	currentViewName := ""
+	if v != nil {
+		currentViewName = v.Name()
+	}
 	for _, kb := range g.keybindings {
 		if !kb.isChord() {
 			continue
@@ -1675,11 +1695,22 @@ func (g *Gui) execKeybindings(v *View, ev *GocuiEvent) error {
 		if !kb.keys[0].Equals(ev.Key) {
 			continue
 		}
-		currentViewName := ""
-		if v != nil {
-			currentViewName = v.Name()
-		}
 		if !chordViewMatches(currentViewName, kb.viewName) {
+			continue
+		}
+		g.pendingChord = []Key{ev.Key}
+		g.pendingChordView = currentViewName
+		if g.onChordStateChange != nil {
+			g.onChordStateChange(g.pendingChord)
+		}
+		return nil
+	}
+	// Fallback: a globally-registered chord prefix (e.g. a keybindingGroups
+	// entry with switchTo) should enter chord-pending in every view, even
+	// if no concrete chord binding for ev.Key is registered for the
+	// current view.
+	for _, prefix := range g.globalChordPrefixes {
+		if !prefix.Equals(ev.Key) {
 			continue
 		}
 		g.pendingChord = []Key{ev.Key}

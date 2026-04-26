@@ -470,7 +470,37 @@ func (gui *Gui) resetKeybindings() error {
 		}
 	}
 
+	gui.g.SetGlobalChordPrefixes(gui.collectAutoSwitchChordPrefixes())
+
 	return nil
+}
+
+// collectAutoSwitchChordPrefixes returns the first key of every
+// keybindingGroups entry that has a non-empty switchTo. These prefixes need
+// to enter chord-pending mode in every view so the auto-switch fires from
+// any panel — even when the group's sub-bindings live in a different
+// context's keybinding scope.
+func (gui *Gui) collectAutoSwitchChordPrefixes() []gocui.Key {
+	groups := gui.c.UserConfig().KeybindingGroups
+	if len(groups) == 0 {
+		return nil
+	}
+	prefixes := make([]gocui.Key, 0, len(groups))
+	for label, group := range groups {
+		if group.SwitchTo == "" {
+			continue
+		}
+		k, ok := config.KeyFromLabel(label)
+		if !ok {
+			continue
+		}
+		seq := k.Sequence()
+		if len(seq) == 0 {
+			continue
+		}
+		prefixes = append(prefixes, seq[0])
+	}
+	return prefixes
 }
 
 func (gui *Gui) SetKeybinding(binding *types.Binding) error {
