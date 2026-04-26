@@ -238,12 +238,8 @@ func buildChordContinuations(
 	return result
 }
 
-// chordContinuationBindings returns the footer entries to show while the
-// given chord prefix is pending: every binding whose key sequence starts
-// with prefix and has at least one more key, plus a final <esc>: cancel
-// entry. Disabled bindings are skipped, but otherwise we don't filter on
-// DisplayOnScreen — chord continuations are always relevant when their
-// prefix is pending.
+// chordContinuationBindings reads keybindingGroups from config and delegates
+// the collapse logic to buildChordContinuations.
 func (self *OptionsMapMgr) chordContinuationBindings(allBindings []*types.Binding, prefix []gocui.Key) []bindingInfo {
 	groups := self.c.UserConfig().KeybindingGroups
 	return buildChordContinuations(allBindings, prefix, groups)
