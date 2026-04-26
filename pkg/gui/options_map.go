@@ -163,6 +163,10 @@ type bindingInfo struct {
 //     (deduplicated across all bindings that share the same group).
 //   - Otherwise, emit one row per binding using its short description.
 //   - Always append the <esc>: cancel row last.
+//
+// Style note: when multiple bindings under one group differ in DisplayStyle,
+// the collapsed group row uses the style of whichever leaf is iterated first.
+// Groups are typically homogeneous in style so this is rarely visible.
 func buildChordContinuations(
 	allBindings []*types.Binding,
 	prefix []gocui.Key,
