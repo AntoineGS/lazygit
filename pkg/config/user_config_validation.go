@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/jesseduffield/lazygit/pkg/constants"
+	"github.com/jesseduffield/lazygit/pkg/gocui"
 )
 
 func (config *UserConfig) Validate() error {
@@ -190,6 +191,22 @@ func collectAllKeybindingStrings(node any) []string {
 	return out
 }
 
+// bindingSequenceStartsWith reports whether bseq starts with prefixSeq
+// (every key in prefixSeq matches the corresponding key in bseq).
+// Note this returns true even when bseq == prefixSeq; callers compare
+// lengths separately to distinguish equal vs proper-prefix.
+func bindingSequenceStartsWith(bseq, prefixSeq []gocui.Key) bool {
+	if len(bseq) < len(prefixSeq) {
+		return false
+	}
+	for i, k := range prefixSeq {
+		if !bseq[i].Equals(k) {
+			return false
+		}
+	}
+	return true
+}
+
 func validateKeybindingGroups(groups map[string]KeybindingGroupConfig, keybindings KeybindingConfig) error {
 	allBindings := collectAllKeybindingStrings(keybindings)
 
@@ -213,17 +230,7 @@ func validateKeybindingGroups(groups map[string]KeybindingGroupConfig, keybindin
 				continue
 			}
 			bseq := bk.Sequence()
-			if len(bseq) != len(prefixSeq) {
-				continue
-			}
-			collision := true
-			for i, k := range prefixSeq {
-				if !bseq[i].Equals(k) {
-					collision = false
-					break
-				}
-			}
-			if collision {
+			if len(bseq) == len(prefixSeq) && bindingSequenceStartsWith(bseq, prefixSeq) {
 				return fmt.Errorf("keybindingGroups[%s] collides with a leaf binding using the same key sequence; a key cannot be both an action and a sub-menu", prefix)
 			}
 		}
@@ -235,17 +242,7 @@ func validateKeybindingGroups(groups map[string]KeybindingGroupConfig, keybindin
 				continue
 			}
 			bseq := bk.Sequence()
-			if len(bseq) <= len(prefixSeq) {
-				continue
-			}
-			match := true
-			for i, k := range prefixSeq {
-				if !bseq[i].Equals(k) {
-					match = false
-					break
-				}
-			}
-			if match {
+			if len(bseq) > len(prefixSeq) && bindingSequenceStartsWith(bseq, prefixSeq) {
 				hasChild = true
 				break
 			}
