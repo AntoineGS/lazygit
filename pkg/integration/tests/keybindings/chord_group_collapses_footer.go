@@ -27,12 +27,12 @@ var ChordGroupCollapsesFooter = NewIntegrationTest(NewIntegrationTestArgs{
 
 		// One row for "Pull Request", NOT three rows for the three leaves.
 		t.Views().Options().Content(Contains("Pull Request"))
-		// Sanity: descriptions of the leaf bindings (Pull/Push/Refresh) should NOT appear in the
-		// collapsed footer when their group is defined.
+		// Sanity: the leaf bindings' formatted footer entries (description: key)
+		// should NOT appear in the collapsed footer when their group is defined.
 		t.Views().Options().
-			Content(DoesNotContain("pull")).
-			Content(DoesNotContain("push")).
-			Content(DoesNotContain("refresh"))
+			Content(DoesNotContain("Pull: o")).
+			Content(DoesNotContain("Push: l")).
+			Content(DoesNotContain("Refresh: r"))
 
 		t.GlobalPress("<esc>")
 	},
