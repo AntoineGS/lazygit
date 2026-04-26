@@ -61,3 +61,32 @@
 | `<c-5>`       | Ctrl5          |
 | `<c-6>`       | Ctrl6          |
 | `<c-8>`       | Ctrl8          |
+
+## Chord Group Labels
+
+You can label chord prefixes to make the footer more readable. Define groups
+under `keybindingGroups`:
+
+```yaml
+keybindingGroups:
+  "<b>":      { name: "Branch" }
+  "<b><t>":   { name: "Pull Request" }
+  "<c>":      { name: "Commit" }
+  "<s>":      { name: "Stash" }
+```
+
+When a chord prefix is pending, sub-bindings whose next key matches a defined
+group prefix are collapsed into a single footer row using the group's `name`.
+For example, with the config above and three bindings under `<b><t>`
+(`<b><t><o>`, `<b><t><l>`, `<b><t><c>`), pressing `b` shows one row labeled
+`t: Pull Request` instead of three rows.
+
+Validation rules:
+- The prefix must be a valid chord-key string.
+- The `name` must be non-empty.
+- At least one keybinding must exist under the prefix.
+- The prefix must not collide with a leaf binding using the same key sequence.
+
+`keybindingGroups` is purely a footer-labeling and mnemonic-grouping
+mechanism — it doesn't change which bindings fire or where. Navigation
+between panes remains the user's responsibility (use `g{n}` or `<tab>`).
