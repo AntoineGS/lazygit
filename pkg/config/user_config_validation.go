@@ -187,6 +187,8 @@ func collectAllKeybindingStrings(node any) []string {
 		if s != "" && s != "<disabled>" {
 			out = append(out, s)
 		}
+	default:
+		log.Fatalf("collectAllKeybindingStrings: unexpected reflect kind %s", value.Kind())
 	}
 	return out
 }
