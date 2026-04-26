@@ -191,6 +191,8 @@ func collectAllKeybindingStrings(node any) []string {
 }
 
 func validateKeybindingGroups(groups map[string]KeybindingGroupConfig, keybindings KeybindingConfig) error {
+	allBindings := collectAllKeybindingStrings(keybindings)
+
 	for prefix, group := range groups {
 		if _, ok := KeyFromLabel(prefix); !ok {
 			return fmt.Errorf("Unrecognized chord prefix '%s' in keybindingGroups. For permitted values see %s",
@@ -203,8 +205,6 @@ func validateKeybindingGroups(groups map[string]KeybindingGroupConfig, keybindin
 		// Validate that the group has at least one binding under it
 		prefixKey, _ := KeyFromLabel(prefix) // already validated parseable above
 		prefixSeq := prefixKey.Sequence()
-
-		allBindings := collectAllKeybindingStrings(keybindings)
 
 		// Check for leaf/group collision: prefix cannot equal an existing leaf binding
 		for _, b := range allBindings {
