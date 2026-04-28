@@ -14,14 +14,16 @@ type InlineStatusHelper struct {
 	c *HelperCommon
 
 	windowHelper             *WindowHelper
+	ongoingOperationsHelper  *OngoingOperationsHelper
 	contextsWithInlineStatus map[types.ContextKey]*inlineStatusInfo
 	mutex                    deadlock.Mutex
 }
 
-func NewInlineStatusHelper(c *HelperCommon, windowHelper *WindowHelper) *InlineStatusHelper {
+func NewInlineStatusHelper(c *HelperCommon, windowHelper *WindowHelper, ongoingOperationsHelper *OngoingOperationsHelper) *InlineStatusHelper {
 	return &InlineStatusHelper{
 		c:                        c,
 		windowHelper:             windowHelper,
+		ongoingOperationsHelper:  ongoingOperationsHelper,
 		contextsWithInlineStatus: make(map[types.ContextKey]*inlineStatusInfo),
 	}
 }

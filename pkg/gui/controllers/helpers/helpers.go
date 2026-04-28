@@ -49,6 +49,7 @@ type Helpers struct {
 	Mode              *ModeHelper
 	AppStatus         *AppStatusHelper
 	InlineStatus      *InlineStatusHelper
+	OngoingOperations *OngoingOperationsHelper
 	WindowArrangement *WindowArrangementHelper
 	Search            *SearchHelper
 	Worktree          *WorktreeHelper
@@ -86,6 +87,7 @@ func NewStubHelpers() *Helpers {
 		Mode:              &ModeHelper{},
 		AppStatus:         &AppStatusHelper{},
 		InlineStatus:      &InlineStatusHelper{},
+		OngoingOperations: &OngoingOperationsHelper{},
 		WindowArrangement: &WindowArrangementHelper{},
 		Search:            &SearchHelper{},
 		Worktree:          &WorktreeHelper{},

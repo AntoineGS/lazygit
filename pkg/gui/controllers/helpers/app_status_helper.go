@@ -11,15 +11,17 @@ import (
 type AppStatusHelper struct {
 	c *HelperCommon
 
-	statusMgr  func() *status.StatusManager
-	modeHelper *ModeHelper
+	statusMgr               func() *status.StatusManager
+	modeHelper              *ModeHelper
+	ongoingOperationsHelper *OngoingOperationsHelper
 }
 
-func NewAppStatusHelper(c *HelperCommon, statusMgr func() *status.StatusManager, modeHelper *ModeHelper) *AppStatusHelper {
+func NewAppStatusHelper(c *HelperCommon, statusMgr func() *status.StatusManager, modeHelper *ModeHelper, ongoingOperationsHelper *OngoingOperationsHelper) *AppStatusHelper {
 	return &AppStatusHelper{
-		c:          c,
-		statusMgr:  statusMgr,
-		modeHelper: modeHelper,
+		c:                       c,
+		statusMgr:               statusMgr,
+		modeHelper:              modeHelper,
+		ongoingOperationsHelper: ongoingOperationsHelper,
 	}
 }
 
