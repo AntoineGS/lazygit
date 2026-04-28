@@ -63,9 +63,8 @@ func (self *OngoingOperationsController) formatOps(ops []*helpers.OngoingOperati
 		return self.c.Tr.NoOngoingOperations
 	}
 	var sb strings.Builder
-	now := time.Now()
 	for _, op := range ops {
-		duration := now.Sub(op.StartTime).Truncate(time.Second)
+		duration := op.Elapsed().Truncate(time.Second)
 		cmd := op.CurrentCommand()
 		if cmd == "" {
 			cmd = "—"

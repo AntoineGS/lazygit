@@ -92,9 +92,10 @@ func (self *AppStatusHelper) WithWaitingStatusForOp(message string, op *OngoingO
 	})
 }
 
-// WithWaitingStatusImpl is the synchronous variant used by callers that already
-// have a task (e.g. background fetch, which is wrapped from outside the worker).
-// It registers a fresh OngoingOperation.
+// WithWaitingStatusImpl is the synchronous variant used by callers that are
+// already inside a worker. The task argument may be nil for callers that
+// don't need credential-prompt support (e.g. background fetch). It registers
+// a fresh OngoingOperation.
 func (self *AppStatusHelper) WithWaitingStatusImpl(message string, f func(gocui.Task) error, task gocui.Task) error {
 	op := self.ongoingOperationsHelper.Register(message)
 	defer self.ongoingOperationsHelper.Unregister(op)
@@ -102,6 +103,9 @@ func (self *AppStatusHelper) WithWaitingStatusImpl(message string, f func(gocui.
 }
 
 func (self *AppStatusHelper) withWaitingStatusInternal(message string, f func(gocui.Task) error, task gocui.Task, op *OngoingOperation) error {
+	if task == nil {
+		task = gocui.NewFakeTask()
+	}
 	return self.statusMgr().WithWaitingStatus(message, self.renderAppStatus, func(waitingStatusHandle *status.WaitingStatusHandle) error {
 		return f(appStatusHelperTask{Task: task, waitingStatusHandle: waitingStatusHandle, op: op})
 	})
