@@ -87,6 +87,7 @@ func (gui *Gui) resetHelpersAndControllers() {
 		func() *status.StatusManager { return gui.statusManager },
 		modeHelper,
 	)
+	branchesHelper := helpers.NewBranchesHelper(helperCommon, worktreeHelper)
 
 	gui.helpers = &helpers.Helpers{
 		Refs:            refsHelper,
@@ -98,7 +99,7 @@ func (gui *Gui) resetHelpersAndControllers() {
 		Files:           helpers.NewFilesHelper(helperCommon),
 		WorkingTree:     helpers.NewWorkingTreeHelper(helperCommon, refsHelper, commitsHelper, gpgHelper, rebaseHelper),
 		Tags:            helpers.NewTagsHelper(helperCommon, commitsHelper, gpgHelper),
-		BranchesHelper:  helpers.NewBranchesHelper(helperCommon, worktreeHelper),
+		BranchesHelper:  branchesHelper,
 		GPG:             helpers.NewGpgHelper(helperCommon),
 		MergeAndRebase:  rebaseHelper,
 		MergeConflicts:  mergeConflictsHelper,
@@ -131,6 +132,7 @@ func (gui *Gui) resetHelpersAndControllers() {
 		Worktree:       worktreeHelper,
 		SubCommits:     helpers.NewSubCommitsHelper(helperCommon, refreshHelper),
 		AllBranchesLog: helpers.NewAllBranchesLogHelper(helperCommon),
+		Fetch:          helpers.NewFetchHelper(helperCommon, branchesHelper),
 	}
 
 	gui.CustomCommandsClient = custom_commands.NewClient(

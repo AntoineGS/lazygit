@@ -188,7 +188,7 @@ func (self *FilesController) GetKeybindings(opts types.KeybindingsOpts) []*types
 		},
 		{
 			Key:         opts.GetKey(opts.Config.Files.Fetch),
-			Handler:     self.fetch,
+			Handler:     self.c.Helpers().Fetch.Fetch,
 			Description: self.c.Tr.Fetch,
 			Tooltip:     self.c.Tr.FetchTooltip,
 		},
@@ -1337,25 +1337,6 @@ func (self *FilesController) handleStashSave(stashFunc func(message string) erro
 
 func (self *FilesController) onClickMain(opts gocui.ViewMouseBindingOpts) error {
 	return self.EnterFile(types.OnFocusOpts{ClickedWindowName: "main", ClickedViewLineIdx: opts.Y})
-}
-
-func (self *FilesController) fetch() error {
-	return self.c.WithWaitingStatus(self.c.Tr.FetchingStatus, func(task gocui.Task) error {
-		self.c.LogAction("Fetch")
-		err := self.c.Git().Sync.Fetch(task)
-
-		if err != nil && strings.Contains(err.Error(), "exit status 128") {
-			return errors.New(self.c.Tr.PassUnameWrong)
-		}
-
-		self.c.Refresh(types.RefreshOptions{Scope: []types.RefreshableView{types.BRANCHES, types.COMMITS, types.REMOTES, types.TAGS}, Mode: types.SYNC})
-
-		if err == nil {
-			err = self.c.Helpers().BranchesHelper.AutoForwardBranches()
-		}
-
-		return err
-	})
 }
 
 // Couldn't think of a better term than 'normalised'. Alas.
