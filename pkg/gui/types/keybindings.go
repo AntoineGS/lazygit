@@ -29,6 +29,19 @@ type Binding struct {
 	Tag                  string // e.g. 'navigation'. Used for grouping things in the cheatsheet
 	OpensMenu            bool
 
+	// SupportsDefaultTarget indicates that this binding's handler can run
+	// without an explicit selection by falling back to a sensible default
+	// target (e.g., topmost stash for popStash). Set to true ONLY for
+	// handlers that implement the default-target branch. Used by config
+	// validation to allow this binding to live under keybinding.universal.*
+	// when it would normally be view-scoped.
+	SupportsDefaultTarget bool
+
+	// DefaultTargetDescription is a short human-readable description of the
+	// default target used when SupportsDefaultTarget is true and no selection
+	// exists (e.g., "topmost stash"). Surfaced in validation error messages.
+	DefaultTargetDescription string
+
 	// If true, the keybinding will appear at the bottom of the screen.
 	// Even if set to true, the keybinding will not be displayed if it is currently
 	// disabled. We could instead display it with a strikethrough, but there's
