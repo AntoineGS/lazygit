@@ -509,6 +509,17 @@ type KeybindingUniversalConfig struct {
 	IncreaseRenameSimilarityThreshold string   `yaml:"increaseRenameSimilarityThreshold"`
 	DecreaseRenameSimilarityThreshold string   `yaml:"decreaseRenameSimilarityThreshold"`
 	OpenDiffTool                      string   `yaml:"openDiffTool"`
+
+	// Universal promotion of view-scoped actions: when set, these chords work
+	// from any view. Selection-free actions just fire; popStash uses the
+	// topmost stash when invoked outside the stash view.
+	CheckForUpdate             string `yaml:"checkForUpdate,omitempty"`
+	RecentRepos                string `yaml:"recentRepos,omitempty"`
+	AllBranchesLogGraph        string `yaml:"allBranchesLogGraph,omitempty"`
+	AllBranchesLogGraphReverse string `yaml:"allBranchesLogGraphReverse,omitempty"`
+	Fetch                      string `yaml:"fetch,omitempty"`
+	StashAllChanges            string `yaml:"stashAllChanges,omitempty"`
+	PopStash                   string `yaml:"popStash,omitempty"`
 }
 
 type KeybindingStatusConfig struct {
