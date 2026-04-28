@@ -22,7 +22,7 @@ func NewGlobalController(
 }
 
 func (self *GlobalController) GetKeybindings(opts types.KeybindingsOpts) []*types.Binding {
-	return []*types.Binding{
+	bindings := []*types.Binding{
 		{
 			Key:         opts.GetKey(opts.Config.Universal.ExecuteShellCommand),
 			Handler:     self.shellCommand,
@@ -153,6 +153,72 @@ func (self *GlobalController) GetKeybindings(opts types.KeybindingsOpts) []*type
 			Tooltip:     self.c.Tr.ToggleWhitespaceInDiffViewTooltip,
 		},
 	}
+
+	// Universal bindings for view-scoped actions (opt-in via config).
+	universalCfg := opts.Config.Universal
+
+	if universalCfg.CheckForUpdate != "" {
+		bindings = append(bindings, &types.Binding{
+			Key:         opts.GetKey(universalCfg.CheckForUpdate),
+			Handler:     self.c.Helpers().Update.CheckForUpdateInForeground,
+			Description: self.c.Tr.CheckForUpdate,
+		})
+	}
+
+	if universalCfg.RecentRepos != "" {
+		bindings = append(bindings, &types.Binding{
+			Key:         opts.GetKey(universalCfg.RecentRepos),
+			Handler:     self.c.Helpers().Repos.CreateRecentReposMenu,
+			Description: self.c.Tr.SwitchRepo,
+		})
+	}
+
+	if universalCfg.AllBranchesLogGraph != "" {
+		bindings = append(bindings, &types.Binding{
+			Key:         opts.GetKey(universalCfg.AllBranchesLogGraph),
+			Handler:     self.c.Helpers().AllBranchesLog.SwitchToOrRotateAllBranchesLogs,
+			Description: self.c.Tr.AllBranchesLogGraph,
+		})
+	}
+
+	if universalCfg.AllBranchesLogGraphReverse != "" {
+		bindings = append(bindings, &types.Binding{
+			Key:         opts.GetKey(universalCfg.AllBranchesLogGraphReverse),
+			Handler:     self.c.Helpers().AllBranchesLog.SwitchToOrRotateAllBranchesLogsBackward,
+			Description: self.c.Tr.AllBranchesLogGraphReverse,
+		})
+	}
+
+	if universalCfg.Fetch != "" {
+		bindings = append(bindings, &types.Binding{
+			Key:         opts.GetKey(universalCfg.Fetch),
+			Handler:     self.c.Helpers().Fetch.Fetch,
+			Description: self.c.Tr.Fetch,
+			Tooltip:     self.c.Tr.FetchTooltip,
+		})
+	}
+
+	if universalCfg.StashAllChanges != "" {
+		bindings = append(bindings, &types.Binding{
+			Key:         opts.GetKey(universalCfg.StashAllChanges),
+			Handler:     self.c.Helpers().Stash.StashAllChanges,
+			Description: self.c.Tr.Stash,
+			Tooltip:     self.c.Tr.StashTooltip,
+		})
+	}
+
+	if universalCfg.PopStash != "" {
+		bindings = append(bindings, &types.Binding{
+			Key:                      opts.GetKey(universalCfg.PopStash),
+			Handler:                  self.c.Helpers().Stash.PopStashWithDefault,
+			Description:              self.c.Tr.Pop,
+			Tooltip:                  self.c.Tr.StashPopTooltip,
+			SupportsDefaultTarget:    true,
+			DefaultTargetDescription: "topmost stash",
+		})
+	}
+
+	return bindings
 }
 
 func (self *GlobalController) Context() types.Context {
