@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/jesseduffield/lazygit/pkg/constants"
+	"github.com/jesseduffield/lazygit/pkg/gocui"
 )
 
 func (config *UserConfig) Validate() error {
@@ -44,6 +45,9 @@ func (config *UserConfig) Validate() error {
 		return err
 	}
 	if err := validateKeybindings(config.Keybinding); err != nil {
+		return err
+	}
+	if err := validateKeybindingGroups(config.KeybindingGroups, config.Keybinding); err != nil {
 		return err
 	}
 	if err := validateCustomCommands(config.CustomCommands); err != nil {
@@ -163,5 +167,92 @@ func validateCustomCommandPrompt(prompt CustomCommandPrompt) error {
 		}
 	}
 
+	return nil
+}
+
+func collectAllKeybindingStrings(node any) []string {
+	var out []string
+	value := reflect.ValueOf(node)
+	switch value.Kind() {
+	case reflect.Struct:
+		for _, f := range reflect.VisibleFields(reflect.TypeOf(node)) {
+			out = append(out, collectAllKeybindingStrings(value.FieldByName(f.Name).Interface())...)
+		}
+	case reflect.Slice:
+		for i := range value.Len() {
+			out = append(out, collectAllKeybindingStrings(value.Index(i).Interface())...)
+		}
+	case reflect.String:
+		s := node.(string)
+		if s != "" && s != "<disabled>" {
+			out = append(out, s)
+		}
+	default:
+		log.Fatalf("collectAllKeybindingStrings: unexpected reflect kind %s", value.Kind())
+	}
+	return out
+}
+
+// bindingSequenceStartsWith reports whether bseq starts with prefixSeq
+// (every key in prefixSeq matches the corresponding key in bseq).
+// Note this returns true even when bseq == prefixSeq; callers compare
+// lengths separately to distinguish equal vs proper-prefix.
+func bindingSequenceStartsWith(bseq, prefixSeq []gocui.Key) bool {
+	if len(bseq) < len(prefixSeq) {
+		return false
+	}
+	for i, k := range prefixSeq {
+		if !bseq[i].Equals(k) {
+			return false
+		}
+	}
+	return true
+}
+
+func validateKeybindingGroups(groups map[string]KeybindingGroupConfig, keybindings KeybindingConfig) error {
+	allBindings := collectAllKeybindingStrings(keybindings)
+
+	for prefix, group := range groups {
+		if _, ok := KeyFromLabel(prefix); !ok {
+			return fmt.Errorf("Unrecognized chord prefix '%s' in keybindingGroups. For permitted values see %s",
+				prefix, constants.Links.Docs.CustomKeybindings)
+		}
+		if strings.TrimSpace(group.Name) == "" {
+			return fmt.Errorf("keybindingGroups[%s] must have a non-empty name", prefix)
+		}
+
+		// Validate that the group has at least one binding under it
+		prefixKey, _ := KeyFromLabel(prefix) // already validated parseable above
+		prefixSeq := prefixKey.Sequence()
+
+		// Check for leaf/group collision: prefix cannot equal an existing leaf binding
+		for _, b := range allBindings {
+			bk, ok := KeyFromLabel(b)
+			if !ok {
+				continue
+			}
+			bseq := bk.Sequence()
+			if len(bseq) == len(prefixSeq) && bindingSequenceStartsWith(bseq, prefixSeq) {
+				return fmt.Errorf("keybindingGroups[%s] collides with a leaf binding using the same key sequence; a key cannot be both an action and a sub-menu", prefix)
+			}
+		}
+
+		hasChild := false
+		for _, b := range allBindings {
+			bk, ok := KeyFromLabel(b)
+			if !ok {
+				continue
+			}
+			bseq := bk.Sequence()
+			if len(bseq) > len(prefixSeq) && bindingSequenceStartsWith(bseq, prefixSeq) {
+				hasChild = true
+				break
+			}
+		}
+		if !hasChild {
+			return fmt.Errorf("keybindingGroups[%s] has no bindings under it; either add a chord binding starting with %s or remove the group entry",
+				prefix, prefix)
+		}
+	}
 	return nil
 }

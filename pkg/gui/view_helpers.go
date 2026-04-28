@@ -3,7 +3,7 @@ package gui
 import (
 	"time"
 
-	"github.com/jesseduffield/gocui"
+	"github.com/jesseduffield/lazygit/pkg/gocui"
 	"github.com/jesseduffield/lazygit/pkg/gui/context"
 	"github.com/jesseduffield/lazygit/pkg/gui/types"
 	"github.com/jesseduffield/lazygit/pkg/tasks"
@@ -58,6 +58,10 @@ func (gui *Gui) currentViewName() string {
 }
 
 func (gui *Gui) onViewTabClick(windowName string, tabIndex int) error {
+	// Switching tabs (mouse click or Tab/Shift-Tab keybinding) cancels any
+	// pending chord so the prefix doesn't reinterpret keys in the new view.
+	gui.g.ClearPendingChord()
+
 	tabs := gui.viewTabMap()[windowName]
 	if len(tabs) == 0 {
 		return nil

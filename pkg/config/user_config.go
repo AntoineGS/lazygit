@@ -38,6 +38,8 @@ type UserConfig struct {
 	PromptToReturnFromSubprocess bool `yaml:"promptToReturnFromSubprocess"`
 	// Keybindings
 	Keybinding KeybindingConfig `yaml:"keybinding"`
+	// Keybinding groups
+	KeybindingGroups map[string]KeybindingGroupConfig `yaml:"keybindingGroups,omitempty"`
 }
 
 type RefresherConfig struct {
@@ -420,6 +422,10 @@ type KeybindingConfig struct {
 	CommitMessage  KeybindingCommitMessageConfig  `yaml:"commitMessage"`
 }
 
+type KeybindingGroupConfig struct {
+	Name string `yaml:"name"`
+}
+
 // damn looks like we have some inconsistencies here with -alt and -alt1
 type KeybindingUniversalConfig struct {
 	Quit                              string   `yaml:"quit"`
@@ -454,6 +460,10 @@ type KeybindingUniversalConfig struct {
 	NextMatch                         string   `yaml:"nextMatch"`
 	PrevMatch                         string   `yaml:"prevMatch"`
 	StartSearch                       string   `yaml:"startSearch"`
+	MoveWordLeft                      string   `yaml:"moveWordLeft"`      // <a-left> on Mac
+	MoveWordRight                     string   `yaml:"moveWordRight"`     // <a-right> on Mac
+	BackspaceWord                     string   `yaml:"backspaceWord"`     // <a-backspace> on Mac
+	ForwardDeleteWord                 string   `yaml:"forwardDeleteWord"` // <a-delete> on Mac
 	OptionMenu                        string   `yaml:"optionMenu"`
 	OptionMenuAlt1                    string   `yaml:"optionMenu-alt1"`
 	Select                            string   `yaml:"select"`
@@ -461,7 +471,7 @@ type KeybindingUniversalConfig struct {
 	Confirm                           string   `yaml:"confirm"`
 	ConfirmMenu                       string   `yaml:"confirmMenu"`
 	ConfirmSuggestion                 string   `yaml:"confirmSuggestion"`
-	ConfirmInEditor                   string   `yaml:"confirmInEditor"`
+	ConfirmInEditor                   string   `yaml:"confirmInEditor"` // <m-enter> on Mac
 	ConfirmInEditorAlt                string   `yaml:"confirmInEditor-alt"`
 	Remove                            string   `yaml:"remove"`
 	New                               string   `yaml:"new"`
@@ -766,6 +776,12 @@ type IconProperties struct {
 }
 
 func GetDefaultConfig() *UserConfig {
+	// This is only for tests; we don't want to use the test runner's host platform in that case,
+	// but always use the fallback bindings
+	return GetDefaultConfigForPlatform("")
+}
+
+func GetDefaultConfigForPlatform(platform string) *UserConfig {
 	return &UserConfig{
 		Gui: GuiConfig{
 			ScrollHeight:             2,
@@ -927,6 +943,10 @@ func GetDefaultConfig() *UserConfig {
 				NextMatch:                         "n",
 				PrevMatch:                         "N",
 				StartSearch:                       "/",
+				MoveWordLeft:                      platformKeyBinding(platform, map[string]string{"darwin": "<a-left>"}, "<c-left>"),
+				MoveWordRight:                     platformKeyBinding(platform, map[string]string{"darwin": "<a-right>"}, "<c-right>"),
+				BackspaceWord:                     platformKeyBinding(platform, map[string]string{"darwin": "<a-backspace>"}, "<c-backspace>"),
+				ForwardDeleteWord:                 platformKeyBinding(platform, map[string]string{"darwin": "<a-delete>"}, "<c-delete>"),
 				OptionMenu:                        "<disabled>",
 				OptionMenuAlt1:                    "?",
 				Select:                            "<space>",
@@ -934,7 +954,7 @@ func GetDefaultConfig() *UserConfig {
 				Confirm:                           "<enter>",
 				ConfirmMenu:                       "<enter>",
 				ConfirmSuggestion:                 "<enter>",
-				ConfirmInEditor:                   "<a-enter>",
+				ConfirmInEditor:                   platformKeyBinding(platform, map[string]string{"darwin": "<m-enter>"}, "<c-enter>"),
 				ConfirmInEditorAlt:                "<c-s>",
 				Remove:                            "d",
 				New:                               "n",
@@ -1033,8 +1053,8 @@ func GetDefaultConfig() *UserConfig {
 				SetFixupMessage:                "c",
 				CreateFixupCommit:              "F",
 				SquashAboveCommits:             "S",
-				MoveDownCommit:                 "<c-j>",
-				MoveUpCommit:                   "<c-k>",
+				MoveDownCommit:                 "<a-down>",
+				MoveUpCommit:                   "<a-up>",
 				AmendToCommit:                  "A",
 				ResetCommitAuthor:              "a",
 				PickCommit:                     "p",
@@ -1044,7 +1064,7 @@ func GetDefaultConfig() *UserConfig {
 				MarkCommitAsBaseForRebase:      "B",
 				CreateTag:                      "T",
 				CheckoutCommit:                 "<space>",
-				ResetCherryPick:                "<c-R>",
+				ResetCherryPick:                "<c-r>",
 				CopyCommitAttributeToClipboard: "y",
 				OpenLogMenu:                    "<c-l>",
 				OpenInBrowser:                  "o",
@@ -1080,4 +1100,11 @@ func GetDefaultConfig() *UserConfig {
 			},
 		},
 	}
+}
+
+func platformKeyBinding(platform string, bindingByPlatform map[string]string, fallback string) string {
+	if binding, ok := bindingByPlatform[platform]; ok {
+		return binding
+	}
+	return fallback
 }

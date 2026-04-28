@@ -996,11 +996,11 @@
         },
         "moveDownCommit": {
           "type": "string",
-          "default": "\u003cc-j\u003e"
+          "default": "\u003ca-down\u003e"
         },
         "moveUpCommit": {
           "type": "string",
-          "default": "\u003cc-k\u003e"
+          "default": "\u003ca-up\u003e"
         },
         "amendToCommit": {
           "type": "string",
@@ -1040,7 +1040,7 @@
         },
         "resetCherryPick": {
           "type": "string",
-          "default": "\u003cc-R\u003e"
+          "default": "\u003cc-r\u003e"
         },
         "copyCommitAttributeToClipboard": {
           "type": "string",
@@ -1410,6 +1410,26 @@
           "type": "string",
           "default": "/"
         },
+        "moveWordLeft": {
+          "type": "string",
+          "description": "\u003ca-left\u003e on Mac",
+          "default": "\u003cc-left\u003e"
+        },
+        "moveWordRight": {
+          "type": "string",
+          "description": "\u003ca-right\u003e on Mac",
+          "default": "\u003cc-right\u003e"
+        },
+        "backspaceWord": {
+          "type": "string",
+          "description": "\u003ca-backspace\u003e on Mac",
+          "default": "\u003cc-backspace\u003e"
+        },
+        "forwardDeleteWord": {
+          "type": "string",
+          "description": "\u003ca-delete\u003e on Mac",
+          "default": "\u003cc-delete\u003e"
+        },
         "optionMenu": {
           "type": "string",
           "default": "\u003cdisabled\u003e"
@@ -1440,7 +1460,8 @@
         },
         "confirmInEditor": {
           "type": "string",
-          "default": "\u003ca-enter\u003e"
+          "description": "\u003cm-enter\u003e on Mac",
+          "default": "\u003cc-enter\u003e"
         },
         "confirmInEditor-alt": {
           "type": "string",

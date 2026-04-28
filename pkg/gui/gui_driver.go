@@ -6,11 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gdamore/tcell/v2"
-	"github.com/jesseduffield/gocui"
+	"github.com/gdamore/tcell/v3"
 	"github.com/jesseduffield/lazygit/pkg/commands/models"
 	"github.com/jesseduffield/lazygit/pkg/config"
-	"github.com/jesseduffield/lazygit/pkg/gui/keybindings"
+	"github.com/jesseduffield/lazygit/pkg/gocui"
 	"github.com/jesseduffield/lazygit/pkg/gui/types"
 	integrationTypes "github.com/jesseduffield/lazygit/pkg/integration/types"
 )
@@ -29,24 +28,18 @@ var _ integrationTypes.GuiDriver = &GuiDriver{}
 func (self *GuiDriver) PressKey(keyStr string) {
 	self.CheckAllToastsAcknowledged()
 
-	key := keybindings.GetKey(keyStr)
-
-	var r rune
-	var tcellKey tcell.Key
-	switch v := key.(type) {
-	case rune:
-		r = v
-		tcellKey = tcell.KeyRune
-	case gocui.Key:
-		tcellKey = tcell.Key(v)
+	key, ok := config.KeyFromLabel(keyStr)
+	if !ok {
+		self.Fail("Unrecognized key: " + keyStr)
 	}
 
-	self.gui.g.ReplayedEvents.Keys <- gocui.NewTcellKeyEventWrapper(
-		tcell.NewEventKey(tcellKey, r, tcell.ModNone),
-		0,
-	)
-
-	self.waitTillIdle()
+	for _, k := range key.Sequence() {
+		self.gui.g.ReplayedEvents.Keys <- gocui.NewTcellKeyEventWrapper(
+			tcell.NewEventKey(tcell.Key(k.KeyName()), k.Str(), tcell.ModMask(k.Mod())),
+			0,
+		)
+		self.waitTillIdle()
+	}
 }
 
 func (self *GuiDriver) Click(x, y int) {

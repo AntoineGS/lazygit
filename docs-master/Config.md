@@ -630,6 +630,18 @@ keybinding:
     nextMatch: "n"
     prevMatch: "N"
     startSearch: /
+
+    # <a-left> on Mac
+    moveWordLeft: <c-left>
+
+    # <a-right> on Mac
+    moveWordRight: <c-right>
+
+    # <a-backspace> on Mac
+    backspaceWord: <c-backspace>
+
+    # <a-delete> on Mac
+    forwardDeleteWord: <c-delete>
     optionMenu: <disabled>
     optionMenu-alt1: '?'
     select: <space>
@@ -637,7 +649,9 @@ keybinding:
     confirm: <enter>
     confirmMenu: <enter>
     confirmSuggestion: <enter>
-    confirmInEditor: <a-enter>
+
+    # <m-enter> on Mac
+    confirmInEditor: <c-enter>
     confirmInEditor-alt: <c-s>
     remove: d
     new: "n"
@@ -735,8 +749,8 @@ keybinding:
     setFixupMessage: c
     createFixupCommit: F
     squashAboveCommits: S
-    moveDownCommit: <c-j>
-    moveUpCommit: <c-k>
+    moveDownCommit: <a-down>
+    moveUpCommit: <a-up>
     amendToCommit: A
     resetCommitAuthor: a
     pickCommit: p
@@ -746,7 +760,7 @@ keybinding:
     markCommitAsBaseForRebase: B
     tagCommit: T
     checkoutCommit: <space>
-    resetCherryPick: <c-R>
+    resetCherryPick: <c-r>
     copyCommitAttributeToClipboard: "y"
     openLogMenu: <c-l>
     openInBrowser: o

@@ -14,7 +14,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jesseduffield/gocui"
 	"github.com/jesseduffield/lazycore/pkg/boxlayout"
 	appTypes "github.com/jesseduffield/lazygit/pkg/app/types"
 	"github.com/jesseduffield/lazygit/pkg/commands"
@@ -24,9 +23,9 @@ import (
 	"github.com/jesseduffield/lazygit/pkg/commands/oscommands"
 	"github.com/jesseduffield/lazygit/pkg/common"
 	"github.com/jesseduffield/lazygit/pkg/config"
+	"github.com/jesseduffield/lazygit/pkg/gocui"
 	"github.com/jesseduffield/lazygit/pkg/gui/context"
 	"github.com/jesseduffield/lazygit/pkg/gui/controllers/helpers"
-	"github.com/jesseduffield/lazygit/pkg/gui/keybindings"
 	"github.com/jesseduffield/lazygit/pkg/gui/modes/cherrypicking"
 	"github.com/jesseduffield/lazygit/pkg/gui/modes/diffing"
 	"github.com/jesseduffield/lazygit/pkg/gui/modes/filtering"
@@ -83,10 +82,10 @@ type Gui struct {
 	statusManager        *status.StatusManager
 	waitForIntro         sync.WaitGroup
 	viewBufferManagerMap map[string]*tasks.ViewBufferManager
-	// holds a mapping of view names to ptmx's. This is for rendering command outputs
-	// from within a pty. The point of keeping track of them is so that if we re-size
-	// the window, we can tell the pty it needs to resize accordingly.
-	viewPtmxMap map[string]*os.File
+	// holds a mapping of view names to the master side of a pseudo-terminal
+	// running a command for that view. Kept so that on a window resize we can
+	// tell each pty to resize accordingly.
+	viewPtmxMap map[string]oscommands.Pty
 	stopChan    chan struct{}
 
 	// when lazygit is opened outside a git directory we want to open to the most
@@ -256,6 +255,10 @@ type GuiRepoState struct {
 	CurrentPopupOpts *types.CreatePopupPanelOpts
 
 	LastBackgroundFetchTime time.Time
+
+	// PendingChord mirrors gocui's chord state so the options footer
+	// can render continuations. Empty when no chord is pending.
+	PendingChord []gocui.Key
 }
 
 var _ types.IRepoStateAccessor = new(GuiRepoState)
@@ -306,6 +309,10 @@ func (self *GuiRepoState) SetSplitMainPanel(value bool) {
 
 func (self *GuiRepoState) GetSplitMainPanel() bool {
 	return self.SplitMainPanel
+}
+
+func (self *GuiRepoState) GetPendingChord() []gocui.Key {
+	return self.PendingChord
 }
 
 func (gui *Gui) onSwitchToNewRepo(startArgs appTypes.StartArgs, contextKey types.ContextKey) error {
@@ -471,9 +478,16 @@ func (gui *Gui) onUserConfigLoaded() error {
 	gui.setColorScheme()
 	gui.configureViewProperties()
 
-	gui.g.SearchEscapeKey = keybindings.GetKey(userConfig.Keybinding.Universal.Return)
-	gui.g.NextSearchMatchKey = keybindings.GetKey(userConfig.Keybinding.Universal.NextMatch)
-	gui.g.PrevSearchMatchKey = keybindings.GetKey(userConfig.Keybinding.Universal.PrevMatch)
+	gui.g.SearchEscapeKey = config.GetValidatedKeyBindingKey(userConfig.Keybinding.Universal.Return)
+	gui.g.NextSearchMatchKey = config.GetValidatedKeyBindingKey(userConfig.Keybinding.Universal.NextMatch)
+	gui.g.PrevSearchMatchKey = config.GetValidatedKeyBindingKey(userConfig.Keybinding.Universal.PrevMatch)
+
+	gui.g.SetEditKeybindings(
+		config.GetValidatedKeyBindingKey(userConfig.Keybinding.Universal.MoveWordLeft),
+		config.GetValidatedKeyBindingKey(userConfig.Keybinding.Universal.MoveWordRight),
+		config.GetValidatedKeyBindingKey(userConfig.Keybinding.Universal.BackspaceWord),
+		config.GetValidatedKeyBindingKey(userConfig.Keybinding.Universal.ForwardDeleteWord),
+	)
 
 	gui.g.ShowListFooter = userConfig.Gui.ShowListFooter
 
@@ -726,7 +740,7 @@ func NewGui(
 		Updater:              updater,
 		statusManager:        status.NewStatusManager(),
 		viewBufferManagerMap: map[string]*tasks.ViewBufferManager{},
-		viewPtmxMap:          map[string]*os.File{},
+		viewPtmxMap:          map[string]oscommands.Pty{},
 		showRecentRepos:      showRecentRepos,
 		RepoPathStack:        &utils.StringStack{},
 		RepoStateMap:         map[Repo]*GuiRepoState{},
@@ -882,7 +896,7 @@ func (gui *Gui) Run(startArgs appTypes.StartArgs) error {
 
 	g.ErrorHandler = gui.PopupHandler.ErrorHandler
 
-	gui.g.ShouldHandleMouseEvent = func(view *gocui.View, key gocui.Key) bool {
+	gui.g.ShouldHandleMouseEvent = func(view *gocui.View, key gocui.KeyName) bool {
 		if gui.helpers.Confirmation.IsPopupPanelFocused() && gui.currentViewName() != view.Name() &&
 			!gocui.IsMouseScrollKey(key) {
 			// we ignore click events on views that aren't popup panels, when a popup panel is focused.
@@ -912,6 +926,14 @@ func (gui *Gui) Run(startArgs appTypes.StartArgs) error {
 	deadlock.Opts.Disable = !gui.Debug || os.Getenv(components.WAIT_FOR_DEBUGGER_ENV_VAR) != ""
 
 	gui.g.OnSearchEscape = func() error { gui.helpers.Search.Cancel(); return nil }
+
+	gui.g.SetChordStateCallback(func(prefix []gocui.Key) {
+		if gui.State != nil {
+			gui.State.PendingChord = prefix
+		}
+		// Schedule a redraw so the options footer repaints.
+		gui.onUIThread(func() error { return nil })
+	})
 
 	gui.g.SetManager(gocui.ManagerFunc(gui.layout))
 
