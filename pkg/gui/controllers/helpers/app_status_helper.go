@@ -44,10 +44,14 @@ func (self *AppStatusHelper) Toast(message string, kind types.ToastKind) {
 type appStatusHelperTask struct {
 	gocui.Task
 	waitingStatusHandle *status.WaitingStatusHandle
+	op                  *OngoingOperation
 }
 
 // poor man's version of explicitly saying that struct X implements interface Y
-var _ gocui.Task = appStatusHelperTask{}
+var (
+	_ gocui.Task                = appStatusHelperTask{}
+	_ types.CommandTrackingTask = appStatusHelperTask{}
+)
 
 func (self appStatusHelperTask) Pause() {
 	self.waitingStatusHandle.Hide()
@@ -59,16 +63,47 @@ func (self appStatusHelperTask) Continue() {
 	self.waitingStatusHandle.Show()
 }
 
-// WithWaitingStatus wraps a function and shows a waiting status while the function is still executing
+// SetCurrentCommand records what the cmd runner is currently executing inside
+// this operation, so the OngoingOperations popup can show it.
+func (self appStatusHelperTask) SetCurrentCommand(cmd string) {
+	if self.op != nil {
+		self.op.SetCurrentCommand(cmd)
+	}
+}
+
+// WithWaitingStatus wraps a function and shows a waiting status while the
+// function is still executing. It registers a fresh OngoingOperation labeled
+// with `message`.
 func (self *AppStatusHelper) WithWaitingStatus(message string, f func(gocui.Task) error) {
 	self.c.OnWorker(func(task gocui.Task) error {
-		return self.WithWaitingStatusImpl(message, f, task)
+		op := self.ongoingOperationsHelper.Register(message)
+		defer self.ongoingOperationsHelper.Unregister(op)
+		return self.withWaitingStatusInternal(message, f, task, op)
 	})
 }
 
+// WithWaitingStatusForOp is like WithWaitingStatus, but uses the caller-supplied
+// OngoingOperation instead of registering a fresh one. Used when WithInlineStatus
+// falls back to the bottom-bar status — the caller has already registered with a
+// more descriptive label and is responsible for unregistering.
+func (self *AppStatusHelper) WithWaitingStatusForOp(message string, op *OngoingOperation, f func(gocui.Task) error) {
+	self.c.OnWorker(func(task gocui.Task) error {
+		return self.withWaitingStatusInternal(message, f, task, op)
+	})
+}
+
+// WithWaitingStatusImpl is the synchronous variant used by callers that already
+// have a task (e.g. background fetch, which is wrapped from outside the worker).
+// It registers a fresh OngoingOperation.
 func (self *AppStatusHelper) WithWaitingStatusImpl(message string, f func(gocui.Task) error, task gocui.Task) error {
+	op := self.ongoingOperationsHelper.Register(message)
+	defer self.ongoingOperationsHelper.Unregister(op)
+	return self.withWaitingStatusInternal(message, f, task, op)
+}
+
+func (self *AppStatusHelper) withWaitingStatusInternal(message string, f func(gocui.Task) error, task gocui.Task, op *OngoingOperation) error {
 	return self.statusMgr().WithWaitingStatus(message, self.renderAppStatus, func(waitingStatusHandle *status.WaitingStatusHandle) error {
-		return f(appStatusHelperTask{task, waitingStatusHandle})
+		return f(appStatusHelperTask{Task: task, waitingStatusHandle: waitingStatusHandle, op: op})
 	})
 }
 

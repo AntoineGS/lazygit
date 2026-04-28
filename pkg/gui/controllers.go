@@ -121,7 +121,7 @@ func (gui *Gui) resetHelpersAndControllers() {
 		Confirmation:      helpers.NewConfirmationHelper(helperCommon),
 		Mode:              modeHelper,
 		AppStatus:         appStatusHelper,
-		InlineStatus:      helpers.NewInlineStatusHelper(helperCommon, windowHelper, ongoingOperationsHelper),
+		InlineStatus:      helpers.NewInlineStatusHelper(helperCommon, windowHelper, appStatusHelper, ongoingOperationsHelper),
 		OngoingOperations: ongoingOperationsHelper,
 		WindowArrangement: helpers.NewWindowArrangementHelper(
 			gui.c,

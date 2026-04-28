@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/jesseduffield/lazygit/pkg/gocui"
@@ -14,15 +15,17 @@ type InlineStatusHelper struct {
 	c *HelperCommon
 
 	windowHelper             *WindowHelper
+	appStatusHelper          *AppStatusHelper
 	ongoingOperationsHelper  *OngoingOperationsHelper
 	contextsWithInlineStatus map[types.ContextKey]*inlineStatusInfo
 	mutex                    deadlock.Mutex
 }
 
-func NewInlineStatusHelper(c *HelperCommon, windowHelper *WindowHelper, ongoingOperationsHelper *OngoingOperationsHelper) *InlineStatusHelper {
+func NewInlineStatusHelper(c *HelperCommon, windowHelper *WindowHelper, appStatusHelper *AppStatusHelper, ongoingOperationsHelper *OngoingOperationsHelper) *InlineStatusHelper {
 	return &InlineStatusHelper{
 		c:                        c,
 		windowHelper:             windowHelper,
+		appStatusHelper:          appStatusHelper,
 		ongoingOperationsHelper:  ongoingOperationsHelper,
 		contextsWithInlineStatus: make(map[types.ContextKey]*inlineStatusInfo),
 	}
@@ -47,10 +50,14 @@ type inlineStatusHelperTask struct {
 
 	inlineStatusHelper *InlineStatusHelper
 	opts               InlineStatusOpts
+	op                 *OngoingOperation
 }
 
 // poor man's version of explicitly saying that struct X implements interface Y
-var _ gocui.Task = inlineStatusHelperTask{}
+var (
+	_ gocui.Task                = inlineStatusHelperTask{}
+	_ types.CommandTrackingTask = inlineStatusHelperTask{}
+)
 
 func (self inlineStatusHelperTask) Pause() {
 	self.inlineStatusHelper.stop(self.opts)
@@ -64,7 +71,18 @@ func (self inlineStatusHelperTask) Continue() {
 	self.inlineStatusHelper.start(self.opts)
 }
 
+// SetCurrentCommand records what the cmd runner is currently executing inside
+// this operation, so the OngoingOperations popup can show it.
+func (self inlineStatusHelperTask) SetCurrentCommand(cmd string) {
+	if self.op != nil {
+		self.op.SetCurrentCommand(cmd)
+	}
+}
+
 func (self *InlineStatusHelper) WithInlineStatus(opts InlineStatusOpts, f func(gocui.Task) error) {
+	label := self.buildOperationLabel(opts)
+	op := self.ongoingOperationsHelper.Register(label)
+
 	context := self.c.ContextForKey(opts.ContextKey).(types.IListContext)
 	view := context.GetView()
 	visible := view.Visible && self.windowHelper.TopViewInWindow(context.GetWindowName(), false) == view
@@ -72,20 +90,36 @@ func (self *InlineStatusHelper) WithInlineStatus(opts InlineStatusOpts, f func(g
 		self.c.OnWorker(func(task gocui.Task) error {
 			self.start(opts)
 			defer self.stop(opts)
+			defer self.ongoingOperationsHelper.Unregister(op)
 
-			return f(inlineStatusHelperTask{task, self, opts})
+			return f(inlineStatusHelperTask{Task: task, inlineStatusHelper: self, opts: opts, op: op})
 		})
 	} else {
+		// Fallback: defer to the bottom-bar status. We've already registered
+		// the operation here with a descriptive label ("Pulling 'main'"), so
+		// pass it directly to AppStatusHelper rather than letting it register
+		// a duplicate with a less specific label.
 		message := presentation.ItemOperationToString(opts.Operation, self.c.Tr)
-		_ = self.c.WithWaitingStatus(message, func(t gocui.Task) error {
-			// We still need to set the item operation, because it might be used
-			// for other (non-presentation) purposes
+		self.appStatusHelper.WithWaitingStatusForOp(message, op, func(t gocui.Task) error {
 			self.c.State().SetItemOperation(opts.Item, opts.Operation)
 			defer self.c.State().ClearItemOperation(opts.Item)
+			defer self.ongoingOperationsHelper.Unregister(op)
 
 			return f(t)
 		})
 	}
+}
+
+// buildOperationLabel turns an InlineStatusOpts into a human-readable label
+// for the OngoingOperations popup. Examples: "Pulling 'main'", "Pushing
+// 'v1.0'". Falls back to the operation name without an item suffix if the
+// item has no descriptive name.
+func (self *InlineStatusHelper) buildOperationLabel(opts InlineStatusOpts) string {
+	label := presentation.ItemOperationToString(opts.Operation, self.c.Tr)
+	if d, ok := opts.Item.(interface{ Description() string }); ok && d.Description() != "" {
+		return fmt.Sprintf("%s '%s'", label, d.Description())
+	}
+	return label
 }
 
 func (self *InlineStatusHelper) start(opts InlineStatusOpts) {
