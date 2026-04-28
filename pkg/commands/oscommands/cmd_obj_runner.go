@@ -22,6 +22,34 @@ type ICmdObjRunner interface {
 	RunAndProcessLines(cmdObj *CmdObj, onLine func(line string) (bool, error)) error
 }
 
+// CommandRecorder mirrors the types.CommandTrackingTask interface so the
+// runner can detect command-tracking tasks without depending on the gui/types
+// package. The wrapping tasks (inlineStatusHelperTask, appStatusHelperTask)
+// satisfy both interfaces structurally.
+type CommandRecorder interface {
+	SetCurrentCommand(cmd string)
+}
+
+// recordCommandOnTask, if the cmd's task implements CommandRecorder, stamps
+// it with the current command line for the duration of the cmd's run, so the
+// OngoingOperations popup can show what's actually executing.
+//
+// Returns a cleanup func that clears the recorded command. Always safe to
+// call; no-ops cleanly when the task is nil or doesn't implement the
+// interface.
+func recordCommandOnTask(cmdObj *CmdObj) func() {
+	task := cmdObj.GetTask()
+	if task == nil {
+		return func() {}
+	}
+	recorder, ok := task.(CommandRecorder)
+	if !ok {
+		return func() {}
+	}
+	recorder.SetCurrentCommand(cmdObj.ToString())
+	return func() { recorder.SetCurrentCommand("") }
+}
+
 type cmdObjRunner struct {
 	log   *logrus.Entry
 	guiIO *guiIO
@@ -166,6 +194,7 @@ func (self *cmdObjRunner) RunAndProcessLines(cmdObj *CmdObj, onLine func(line st
 	if err := cmd.Start(); err != nil {
 		return err
 	}
+	defer recordCommandOnTask(cmdObj)()
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -265,6 +294,8 @@ func (self *cmdObjRunner) runAndStreamAux(
 	}()
 
 	t := time.Now()
+
+	defer recordCommandOnTask(cmdObj)()
 
 	onRun(handler, cmdWriter)
 

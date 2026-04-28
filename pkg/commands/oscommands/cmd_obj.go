@@ -224,6 +224,16 @@ func (self *CmdObj) GetTask() gocui.Task {
 	return self.task
 }
 
+// WithTask attaches a gocui.Task to this command without changing the
+// credential strategy or pty usage. The cmd runner will use it to call
+// SetCurrentCommand on the task (if it implements CommandRecorder) so the
+// OngoingOperations popup can show the running command. Use this for
+// background commands that don't need credential prompting.
+func (self *CmdObj) WithTask(task gocui.Task) *CmdObj {
+	self.task = task
+	return self
+}
+
 func (self *CmdObj) Clone() *CmdObj {
 	clone := &CmdObj{}
 	*clone = *self

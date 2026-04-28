@@ -1,7 +1,9 @@
 package oscommands
 
 import (
+	"os/exec"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/jesseduffield/lazygit/pkg/gocui"
@@ -134,4 +136,53 @@ func TestProcessOutput(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRecordCommandOnTask_NilTaskNoop(t *testing.T) {
+	cmdObj := &CmdObj{} // no task set
+	cleanup := recordCommandOnTask(cmdObj)
+	cleanup() // must not panic
+}
+
+type fakeRecorderTask struct {
+	gocui.Task
+	mu      sync.Mutex
+	current string
+}
+
+func (r *fakeRecorderTask) SetCurrentCommand(cmd string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.current = cmd
+}
+
+func TestRecordCommandOnTask_StampsAndClears(t *testing.T) {
+	rec := &fakeRecorderTask{}
+	cmdObj := (&CmdObj{cmd: exec.Command("git", "pull")}).WithTask(rec)
+
+	cleanup := recordCommandOnTask(cmdObj)
+	rec.mu.Lock()
+	got := rec.current
+	rec.mu.Unlock()
+	if got != "git pull" {
+		t.Fatalf("expected current=%q after stamp, got %q", "git pull", got)
+	}
+
+	cleanup()
+	rec.mu.Lock()
+	got = rec.current
+	rec.mu.Unlock()
+	if got != "" {
+		t.Fatalf("expected current=%q after cleanup, got %q", "", got)
+	}
+}
+
+type fakePlainTask struct {
+	gocui.Task
+}
+
+func TestRecordCommandOnTask_NonRecorderTaskNoop(t *testing.T) {
+	cmdObj := (&CmdObj{cmd: exec.Command("git", "status")}).WithTask(&fakePlainTask{})
+	cleanup := recordCommandOnTask(cmdObj)
+	cleanup() // must not panic; nothing to assert beyond no-panic
 }
