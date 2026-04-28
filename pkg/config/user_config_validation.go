@@ -47,6 +47,9 @@ func (config *UserConfig) Validate() error {
 	if err := validateKeybindings(config.Keybinding); err != nil {
 		return err
 	}
+	if err := validateUniversalBindingEligibility(config.Keybinding.Universal); err != nil {
+		return err
+	}
 	if err := validateKeybindingGroups(config.KeybindingGroups, config.Keybinding); err != nil {
 		return err
 	}
@@ -207,6 +210,55 @@ func bindingSequenceStartsWith(bseq, prefixSeq []gocui.Key) bool {
 		}
 	}
 	return true
+}
+
+// universalEligibleActions lists keybinding.universal.* field names whose
+// underlying actions can run without a selection. This includes both
+// inherently selection-free actions and actions whose handler declares
+// SupportsDefaultTarget (e.g. PopStash falls back to topmost stash).
+// Update this when annotating a new handler.
+var universalEligibleActions = map[string]bool{
+	"CheckForUpdate":             true,
+	"RecentRepos":                true,
+	"AllBranchesLogGraph":        true,
+	"AllBranchesLogGraphReverse": true,
+	"Fetch":                      true,
+	"StashAllChanges":            true,
+	"PopStash":                   true,
+}
+
+// selectionRequiringUniversalActions lists keybinding.universal.* field
+// names whose underlying actions historically required a selection.
+// Bindings for these actions must also appear in universalEligibleActions
+// to be valid (i.e., the handler must support a default-target mode).
+var selectionRequiringUniversalActions = map[string]bool{
+	"PopStash": true,
+}
+
+func validateUniversalBindingEligibility(universal KeybindingUniversalConfig) error {
+	value := reflect.ValueOf(universal)
+	typ := reflect.TypeOf(universal)
+	for i := 0; i < typ.NumField(); i++ {
+		fieldName := typ.Field(i).Name
+		fieldValue := value.Field(i)
+		if fieldValue.Kind() != reflect.String || fieldValue.String() == "" {
+			continue
+		}
+		if selectionRequiringUniversalActions[fieldName] && !universalEligibleActions[fieldName] {
+			return fmt.Errorf(
+				"keybinding.universal.%s requires a selection and is not on the default-target allowlist; "+
+					"either bind it under keybinding.<view>.* instead, or annotate the handler with SupportsDefaultTarget: true",
+				lowerFirst(fieldName))
+		}
+	}
+	return nil
+}
+
+func lowerFirst(s string) string {
+	if s == "" {
+		return s
+	}
+	return strings.ToLower(s[:1]) + s[1:]
 }
 
 func validateKeybindingGroups(groups map[string]KeybindingGroupConfig, keybindings KeybindingConfig) error {

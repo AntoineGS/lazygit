@@ -344,3 +344,28 @@ func TestKeybindingGroup_MustHaveAtLeastOneBinding(t *testing.T) {
 		t.Fatalf("expected error citing empty group <z>, got: %v", err)
 	}
 }
+
+func TestKeybindingUniversal_PopStashAccepted(t *testing.T) {
+	cfg := GetDefaultConfig()
+	cfg.Keybinding.Universal.PopStash = "sp"
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("expected validation to succeed for allowlisted popStash, got: %v", err)
+	}
+}
+
+func TestKeybindingUniversal_NotEligibleRejected(t *testing.T) {
+	// Temporarily simulate "popStash not yet annotated" by clearing the allowlist.
+	original := universalEligibleActions
+	universalEligibleActions = map[string]bool{}
+	defer func() { universalEligibleActions = original }()
+
+	cfg := GetDefaultConfig()
+	cfg.Keybinding.Universal.PopStash = "sp"
+	err := cfg.Validate()
+	if err == nil {
+		t.Fatal("expected validation error for unannotated universal popStash")
+	}
+	if !strings.Contains(err.Error(), "PopStash") && !strings.Contains(err.Error(), "popStash") {
+		t.Fatalf("error should cite the action name, got: %v", err)
+	}
+}
