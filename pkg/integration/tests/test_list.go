@@ -340,6 +340,7 @@ var tests = []*components.IntegrationTest{
 	keybindings.ChordUnboundCancels,
 	keybindings.ChordViewSwitchCancels,
 	keybindings.UniversalCheckForUpdate,
+	keybindings.UniversalFetch,
 	misc.ConfirmOnQuit,
 	misc.CopyConfirmationMessageToClipboard,
 	misc.CopyToClipboard,
