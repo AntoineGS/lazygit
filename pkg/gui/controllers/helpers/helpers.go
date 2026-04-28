@@ -54,6 +54,7 @@ type Helpers struct {
 	Stash             *StashHelper
 	Worktree          *WorktreeHelper
 	SubCommits        *SubCommitsHelper
+	AllBranchesLog    *AllBranchesLogHelper
 }
 
 func NewStubHelpers() *Helpers {
@@ -92,5 +93,6 @@ func NewStubHelpers() *Helpers {
 		Stash:             &StashHelper{},
 		Worktree:          &WorktreeHelper{},
 		SubCommits:        &SubCommitsHelper{},
+		AllBranchesLog:    &AllBranchesLogHelper{},
 	}
 }

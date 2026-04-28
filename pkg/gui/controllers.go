@@ -126,10 +126,11 @@ func (gui *Gui) resetHelpersAndControllers() {
 			modeHelper,
 			appStatusHelper,
 		),
-		Search:     searchHelper,
-		Stash:      helpers.NewStashHelper(helperCommon),
-		Worktree:   worktreeHelper,
-		SubCommits: helpers.NewSubCommitsHelper(helperCommon, refreshHelper),
+		Search:         searchHelper,
+		Stash:          helpers.NewStashHelper(helperCommon),
+		Worktree:       worktreeHelper,
+		SubCommits:     helpers.NewSubCommitsHelper(helperCommon, refreshHelper),
+		AllBranchesLog: helpers.NewAllBranchesLogHelper(helperCommon),
 	}
 
 	gui.CustomCommandsClient = custom_commands.NewClient(

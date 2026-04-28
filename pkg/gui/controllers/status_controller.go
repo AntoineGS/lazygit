@@ -60,12 +60,12 @@ func (self *StatusController) GetKeybindings(opts types.KeybindingsOpts) []*type
 		},
 		{
 			Key:         opts.GetKey(opts.Config.Status.AllBranchesLogGraph),
-			Handler:     func() error { self.switchToOrRotateAllBranchesLogs(); return nil },
+			Handler:     self.c.Helpers().AllBranchesLog.SwitchToOrRotateAllBranchesLogs,
 			Description: self.c.Tr.AllBranchesLogGraph,
 		},
 		{
 			Key:         opts.GetKey(opts.Config.Status.AllBranchesLogGraphReverse),
-			Handler:     func() error { self.switchToOrRotateAllBranchesLogsBackward(); return nil },
+			Handler:     self.c.Helpers().AllBranchesLog.SwitchToOrRotateAllBranchesLogsBackward,
 			Description: self.c.Tr.AllBranchesLogGraphReverse,
 		},
 	}
@@ -89,7 +89,7 @@ func (self *StatusController) GetOnRenderToMain() func() {
 		case "dashboard":
 			self.showDashboard()
 		case "allBranchesLog":
-			self.showAllBranchLogs()
+			self.c.Helpers().AllBranchesLog.ShowAllBranchLogs()
 		default:
 			self.showDashboard()
 		}
@@ -180,47 +180,6 @@ func (self *StatusController) editConfig() error {
 	return self.askForConfigFile(func(file string) error {
 		return self.c.Helpers().Files.EditFiles([]string{file})
 	})
-}
-
-func (self *StatusController) showAllBranchLogs() {
-	cmdObj := self.c.Git().Branch.AllBranchesLogCmdObj()
-	task := types.NewRunPtyTask(cmdObj.GetCmd())
-
-	title := self.c.Tr.LogTitle
-	if i, n := self.c.Git().Branch.GetAllBranchesLogIdxAndCount(); n > 1 {
-		title = fmt.Sprintf(self.c.Tr.LogXOfYTitle, i+1, n)
-	}
-	self.c.RenderToMainViews(types.RefreshMainOpts{
-		Pair: self.c.MainViewPairs().Normal,
-		Main: &types.ViewUpdateOpts{
-			Title: title,
-			Task:  task,
-		},
-	})
-}
-
-// Switches to the all branches view, or, if already on that view,
-// rotates to the next command in the list, and then renders it.
-func (self *StatusController) switchToOrRotateAllBranchesLogs() {
-	// A bit of a hack to ensure we only rotate to the next branch log command
-	// if we currently are looking at a branch log. Otherwise, we should just show
-	// the current index (if we are coming from the dashboard).
-	if self.c.Views().Main.Title != self.c.Tr.StatusTitle {
-		self.c.Git().Branch.RotateAllBranchesLogIdx()
-	}
-	self.showAllBranchLogs()
-}
-
-// Switches to the all branches view, or, if already on that view,
-// rotates to the previous command in the list, and then renders it.
-func (self *StatusController) switchToOrRotateAllBranchesLogsBackward() {
-	// A bit of a hack to ensure we only rotate to the previous branch log command
-	// if we currently are looking at a branch log. Otherwise, we should just show
-	// the current index (if we are coming from the dashboard).
-	if self.c.Views().Main.Title != self.c.Tr.StatusTitle {
-		self.c.Git().Branch.RotateAllBranchesLogIdxBackward()
-	}
-	self.showAllBranchLogs()
 }
 
 func (self *StatusController) showDashboard() {
