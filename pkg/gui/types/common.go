@@ -116,6 +116,16 @@ type IGuiCommon interface {
 	InDemo() bool
 }
 
+// CommandTrackingTask is implemented by gocui.Task wrappers that can record
+// the git command currently being executed inside their containing operation.
+// The cmd runner type-asserts the task it was given (see
+// pkg/commands/oscommands/cmd_obj_runner.go) and, if the assertion succeeds,
+// calls SetCurrentCommand("git ...") before cmd.Wait and SetCurrentCommand("")
+// after, so the OngoingOperations popup can show what's actually running.
+type CommandTrackingTask interface {
+	SetCurrentCommand(cmd string)
+}
+
 type IModeMgr interface {
 	IsAnyModeActive() bool
 }
