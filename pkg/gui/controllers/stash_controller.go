@@ -129,33 +129,7 @@ func (self *StashController) handleStashApply(stashEntry *models.StashEntry) err
 }
 
 func (self *StashController) handleStashPop(stashEntry *models.StashEntry) error {
-	pop := func() error {
-		self.c.LogAction(self.c.Tr.Actions.PopStash)
-		self.c.LogCommand(fmt.Sprintf(self.c.Tr.Log.PoppingStash, stashEntry.Hash), false)
-		err := self.c.Git().Stash.Pop(stashEntry.Index)
-		self.postStashRefresh()
-		if err != nil {
-			return err
-		}
-		if self.c.UserConfig().Gui.SwitchToFilesAfterStashPop {
-			self.c.Context().Push(self.c.Contexts().Files, types.OnFocusOpts{})
-		}
-		return nil
-	}
-
-	if self.c.UserConfig().Gui.SkipStashWarning {
-		return pop()
-	}
-
-	self.c.Confirm(types.ConfirmOpts{
-		Title:  self.c.Tr.StashPop,
-		Prompt: self.c.Tr.SurePopStashEntry,
-		HandleConfirm: func() error {
-			return pop()
-		},
-	})
-
-	return nil
+	return self.c.Helpers().Stash.PopStash(stashEntry)
 }
 
 func (self *StashController) handleStashDrop(stashEntries []*models.StashEntry) error {

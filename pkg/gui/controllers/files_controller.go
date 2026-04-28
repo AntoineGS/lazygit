@@ -1290,7 +1290,7 @@ func (self *FilesController) hasPathStagedChanges(node *filetree.FileNode) bool 
 }
 
 func (self *FilesController) stash() error {
-	return self.handleStashSave(self.c.Git().Stash.Push, self.c.Tr.Actions.StashAllChanges)
+	return self.c.Helpers().Stash.StashAllChanges()
 }
 
 func (self *FilesController) createResetToUpstreamMenu() error {

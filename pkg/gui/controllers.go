@@ -127,6 +127,7 @@ func (gui *Gui) resetHelpersAndControllers() {
 			appStatusHelper,
 		),
 		Search:     searchHelper,
+		Stash:      helpers.NewStashHelper(helperCommon),
 		Worktree:   worktreeHelper,
 		SubCommits: helpers.NewSubCommitsHelper(helperCommon, refreshHelper),
 	}
