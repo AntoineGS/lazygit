@@ -1,0 +1,213 @@
+notARepository: skip
+gui:
+  showDivergenceFromBaseBranch: arrowAndNumber
+  theme:
+    activeBorderColor:
+      - "#cba6f7" # mauve
+      - bold
+    inactiveBorderColor:
+      - "#45475a" # surface1
+    searchingActiveBorderColor:
+      - "#f9e2af" # yellow
+    optionsTextColor:
+      - "#89b4fa" # blue
+    selectedLineBgColor:
+      - "#313244" # surface0
+    inactiveViewSelectedLineBgColor:
+      - "#6c7086" # overlay0
+    cherryPickedCommitFgColor:
+      - "#89b4fa" # blue
+    cherryPickedCommitBgColor:
+      - "#45475a" # surface1
+    markedBaseCommitFgColor:
+      - "#89b4fa" # blue
+    markedBaseCommitBgColor:
+      - "#f9e2af" # yellow
+    unstagedChangesColor:
+      - "#f38ba8" # red
+    defaultFgColor:
+      - "#cdd6f4" # text
+  authorColors:
+    "*": "#b4befe" # lavender
+git:
+  pagers:
+    - pager: delta --paging=never
+os:
+  editPreset: "nvim"
+keybinding:
+  universal:
+    quit: "q"
+    quit-alt1: "<c-c>"
+    suspendApp: "<c-z>"
+    return: "<esc>"
+    quitWithoutChangingDirectory: "Q"
+    togglePanel: "<tab>"
+    prevItem: "<up>"
+    nextItem: "<down>"
+    prevItem-alt: "k"
+    nextItem-alt: "j"
+    prevPage: "<c-u>"
+    nextPage: "<c-d>"
+    scrollLeft: "h"
+    scrollRight: "l"
+    gotoTop: "gg"
+    gotoBottom: "G"
+    gotoTop-alt: "<disabled>"
+    gotoBottom-alt: "<disabled>"
+    toggleRangeSelect: "v"
+    rangeSelectDown: "<s-down>"
+    rangeSelectUp: "<s-up>"
+    prevBlock: "<left>"
+    nextBlock: "<right>"
+    prevBlock-alt: "<disabled>"
+    nextBlock-alt: "<disabled>"
+    prevBlock-alt2: "<backtab>"
+    nextBlock-alt2: "<tab>"
+    jumpToBlock: ["1", "2", "3", "4", "5"]
+    focusMainView: "0"
+    nextMatch: "n"
+    prevMatch: "N"
+    startSearch: "/"
+    optionMenu: "?"
+    optionMenu-alt1: "<disabled>"
+    select: "<space>"
+    goInto: "<enter>"
+    confirm: "<enter>"
+    confirmMenu: "<enter>"
+    confirmSuggestion: "<enter>"
+    confirmInEditor: "<c-enter>"
+    confirmInEditor-alt: "<disabled>"
+    remove: "d"
+    new: "a"
+    edit: "e"
+    openFile: "o"
+    openRecentRepos: "gr"
+    scrollUpMain: "<a-u>"
+    scrollDownMain: "<a-d>"
+    scrollUpMain-alt1: "<disabled>"
+    scrollDownMain-alt1: "<disabled>"
+    scrollUpMain-alt2: "<disabled>"
+    scrollDownMain-alt2: "<disabled>"
+    executeShellCommand: ":"
+    createRebaseOptionsMenu: "m"
+    pushFiles: "gP"
+    pullFiles: "gp"
+    refresh: "R"
+    createPatchOptionsMenu: "<c-p>"
+    nextTab: "]"
+    prevTab: "["
+    nextScreenMode: "+"
+    prevScreenMode: "_"
+    cyclePagers: "|"
+    undo: "u"
+    redo: "<c-r>"
+    filteringMenu: "g/"
+    diffingMenu: "gd"
+    diffingMenu-alt: "<disabled>"
+    copyToClipboard: "gy"
+    submitEditorText: "<enter>"
+    extrasMenu: "gm"
+    toggleWhitespaceInDiffView: "<c-w>"
+    increaseContextInDiffView: "}"
+    decreaseContextInDiffView: "{"
+    increaseRenameSimilarityThreshold: ")"
+    decreaseRenameSimilarityThreshold: "("
+    openDiffTool: "<c-t>"
+    # Promoted from view scope: these chords now fire from any view.
+    # popStash uses the topmost stash when invoked outside the stash view.
+    # recentRepos intentionally NOT added: openRecentRepos: "gr" above
+    # already provides the same menu universally (different action name,
+    # same handler).
+    checkForUpdate: "gu"
+    allBranchesLogGraph: "ga"
+    allBranchesLogGraphReverse: "gA"
+    fetch: "gf"
+    stashAllChanges: "sa"
+    popStash: "sp"
+  status: {}
+  files:
+    commitChanges: "cc"
+    commitChangesWithoutHook: "cw"
+    amendLastCommit: "cA"
+    commitChangesWithEditor: "ce"
+    findBaseCommitForFixup: "<c-f>"
+    confirmDiscard: "d"
+    ignoreFile: "i"
+    refreshFiles: "r"
+    viewStashOptions: "so"
+    toggleStagedAll: "st"
+    viewResetOptions: "x"
+    toggleTreeView: "t"
+    openMergeOptions: "m"
+    openStatusFilter: "f"
+    copyFileInfoToClipboard: "yc"
+    collapseAll: "c-"
+    expandAll: "c="
+  branches:
+    createPullRequest: "pc"
+    viewPullRequestOptions: "po"
+    openPullRequestInBrowser: "pb"
+    copyPullRequestURL: "py"
+    checkoutBranchByName: "cb"
+    forceCheckoutBranch: "cB"
+    checkoutPreviousBranch: "c-"
+    rebaseBranch: "R"
+    renameBranch: "r"
+    mergeIntoCurrentBranch: "M"
+    moveCommitsToNewBranch: "N"
+    viewGitFlowOptions: "i"
+    fastForward: "ff"
+    createTag: "tc"
+    pushTag: "tp"
+    setUpstream: "U"
+    fetchRemote: "fr"
+    addForkRemote: "F"
+    sortOrder: "so"
+  worktrees:
+    viewWorktreeOptions: "w"
+  commits:
+    squashDown: "sd"
+    renameCommit: "r"
+    renameCommitWithEditor: "R"
+    viewResetOptions: "x"
+    markCommitAsFixup: "fm"
+    setFixupMessage: "cm"
+    createFixupCommit: "fc"
+    squashAboveCommits: "sa"
+    moveDownCommit: "<c-j>"
+    moveUpCommit: "<c-k>"
+    amendToCommit: "A"
+    resetCommitAuthor: "a"
+    pickCommit: "p"
+    revertCommit: "v"
+    cherryPickCopy: "cy"
+    pasteCommits: "cp"
+    markCommitAsBaseForRebase: "B"
+    tagCommit: "t"
+    checkoutCommit: "<space>"
+    resetCherryPick: "cr"
+    copyCommitAttributeToClipboard: "y"
+    openLogMenu: "l"
+    openInBrowser: "b"
+    openPullRequestInBrowser: "pb"
+    viewBisectOptions: "b"
+    startInteractiveRebase: "i"
+    selectCommitsOfCurrentBranch: "B"
+  amendAttribute:
+    resetAuthor: "r"
+    setAuthor: "a"
+    addCoAuthor: "c"
+  stash:
+    renameStash: "sr"
+  commitFiles:
+    checkoutCommitFile: "<disabled>"
+  main:
+    toggleSelectHunk: "h"
+    pickBothHunks: "b"
+    editSelectHunk: "e"
+  submodules:
+    init: "i"
+    update: "u"
+    bulkMenu: "b"
+  commitMessage:
+    commitMenu: "<c-o>"
