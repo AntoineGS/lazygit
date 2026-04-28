@@ -341,6 +341,7 @@ var tests = []*components.IntegrationTest{
 	keybindings.ChordViewSwitchCancels,
 	keybindings.UniversalCheckForUpdate,
 	keybindings.UniversalFetch,
+	keybindings.UniversalStashAllChanges,
 	misc.ConfirmOnQuit,
 	misc.CopyConfirmationMessageToClipboard,
 	misc.CopyToClipboard,
