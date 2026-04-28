@@ -173,6 +173,7 @@ func (gui *Gui) resetHelpersAndControllers() {
 	worktreesController := controllers.NewWorktreesController(common)
 	undoController := controllers.NewUndoController(common)
 	globalController := controllers.NewGlobalController(common)
+	ongoingOperationsController := controllers.NewOngoingOperationsController(common)
 	contextLinesController := controllers.NewContextLinesController(common)
 	renameSimilarityThresholdController := controllers.NewRenameSimilarityThresholdController(common)
 	verticalScrollControllerFactory := controllers.NewVerticalScrollControllerFactory(common)
@@ -416,6 +417,7 @@ func (gui *Gui) resetHelpersAndControllers() {
 	controllers.AttachControllers(gui.State.Contexts.Global,
 		undoController,
 		globalController,
+		ongoingOperationsController,
 		contextLinesController,
 		renameSimilarityThresholdController,
 		jumpToSideWindowController,

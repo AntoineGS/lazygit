@@ -87,7 +87,7 @@ func NewStubHelpers() *Helpers {
 		Mode:              &ModeHelper{},
 		AppStatus:         &AppStatusHelper{},
 		InlineStatus:      &InlineStatusHelper{},
-		OngoingOperations: &OngoingOperationsHelper{},
+		OngoingOperations: NewOngoingOperationsHelper(),
 		WindowArrangement: &WindowArrangementHelper{},
 		Search:            &SearchHelper{},
 		Worktree:          &WorktreeHelper{},
