@@ -237,8 +237,8 @@ var selectionRequiringUniversalActions = map[string]bool{
 
 func validateUniversalBindingEligibility(universal KeybindingUniversalConfig) error {
 	value := reflect.ValueOf(universal)
-	typ := reflect.TypeOf(universal)
-	for i := 0; i < typ.NumField(); i++ {
+	typ := reflect.TypeFor[KeybindingUniversalConfig]()
+	for i := range typ.NumField() {
 		fieldName := typ.Field(i).Name
 		fieldValue := value.Field(i)
 		if fieldValue.Kind() != reflect.String || fieldValue.String() == "" {
@@ -254,6 +254,9 @@ func validateUniversalBindingEligibility(universal KeybindingUniversalConfig) er
 	return nil
 }
 
+// lowerFirst returns s with its first byte lowercased. Assumes ASCII —
+// safe here because callers only pass Go field names. Don't reuse for
+// arbitrary user input without revisiting.
 func lowerFirst(s string) string {
 	if s == "" {
 		return s
