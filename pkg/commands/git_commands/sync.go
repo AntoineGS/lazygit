@@ -74,17 +74,20 @@ func (self *SyncCommands) Fetch(task gocui.Task) error {
 	return self.FetchCmdObj(task).Run()
 }
 
-func (self *SyncCommands) FetchBackgroundCmdObj() *oscommands.CmdObj {
+func (self *SyncCommands) FetchBackgroundCmdObj(task gocui.Task) *oscommands.CmdObj {
 	cmdArgs := self.fetchCommandBuilder(self.UserConfig().Git.FetchAll).ToArgv()
 
 	cmdObj := self.cmd.New(cmdArgs)
 	cmdObj.DontLog().FailOnCredentialRequest()
 	cmdObj.SuppressOutputUnlessError()
+	if task != nil {
+		cmdObj.WithTask(task)
+	}
 	return cmdObj
 }
 
-func (self *SyncCommands) FetchBackground() error {
-	return self.FetchBackgroundCmdObj().Run()
+func (self *SyncCommands) FetchBackground(task gocui.Task) error {
+	return self.FetchBackgroundCmdObj(task).Run()
 }
 
 type PullOptions struct {

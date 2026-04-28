@@ -185,7 +185,7 @@ func TestSyncFetchBackground(t *testing.T) {
 		t.Run(s.testName, func(t *testing.T) {
 			instance := buildSyncCommands(commonDeps{})
 			instance.UserConfig().Git.FetchAll = s.fetchAllConfig
-			s.test(instance.FetchBackgroundCmdObj())
+			s.test(instance.FetchBackgroundCmdObj(nil))
 		})
 	}
 }

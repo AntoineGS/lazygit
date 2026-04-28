@@ -90,12 +90,12 @@ func (self *BackgroundRoutineMgr) startBackgroundFetch() {
 		})
 
 		if self.gui.UserConfig().Gui.ShowBottomLine || firstTimeOrRetriggered {
-			return self.gui.helpers.AppStatus.WithWaitingStatusImpl(self.gui.Tr.FetchingStatus, func(gocui.Task) error {
-				return self.backgroundFetch()
+			return self.gui.helpers.AppStatus.WithWaitingStatusImpl(self.gui.Tr.FetchingStatus, func(task gocui.Task) error {
+				return self.backgroundFetch(task)
 			}, nil)
 		}
 
-		return self.backgroundFetch()
+		return self.backgroundFetch(nil)
 	}
 
 	// We want an immediate fetch at startup, and since goEvery starts by
@@ -152,8 +152,8 @@ func (self *BackgroundRoutineMgr) goEvery(interval time.Duration, stop chan stru
 	return retrigger
 }
 
-func (self *BackgroundRoutineMgr) backgroundFetch() (err error) {
-	err = self.gui.git.Sync.FetchBackground()
+func (self *BackgroundRoutineMgr) backgroundFetch(task gocui.Task) (err error) {
+	err = self.gui.git.Sync.FetchBackground(task)
 
 	self.gui.c.Refresh(types.RefreshOptions{Scope: []types.RefreshableView{types.BRANCHES, types.COMMITS, types.REMOTES, types.TAGS, types.PULL_REQUESTS}, Mode: types.SYNC})
 
