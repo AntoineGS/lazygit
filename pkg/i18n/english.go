@@ -409,6 +409,10 @@ type TranslationSet struct {
 	PullingStatus                         string
 	PushingStatus                         string
 	FetchingStatus                        string
+	OngoingOperations                     string
+	OngoingOperationsTooltip              string
+	NoOngoingOperations                   string
+	OngoingOperationLineFormat            string
 	SquashingStatus                       string
 	FixingStatus                          string
 	DeletingStatus                        string
@@ -1534,6 +1538,10 @@ func EnglishTranslationSet() *TranslationSet {
 		PullingStatus:                        "Pulling",
 		PushingStatus:                        "Pushing",
 		FetchingStatus:                       "Fetching",
+		OngoingOperations:                    "Ongoing operations",
+		OngoingOperationsTooltip:             "Show all in-flight long-running operations and their durations.",
+		NoOngoingOperations:                  "No operations are currently running.",
+		OngoingOperationLineFormat:           "%s — %s — %s",
 		SquashingStatus:                      "Squashing",
 		FixingStatus:                         "Fixing up",
 		DeletingStatus:                       "Deleting",

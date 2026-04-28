@@ -503,6 +503,7 @@ type KeybindingUniversalConfig struct {
 	IncreaseRenameSimilarityThreshold string   `yaml:"increaseRenameSimilarityThreshold"`
 	DecreaseRenameSimilarityThreshold string   `yaml:"decreaseRenameSimilarityThreshold"`
 	OpenDiffTool                      string   `yaml:"openDiffTool"`
+	ShowOngoingOperations             string   `yaml:"showOngoingOperations"`
 }
 
 type KeybindingStatusConfig struct {
@@ -986,6 +987,7 @@ func GetDefaultConfigForPlatform(platform string) *UserConfig {
 				IncreaseRenameSimilarityThreshold: ")",
 				DecreaseRenameSimilarityThreshold: "(",
 				OpenDiffTool:                      "<ctrl+t>",
+				ShowOngoingOperations:             "<ctrl+g>",
 			},
 			Status: KeybindingStatusConfig{
 				CheckForUpdate:             "u",
