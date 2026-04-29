@@ -39,6 +39,10 @@ func (self *OngoingOperationsController) Context() types.Context {
 	return nil
 }
 
+// refreshInterval is how often the popup re-renders while open, so newly-started
+// or completed operations appear/disappear without the user re-pressing the key.
+const refreshInterval = time.Second
+
 func (self *OngoingOperationsController) show() error {
 	ops := self.c.Helpers().OngoingOperations.List()
 
@@ -55,7 +59,36 @@ func (self *OngoingOperationsController) show() error {
 	// items the buffer would otherwise hold stale content from the previous
 	// menu, leaving an empty tooltip pane visible below the prompt.
 	self.c.Views().Tooltip.SetContent("")
+
+	go self.refreshWhileOpen()
 	return nil
+}
+
+// refreshWhileOpen periodically re-renders the popup so operations that start
+// or finish while it's open appear/disappear in place. Exits when the user
+// dismisses the popup (the menu is no longer the current context).
+func (self *OngoingOperationsController) refreshWhileOpen() {
+	ticker := time.NewTicker(refreshInterval)
+	defer ticker.Stop()
+
+	menuKey := self.c.Contexts().Menu.GetKey()
+	for range ticker.C {
+		if self.c.Context().Current().GetKey() != menuKey {
+			return
+		}
+		self.c.OnUIThread(func() error {
+			// Re-check inside the UI thread: the user may have dismissed the
+			// popup, or another menu may have replaced it, between the ticker
+			// firing and this callback running.
+			if self.c.Context().Current().GetKey() != menuKey {
+				return nil
+			}
+			ops := self.c.Helpers().OngoingOperations.List()
+			self.c.Contexts().Menu.SetPrompt(self.formatOps(ops))
+			self.c.PostRefreshUpdate(self.c.Contexts().Menu)
+			return nil
+		})
+	}
 }
 
 func (self *OngoingOperationsController) formatOps(ops []*helpers.OngoingOperation) string {
