@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/jesseduffield/lazygit/pkg/gui/types"
@@ -37,47 +38,58 @@ func (self *OngoingOperationsController) Context() types.Context {
 	return nil
 }
 
-// refreshInterval is how often the popup re-renders while open, so newly-started
-// or completed operations appear/disappear without the user re-pressing the key.
-const refreshInterval = time.Second
-
 func (self *OngoingOperationsController) show() error {
+	events, unsubscribe := self.c.Helpers().OngoingOperations.Subscribe()
+
+	stop := make(chan struct{})
+	closeOnce := sync.Once{}
+	closePopup := func() {
+		closeOnce.Do(func() {
+			close(stop)
+			unsubscribe()
+		})
+	}
+	onClose := func() error {
+		closePopup()
+		return nil
+	}
+
 	if err := self.c.Menu(types.CreateMenuOptions{
 		Title:           self.c.Tr.OngoingOperations,
-		Items:           self.buildItems(),
+		Items:           self.buildItems(onClose),
 		HideCancel:      true,
 		HideConfirmHint: true,
+		OnCancel:        onClose,
 	}); err != nil {
+		closePopup()
 		return err
 	}
 
-	go self.refreshWhileOpen()
+	go self.refreshOnEvents(events, stop, onClose)
 	return nil
 }
 
-// refreshWhileOpen periodically re-renders the popup so operations that start
-// or finish while it's open appear/disappear in place. Exits when the user
-// dismisses the popup (the menu is no longer the current context).
-func (self *OngoingOperationsController) refreshWhileOpen() {
-	ticker := time.NewTicker(refreshInterval)
-	defer ticker.Stop()
-
-	menuKey := self.c.Contexts().Menu.GetKey()
-	for range ticker.C {
-		if self.c.Context().Current().GetKey() != menuKey {
+// refreshOnEvents re-renders the popup whenever the registry signals a change.
+// Exits when stop is closed (popup dismissed). Durations don't auto-tick
+// between events — that's by design for the "is this stuck?" use case (a
+// frozen duration means nothing has happened).
+func (self *OngoingOperationsController) refreshOnEvents(events <-chan struct{}, stop <-chan struct{}, onClose func() error) {
+	for {
+		select {
+		case <-stop:
 			return
-		}
-		self.c.OnUIThread(func() error {
-			// Re-check inside the UI thread: the user may have dismissed the
-			// popup, or another menu may have replaced it, between the ticker
-			// firing and this callback running.
-			if self.c.Context().Current().GetKey() != menuKey {
+		case <-events:
+			self.c.OnUIThread(func() error {
+				select {
+				case <-stop:
+					return nil
+				default:
+				}
+				self.c.Contexts().Menu.SetMenuItems(self.buildItems(onClose), nil)
+				self.c.PostRefreshUpdate(self.c.Contexts().Menu)
 				return nil
-			}
-			self.c.Contexts().Menu.SetMenuItems(self.buildItems(), nil)
-			self.c.PostRefreshUpdate(self.c.Contexts().Menu)
-			return nil
-		})
+			})
+		}
 	}
 }
 
@@ -87,17 +99,18 @@ func (self *OngoingOperationsController) refreshWhileOpen() {
 // like a stale Tooltip pane appearing under the menu).
 //
 // LabelColumns is set explicitly (rather than letting Label propagate via
-// createMenu) so that auto-refresh — which calls SetMenuItems directly without
-// going back through createMenu — produces visible rows.
-func (self *OngoingOperationsController) buildItems() []*types.MenuItem {
-	noop := func() error { return nil }
-
+// createMenu) so that the event-driven re-render — which calls SetMenuItems
+// directly without going back through createMenu — produces visible rows.
+//
+// Each item's OnPress invokes onClose so pressing Enter dismisses the popup
+// just like Esc does (and also tears down the subscription/goroutine).
+func (self *OngoingOperationsController) buildItems(onClose func() error) []*types.MenuItem {
 	ops := self.c.Helpers().OngoingOperations.List()
 	if len(ops) == 0 {
 		return []*types.MenuItem{
 			{
 				LabelColumns: []string{self.c.Tr.NoOngoingOperations},
-				OnPress:      noop,
+				OnPress:      onClose,
 			},
 		}
 	}
@@ -112,7 +125,7 @@ func (self *OngoingOperationsController) buildItems() []*types.MenuItem {
 		label := fmt.Sprintf(self.c.Tr.OngoingOperationLineFormat, op.Label, duration.String(), cmd)
 		items = append(items, &types.MenuItem{
 			LabelColumns: []string{label},
-			OnPress:      noop,
+			OnPress:      onClose,
 		})
 	}
 	return items

@@ -19,12 +19,19 @@ type OngoingOperation struct {
 	// currentCommand holds a *string so SetCurrentCommand can swap
 	// atomically without locking the registry mutex.
 	currentCommand atomic.Pointer[string]
+
+	// notify is set by Register so SetCurrentCommand can wake any popup
+	// subscribers without taking a back-reference to the helper.
+	notify func()
 }
 
 // SetCurrentCommand records the git command currently being executed inside
 // this operation. Pass "" to indicate no command is currently running.
 func (op *OngoingOperation) SetCurrentCommand(cmd string) {
 	op.currentCommand.Store(&cmd)
+	if op.notify != nil {
+		op.notify()
+	}
 }
 
 // CurrentCommand returns the most recently recorded command, or "".
@@ -41,9 +48,10 @@ func (op *OngoingOperation) Elapsed() time.Duration {
 }
 
 type OngoingOperationsHelper struct {
-	mutex      deadlock.Mutex
-	operations map[int64]*OngoingOperation
-	nextID     int64
+	mutex       deadlock.Mutex
+	operations  map[int64]*OngoingOperation
+	nextID      int64
+	subscribers []chan struct{}
 }
 
 // NewOngoingOperationsHelper returns an empty registry. The returned helper is
@@ -65,8 +73,10 @@ func (self *OngoingOperationsHelper) Register(label string) *OngoingOperation {
 		ID:        self.nextID,
 		Label:     label,
 		StartTime: time.Now(),
+		notify:    self.Notify,
 	}
 	self.operations[op.ID] = op
+	self.notifyLocked()
 	return op
 }
 
@@ -79,6 +89,7 @@ func (self *OngoingOperationsHelper) Unregister(op *OngoingOperation) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 	delete(self.operations, op.ID)
+	self.notifyLocked()
 }
 
 // List returns a snapshot of active operations sorted by start time
@@ -95,4 +106,47 @@ func (self *OngoingOperationsHelper) List() []*OngoingOperation {
 		return a.StartTime.Compare(b.StartTime)
 	})
 	return ops
+}
+
+// Subscribe returns a channel that receives a signal each time the registry
+// changes (Register, Unregister, or SetCurrentCommand on any operation). The
+// channel is buffered with a single slot, so emitters never block — bursts
+// of events while a subscriber is busy are coalesced into one wake-up.
+//
+// Callers MUST invoke the returned unsubscribe func when they're done, or
+// the helper will retain the channel and emit to it forever.
+func (self *OngoingOperationsHelper) Subscribe() (<-chan struct{}, func()) {
+	ch := make(chan struct{}, 1)
+
+	self.mutex.Lock()
+	self.subscribers = append(self.subscribers, ch)
+	self.mutex.Unlock()
+
+	unsubscribe := func() {
+		self.mutex.Lock()
+		defer self.mutex.Unlock()
+		self.subscribers = slices.DeleteFunc(self.subscribers, func(c chan struct{}) bool {
+			return c == ch
+		})
+	}
+	return ch, unsubscribe
+}
+
+// Notify wakes all subscribers. Safe to call without holding the registry
+// mutex; used by OngoingOperation.SetCurrentCommand.
+func (self *OngoingOperationsHelper) Notify() {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+	self.notifyLocked()
+}
+
+// notifyLocked broadcasts to subscribers; the registry mutex must be held.
+func (self *OngoingOperationsHelper) notifyLocked() {
+	for _, ch := range self.subscribers {
+		select {
+		case ch <- struct{}{}:
+		default:
+			// channel already has a pending wake-up; coalesce
+		}
+	}
 }

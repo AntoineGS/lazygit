@@ -85,3 +85,67 @@ func TestOngoingOperationsHelper_ConcurrentRegisterUnregister(t *testing.T) {
 	wg.Wait()
 	assert.Empty(t, h.List())
 }
+
+func TestOngoingOperationsHelper_SubscribeReceivesEventsForRegisterUnregisterAndCommandChange(t *testing.T) {
+	h := NewOngoingOperationsHelper()
+	events, unsubscribe := h.Subscribe()
+	defer unsubscribe()
+
+	op := h.Register("Pulling 'main'")
+	assertEventReceived(t, events, "Register")
+
+	op.SetCurrentCommand("git pull")
+	assertEventReceived(t, events, "SetCurrentCommand")
+
+	h.Unregister(op)
+	assertEventReceived(t, events, "Unregister")
+}
+
+func TestOngoingOperationsHelper_SubscribeCoalescesBurstsIntoOneWakeup(t *testing.T) {
+	h := NewOngoingOperationsHelper()
+	events, unsubscribe := h.Subscribe()
+	defer unsubscribe()
+
+	// Three rapid events; the buffered (size-1) channel should hold one
+	// pending wake-up at most.
+	op1 := h.Register("a")
+	op2 := h.Register("b")
+	op3 := h.Register("c")
+	_, _, _ = op1, op2, op3
+
+	assertEventReceived(t, events, "first")
+
+	// Channel should now be empty — the second and third events were
+	// coalesced into the one pending slot.
+	select {
+	case <-events:
+		t.Fatal("expected coalesced events; got a second wake-up")
+	case <-time.After(10 * time.Millisecond):
+	}
+}
+
+func TestOngoingOperationsHelper_UnsubscribeStopsDelivery(t *testing.T) {
+	h := NewOngoingOperationsHelper()
+	events, unsubscribe := h.Subscribe()
+
+	h.Register("first")
+	assertEventReceived(t, events, "before unsubscribe")
+
+	unsubscribe()
+	h.Register("second")
+
+	select {
+	case <-events:
+		t.Fatal("received event after unsubscribe")
+	case <-time.After(10 * time.Millisecond):
+	}
+}
+
+func assertEventReceived(t *testing.T, events <-chan struct{}, label string) {
+	t.Helper()
+	select {
+	case <-events:
+	case <-time.After(50 * time.Millisecond):
+		t.Fatalf("expected %s event within 50ms; got none", label)
+	}
+}
