@@ -242,8 +242,12 @@ func (self *OngoingOperationsController) buildCompletedItem(c completedOp, onClo
 	label := fmt.Sprintf(self.c.Tr.OngoingOperationLineFormat, c.Label, cmd)
 	tooltip := fmt.Sprintf(self.c.Tr.OngoingOperationCompletedAtFormat,
 		c.StartTime.Format(time.TimeOnly), c.EndTime.Format(time.TimeOnly))
+	// Trailing unstyled space: gocui reuses the last character's fgColor for
+	// empty cells past end-of-line (vendor view.go:1288), so without it the
+	// strikethrough bleeds across the row when the line is highlighted.
+	styled := style.FgDefault.SetStrikethrough().Sprint(label) + " "
 	return &types.MenuItem{
-		LabelColumns: []string{style.FgDefault.SetStrikethrough().Sprint(label)},
+		LabelColumns: []string{styled},
 		Tooltip:      tooltip,
 		OnPress:      onClose,
 	}
