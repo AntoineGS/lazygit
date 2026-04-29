@@ -37,13 +37,7 @@ func (self *MenuController) GetKeybindings(opts types.KeybindingsOpts) []*types.
 			Handler:           self.withItem(self.press),
 			GetDisabledReason: self.require(self.singleItemSelected()),
 		},
-		{
-			Key:               opts.GetKey(opts.Config.Universal.ConfirmMenu),
-			Handler:           self.withItem(self.press),
-			GetDisabledReason: self.require(self.singleItemSelected()),
-			Description:       self.c.Tr.Execute,
-			DisplayOnScreen:   true,
-		},
+		self.confirmMenuBinding(opts),
 		{
 			Key:             opts.GetKey(opts.Config.Universal.Return),
 			Handler:         self.close,
@@ -53,6 +47,22 @@ func (self *MenuController) GetKeybindings(opts types.KeybindingsOpts) []*types.
 	}
 
 	return bindings
+}
+
+// confirmMenuBinding builds the Enter binding. The bottom-bar "Execute" hint
+// is suppressed when the menu was created with HideConfirmHint=true, but the
+// binding itself stays active so Enter still dismisses the menu.
+func (self *MenuController) confirmMenuBinding(opts types.KeybindingsOpts) *types.Binding {
+	binding := &types.Binding{
+		Key:               opts.GetKey(opts.Config.Universal.ConfirmMenu),
+		Handler:           self.withItem(self.press),
+		GetDisabledReason: self.require(self.singleItemSelected()),
+	}
+	if !self.context().HideConfirmHint() {
+		binding.Description = self.c.Tr.Execute
+		binding.DisplayOnScreen = true
+	}
+	return binding
 }
 
 func (self *MenuController) GetOnDoubleClick() func() error {

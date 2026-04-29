@@ -63,6 +63,7 @@ func (gui *Gui) createMenu(opts types.CreateMenuOptions) error {
 	gui.State.Contexts.Menu.SetPrompt(opts.Prompt)
 	gui.State.Contexts.Menu.SetAllowFilteringKeybindings(opts.AllowFilteringKeybindings)
 	gui.State.Contexts.Menu.SetKeybindingsTakePrecedence(!opts.KeepConflictingKeybindings)
+	gui.State.Contexts.Menu.SetHideConfirmHint(opts.HideConfirmHint)
 	gui.State.Contexts.Menu.SetOnCancel(opts.OnCancel)
 	gui.State.Contexts.Menu.SetSelection(0)
 

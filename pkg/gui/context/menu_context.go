@@ -57,6 +57,7 @@ type MenuViewModel struct {
 	columnAlignment           []utils.Alignment
 	allowFilteringKeybindings bool
 	keybindingsTakePrecedence bool
+	hideConfirmHint           bool
 	onCancel                  func() error
 	*FilteredListViewModel[*types.MenuItem]
 }
@@ -125,6 +126,14 @@ func (self *MenuViewModel) SetAllowFilteringKeybindings(allow bool) {
 
 func (self *MenuViewModel) SetKeybindingsTakePrecedence(value bool) {
 	self.keybindingsTakePrecedence = value
+}
+
+func (self *MenuViewModel) SetHideConfirmHint(hide bool) {
+	self.hideConfirmHint = hide
+}
+
+func (self *MenuViewModel) HideConfirmHint() bool {
+	return self.hideConfirmHint
 }
 
 // TODO: move into presentation package

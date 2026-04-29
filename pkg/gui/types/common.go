@@ -164,6 +164,7 @@ type CreateMenuOptions struct {
 	Prompt                     string // a message that will be displayed above the menu options
 	Items                      []*MenuItem
 	HideCancel                 bool
+	HideConfirmHint            bool         // if true, the bottom-bar "Execute" hint is suppressed (Enter still works)
 	OnCancel                   func() error // called when the menu is dismissed without selecting an item
 	ColumnAlignment            []utils.Alignment
 	AllowFilteringKeybindings  bool

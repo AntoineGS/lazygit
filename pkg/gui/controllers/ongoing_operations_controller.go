@@ -43,9 +43,10 @@ const refreshInterval = time.Second
 
 func (self *OngoingOperationsController) show() error {
 	if err := self.c.Menu(types.CreateMenuOptions{
-		Title:      self.c.Tr.OngoingOperations,
-		Items:      self.buildItems(),
-		HideCancel: true,
+		Title:           self.c.Tr.OngoingOperations,
+		Items:           self.buildItems(),
+		HideCancel:      true,
+		HideConfirmHint: true,
 	}); err != nil {
 		return err
 	}
@@ -84,13 +85,19 @@ func (self *OngoingOperationsController) refreshWhileOpen() {
 // row; when nothing is running, a single inert row carries the empty-state
 // message so the popup is always a list (avoids prompt-only rendering quirks
 // like a stale Tooltip pane appearing under the menu).
+//
+// LabelColumns is set explicitly (rather than letting Label propagate via
+// createMenu) so that auto-refresh — which calls SetMenuItems directly without
+// going back through createMenu — produces visible rows.
 func (self *OngoingOperationsController) buildItems() []*types.MenuItem {
+	noop := func() error { return nil }
+
 	ops := self.c.Helpers().OngoingOperations.List()
 	if len(ops) == 0 {
 		return []*types.MenuItem{
 			{
-				Label:   self.c.Tr.NoOngoingOperations,
-				OnPress: func() error { return nil },
+				LabelColumns: []string{self.c.Tr.NoOngoingOperations},
+				OnPress:      noop,
 			},
 		}
 	}
@@ -104,8 +111,8 @@ func (self *OngoingOperationsController) buildItems() []*types.MenuItem {
 		}
 		label := fmt.Sprintf(self.c.Tr.OngoingOperationLineFormat, op.Label, duration.String(), cmd)
 		items = append(items, &types.MenuItem{
-			Label:   label,
-			OnPress: func() error { return nil },
+			LabelColumns: []string{label},
+			OnPress:      noop,
 		})
 	}
 	return items
