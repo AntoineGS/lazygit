@@ -414,6 +414,7 @@ type TranslationSet struct {
 	NoOngoingOperations                   string
 	OngoingOperationLineFormat            string
 	OngoingOperationStartedAtFormat       string
+	OngoingOperationCompletedAtFormat     string
 	SquashingStatus                       string
 	FixingStatus                          string
 	DeletingStatus                        string
@@ -1544,6 +1545,7 @@ func EnglishTranslationSet() *TranslationSet {
 		NoOngoingOperations:                  "No operations are currently running.",
 		OngoingOperationLineFormat:           "%s — %s — %s",
 		OngoingOperationStartedAtFormat:      "Started at %s",
+		OngoingOperationCompletedAtFormat:    "Started at %s, completed at %s",
 		SquashingStatus:                      "Squashing",
 		FixingStatus:                         "Fixing up",
 		DeletingStatus:                       "Deleting",
