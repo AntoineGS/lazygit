@@ -1543,7 +1543,7 @@ func EnglishTranslationSet() *TranslationSet {
 		OngoingOperations:                    "Ongoing operations",
 		OngoingOperationsTooltip:             "Show all in-flight long-running operations and their durations.",
 		NoOngoingOperations:                  "No operations are currently running.",
-		OngoingOperationLineFormat:           "%s — %s — %s",
+		OngoingOperationLineFormat:           "%s — %s",
 		OngoingOperationStartedAtFormat:      "Started at %s",
 		OngoingOperationCompletedAtFormat:    "Started at %s, completed at %s",
 		SquashingStatus:                      "Squashing",

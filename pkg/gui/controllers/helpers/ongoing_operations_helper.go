@@ -17,8 +17,14 @@ type OngoingOperation struct {
 	StartTime time.Time
 
 	// currentCommand holds a *string so SetCurrentCommand can swap
-	// atomically without locking the registry mutex.
+	// atomically without locking the registry mutex. It is cleared
+	// (set to "") at cmd-end.
 	currentCommand atomic.Pointer[string]
+
+	// lastCommand mirrors the most recent non-empty command. It is never
+	// cleared, so a popup snapshotting an operation that has already
+	// completed (cmd cleared, op unregistered) can still surface what ran.
+	lastCommand atomic.Pointer[string]
 
 	// notify is set by Register so SetCurrentCommand can wake any popup
 	// subscribers without taking a back-reference to the helper.
@@ -34,16 +40,35 @@ type OngoingOperation struct {
 // the row with cmd="" before removing it. Skipping the clear-notify lets the
 // next event (Unregister, or a follow-on SetCurrentCommand for multi-cmd ops)
 // pick up the cleared atomic value naturally without an intermediate flash.
+//
+// Non-empty values are also recorded as lastCommand, which never gets
+// cleared — see LastCommand.
 func (op *OngoingOperation) SetCurrentCommand(cmd string) {
 	op.currentCommand.Store(&cmd)
-	if cmd != "" && op.notify != nil {
+	if cmd == "" {
+		return
+	}
+	op.lastCommand.Store(&cmd)
+	if op.notify != nil {
 		op.notify()
 	}
 }
 
-// CurrentCommand returns the most recently recorded command, or "".
+// CurrentCommand returns the command currently executing, or "" between
+// commands or when none has run yet.
 func (op *OngoingOperation) CurrentCommand() string {
 	if p := op.currentCommand.Load(); p != nil {
+		return *p
+	}
+	return ""
+}
+
+// LastCommand returns the most recent non-empty command. Unlike
+// CurrentCommand, it is not cleared when a command finishes — so it remains
+// usable after the operation has been unregistered, for popups that want to
+// keep showing what ran.
+func (op *OngoingOperation) LastCommand() string {
+	if p := op.lastCommand.Load(); p != nil {
 		return *p
 	}
 	return ""

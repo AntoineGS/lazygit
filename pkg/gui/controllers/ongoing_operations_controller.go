@@ -179,7 +179,7 @@ func (self *OngoingOperationsController) buildItems(session *popupSession, onClo
 			Label:     op.Label,
 			StartTime: op.StartTime,
 			EndTime:   time.Now(),
-			LastCmd:   op.CurrentCommand(),
+			LastCmd:   op.LastCommand(),
 		})
 	}
 
@@ -216,12 +216,11 @@ func (self *OngoingOperationsController) buildItems(session *popupSession, onClo
 }
 
 func (self *OngoingOperationsController) buildActiveItem(op *helpers.OngoingOperation, onClose func() error) *types.MenuItem {
-	duration := op.Elapsed().Truncate(time.Second)
 	cmd := op.CurrentCommand()
 	if cmd == "" {
 		cmd = "—"
 	}
-	label := fmt.Sprintf(self.c.Tr.OngoingOperationLineFormat, op.Label, duration.String(), cmd)
+	label := fmt.Sprintf(self.c.Tr.OngoingOperationLineFormat, op.Label, cmd)
 	tooltip := fmt.Sprintf(self.c.Tr.OngoingOperationStartedAtFormat, op.StartTime.Format(time.TimeOnly))
 	return &types.MenuItem{
 		LabelColumns: []string{label},
@@ -231,12 +230,11 @@ func (self *OngoingOperationsController) buildActiveItem(op *helpers.OngoingOper
 }
 
 func (self *OngoingOperationsController) buildCompletedItem(c completedOp, onClose func() error) *types.MenuItem {
-	duration := c.EndTime.Sub(c.StartTime).Truncate(time.Second)
 	cmd := c.LastCmd
 	if cmd == "" {
 		cmd = "—"
 	}
-	label := fmt.Sprintf(self.c.Tr.OngoingOperationLineFormat, c.Label, duration.String(), cmd)
+	label := fmt.Sprintf(self.c.Tr.OngoingOperationLineFormat, c.Label, cmd)
 	tooltip := fmt.Sprintf(self.c.Tr.OngoingOperationCompletedAtFormat,
 		c.StartTime.Format(time.TimeOnly), c.EndTime.Format(time.TimeOnly))
 	return &types.MenuItem{

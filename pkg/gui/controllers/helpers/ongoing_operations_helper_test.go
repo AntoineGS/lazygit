@@ -68,6 +68,25 @@ func TestOngoingOperation_SetAndGetCurrentCommand(t *testing.T) {
 	assert.Equal(t, "", op.CurrentCommand())
 }
 
+func TestOngoingOperation_LastCommandPersistsAcrossClear(t *testing.T) {
+	// LastCommand keeps the most recent non-empty command even after
+	// SetCurrentCommand("") clears the active command, so popups can show
+	// what ran on a row that has just completed.
+	h := NewOngoingOperationsHelper()
+	op := h.Register("Pulling 'main'")
+
+	assert.Equal(t, "", op.LastCommand())
+
+	op.SetCurrentCommand("git pull")
+	assert.Equal(t, "git pull", op.LastCommand())
+
+	op.SetCurrentCommand("")
+	assert.Equal(t, "git pull", op.LastCommand(), "clear must not erase last command")
+
+	op.SetCurrentCommand("git fetch")
+	assert.Equal(t, "git fetch", op.LastCommand(), "subsequent non-empty replaces it")
+}
+
 func TestOngoingOperationsHelper_ConcurrentRegisterUnregister(t *testing.T) {
 	h := NewOngoingOperationsHelper()
 	var wg sync.WaitGroup
