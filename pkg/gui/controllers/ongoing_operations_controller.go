@@ -123,8 +123,10 @@ func (self *OngoingOperationsController) buildItems(onClose func() error) []*typ
 			cmd = "—"
 		}
 		label := fmt.Sprintf(self.c.Tr.OngoingOperationLineFormat, op.Label, duration.String(), cmd)
+		tooltip := fmt.Sprintf(self.c.Tr.OngoingOperationStartedAtFormat, op.StartTime.Format(time.TimeOnly))
 		items = append(items, &types.MenuItem{
 			LabelColumns: []string{label},
+			Tooltip:      tooltip,
 			OnPress:      onClose,
 		})
 	}
