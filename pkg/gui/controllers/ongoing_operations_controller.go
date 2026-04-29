@@ -202,11 +202,16 @@ func (self *OngoingOperationsController) buildItems(session *popupSession, onClo
 	items := make([]*types.MenuItem, 0, len(currentActive)+len(session.completed))
 	ids := make([]int64, 0, len(currentActive)+len(session.completed))
 
-	for _, op := range currentActive {
+	// Latest at the top, oldest at the bottom: registry returns active ops in
+	// StartTime-ascending order and we append completed ops in completion
+	// order, so we iterate both backwards.
+	for i := len(currentActive) - 1; i >= 0; i-- {
+		op := currentActive[i]
 		items = append(items, self.buildActiveItem(op, onClose))
 		ids = append(ids, op.ID)
 	}
-	for _, c := range session.completed {
+	for i := len(session.completed) - 1; i >= 0; i-- {
+		c := session.completed[i]
 		items = append(items, self.buildCompletedItem(c, onClose))
 		ids = append(ids, c.ID)
 	}
