@@ -51,6 +51,10 @@ type completedOp struct {
 	LastCmd   string
 }
 
+// maxPopupItems caps total rows in the popup. When exceeded, the oldest
+// completed snapshots are dropped first (active rows are never trimmed).
+const maxPopupItems = 100
+
 // popupSession is the controller's state for a single popup-open. It tracks
 // which ops are currently live in the registry and which have completed
 // while this popup was open. renderedIDs is parallel to the most-recently
@@ -187,6 +191,14 @@ func (self *OngoingOperationsController) buildItems(session *popupSession, onClo
 	session.activeOps = make(map[int64]*helpers.OngoingOperation, len(currentActive))
 	for _, op := range currentActive {
 		session.activeOps[op.ID] = op
+	}
+
+	// Trim oldest completed rows when total would exceed maxPopupItems.
+	// session.completed is in completion order (oldest first), so the
+	// front is what we drop. Active rows are never trimmed.
+	if overflow := len(currentActive) + len(session.completed) - maxPopupItems; overflow > 0 {
+		overflow = min(overflow, len(session.completed))
+		session.completed = session.completed[overflow:]
 	}
 
 	if len(currentActive) == 0 && len(session.completed) == 0 {
