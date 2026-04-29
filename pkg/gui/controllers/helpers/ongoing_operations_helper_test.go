@@ -95,10 +95,31 @@ func TestOngoingOperationsHelper_SubscribeReceivesEventsForRegisterUnregisterAnd
 	assertEventReceived(t, events, "Register")
 
 	op.SetCurrentCommand("git pull")
-	assertEventReceived(t, events, "SetCurrentCommand")
+	assertEventReceived(t, events, "SetCurrentCommand non-empty")
 
 	h.Unregister(op)
 	assertEventReceived(t, events, "Unregister")
+}
+
+func TestOngoingOperationsHelper_SetCurrentCommandClearDoesNotNotify(t *testing.T) {
+	// Clearing the command (passing "") must not fire an event: cmd-end is
+	// immediately followed by Unregister, and a clear-notify would render the
+	// row with cmd="" briefly before removing it.
+	h := NewOngoingOperationsHelper()
+	op := h.Register("Pulling 'main'")
+	op.SetCurrentCommand("git pull")
+
+	events, unsubscribe := h.Subscribe()
+	defer unsubscribe()
+
+	op.SetCurrentCommand("")
+
+	select {
+	case <-events:
+		t.Fatal("expected no event when clearing command; got one")
+	case <-time.After(10 * time.Millisecond):
+	}
+	assert.Equal(t, "", op.CurrentCommand(), "atomic value should still be cleared")
 }
 
 func TestOngoingOperationsHelper_SubscribeCoalescesBurstsIntoOneWakeup(t *testing.T) {

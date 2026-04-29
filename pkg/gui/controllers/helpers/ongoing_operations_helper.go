@@ -27,9 +27,16 @@ type OngoingOperation struct {
 
 // SetCurrentCommand records the git command currently being executed inside
 // this operation. Pass "" to indicate no command is currently running.
+//
+// We only notify subscribers when a non-empty command is set, not when one
+// is cleared. The cmd runner clears at cmd-end, immediately followed by the
+// containing operation's Unregister; firing both events would briefly render
+// the row with cmd="" before removing it. Skipping the clear-notify lets the
+// next event (Unregister, or a follow-on SetCurrentCommand for multi-cmd ops)
+// pick up the cleared atomic value naturally without an intermediate flash.
 func (op *OngoingOperation) SetCurrentCommand(cmd string) {
 	op.currentCommand.Store(&cmd)
-	if op.notify != nil {
+	if cmd != "" && op.notify != nil {
 		op.notify()
 	}
 }
