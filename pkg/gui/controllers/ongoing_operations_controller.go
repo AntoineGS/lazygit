@@ -2,10 +2,8 @@ package controllers
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
-	"github.com/jesseduffield/lazygit/pkg/gui/controllers/helpers"
 	"github.com/jesseduffield/lazygit/pkg/gui/types"
 )
 
@@ -44,21 +42,13 @@ func (self *OngoingOperationsController) Context() types.Context {
 const refreshInterval = time.Second
 
 func (self *OngoingOperationsController) show() error {
-	ops := self.c.Helpers().OngoingOperations.List()
-
 	if err := self.c.Menu(types.CreateMenuOptions{
 		Title:      self.c.Tr.OngoingOperations,
-		Prompt:     self.formatOps(ops),
-		Items:      []*types.MenuItem{},
+		Items:      self.buildItems(),
 		HideCancel: true,
 	}); err != nil {
 		return err
 	}
-
-	// MenuController only sets the tooltip when an item is selected; with no
-	// items the buffer would otherwise hold stale content from the previous
-	// menu, leaving an empty tooltip pane visible below the prompt.
-	self.c.Views().Tooltip.SetContent("")
 
 	go self.refreshWhileOpen()
 	return nil
@@ -83,26 +73,40 @@ func (self *OngoingOperationsController) refreshWhileOpen() {
 			if self.c.Context().Current().GetKey() != menuKey {
 				return nil
 			}
-			ops := self.c.Helpers().OngoingOperations.List()
-			self.c.Contexts().Menu.SetPrompt(self.formatOps(ops))
+			self.c.Contexts().Menu.SetMenuItems(self.buildItems(), nil)
 			self.c.PostRefreshUpdate(self.c.Contexts().Menu)
 			return nil
 		})
 	}
 }
 
-func (self *OngoingOperationsController) formatOps(ops []*helpers.OngoingOperation) string {
+// buildItems renders the current registry as menu items. Each operation is one
+// row; when nothing is running, a single inert row carries the empty-state
+// message so the popup is always a list (avoids prompt-only rendering quirks
+// like a stale Tooltip pane appearing under the menu).
+func (self *OngoingOperationsController) buildItems() []*types.MenuItem {
+	ops := self.c.Helpers().OngoingOperations.List()
 	if len(ops) == 0 {
-		return self.c.Tr.NoOngoingOperations
+		return []*types.MenuItem{
+			{
+				Label:   self.c.Tr.NoOngoingOperations,
+				OnPress: func() error { return nil },
+			},
+		}
 	}
-	var sb strings.Builder
+
+	items := make([]*types.MenuItem, 0, len(ops))
 	for _, op := range ops {
 		duration := op.Elapsed().Truncate(time.Second)
 		cmd := op.CurrentCommand()
 		if cmd == "" {
 			cmd = "—"
 		}
-		fmt.Fprintf(&sb, self.c.Tr.OngoingOperationLineFormat+"\n", op.Label, duration.String(), cmd)
+		label := fmt.Sprintf(self.c.Tr.OngoingOperationLineFormat, op.Label, duration.String(), cmd)
+		items = append(items, &types.MenuItem{
+			Label:   label,
+			OnPress: func() error { return nil },
+		})
 	}
-	return strings.TrimRight(sb.String(), "\n")
+	return items
 }
