@@ -5,8 +5,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-
-	"github.com/mgutz/str"
 )
 
 type ICmdObjBuilder interface {
@@ -48,10 +46,7 @@ func (self *CmdObjBuilder) NewShell(commandStr string, shellFunctionsFile string
 	if len(shellFunctionsFile) > 0 {
 		commandStr = fmt.Sprintf("%ssource %s\n%s", self.platform.PrefixForShellFunctionsFile, shellFunctionsFile, commandStr)
 	}
-	quotedCommand := self.quotedCommandString(commandStr)
-	cmdArgs := str.ToArgv(fmt.Sprintf("%s %s %s", self.platform.Shell, self.platform.ShellArg, quotedCommand))
-
-	return self.New(cmdArgs)
+	return self.newShellCmd(self.quotedCommandString(commandStr))
 }
 
 func (self *CmdObjBuilder) quotedCommandString(commandStr string) string {
