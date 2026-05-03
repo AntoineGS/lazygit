@@ -96,7 +96,7 @@ func (self *AppStatusHelper) renderAppStatus() {
 		for range ticker.C {
 			appStatus, color := self.statusMgr().GetStatusString(self.c.UserConfig())
 			self.c.Views().AppStatus.FgColor = color
-			self.c.OnUIThread(func() error {
+			self.c.OnUIThreadContentOnly(func() error {
 				self.c.SetViewContent(self.c.Views().AppStatus, appStatus)
 				return nil
 			})
@@ -105,6 +105,10 @@ func (self *AppStatusHelper) renderAppStatus() {
 				break
 			}
 		}
+		// Some layout changes do not explicitly request a redraw, and depended
+		// on the ticker redraw, so once the ticker redraws are complete, we
+		// request a full redraw
+		self.c.OnUIThread(func() error { return nil })
 		return nil
 	})
 }
