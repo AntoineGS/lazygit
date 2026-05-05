@@ -524,7 +524,6 @@ type TranslationSet struct {
 	StashIncludeUntrackedChanges          string
 	ViewStashOptions                      string
 	ViewStashOptionsTooltip               string
-	StashOptions                          string
 	NotARepository                        string
 	WorkingDirectoryDoesNotExist          string
 	ScrollLeft                            string
@@ -744,7 +743,6 @@ type TranslationSet struct {
 	BulkDeinitSubmodules                  string
 	BulkUpdateRecursiveSubmodules         string
 	ViewBulkSubmoduleOptions              string
-	BulkSubmoduleOptions                  string
 	RunningCommand                        string
 	SubCommitsTitle                       string
 	ExitSubview                           string
@@ -1670,7 +1668,6 @@ func EnglishTranslationSet() *TranslationSet {
 		StashIncludeUntrackedChanges:         "Stash all changes including untracked files",
 		ViewStashOptions:                     "View stash options",
 		ViewStashOptionsTooltip:              "View stash options (e.g. stash all, stash staged, stash unstaged).",
-		StashOptions:                         "Stash options",
 		NotARepository:                       "Error: must be run inside a git repository",
 		WorkingDirectoryDoesNotExist:         "Error: the current working directory does not exist",
 		ScrollLeft:                           "Scroll left",
@@ -1888,7 +1885,6 @@ func EnglishTranslationSet() *TranslationSet {
 		BulkDeinitSubmodules:                     "Bulk deinit submodules",
 		BulkUpdateRecursiveSubmodules:            "Bulk init and update submodules recursively",
 		ViewBulkSubmoduleOptions:                 "View bulk submodule options",
-		BulkSubmoduleOptions:                     "Bulk submodule options",
 		RunningCommand:                           "Running command",
 		SubCommitsTitle:                          "Sub-commits",
 		ExitSubview:                              "Exit subview",
