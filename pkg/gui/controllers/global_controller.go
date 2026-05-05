@@ -14,10 +14,17 @@ type GlobalController struct {
 func NewGlobalController(
 	c *ControllerCommon,
 ) *GlobalController {
-	return &GlobalController{
+	ctrl := &GlobalController{
 		baseController: baseController{},
 		c:              c,
 	}
+
+	chord := c.Helpers().ChordMenu
+	chord.RegisterTitleFunc("global", "m", func() string {
+		return c.Tr.RebaseOptionsTitle
+	})
+
+	return ctrl
 }
 
 func (self *GlobalController) GetKeybindings(opts types.KeybindingsOpts) []*types.Binding {
@@ -36,12 +43,25 @@ func (self *GlobalController) GetKeybindings(opts types.KeybindingsOpts) []*type
 			OpensMenu:   true,
 		},
 		{
-			Key:               opts.GetKey(opts.Config.Universal.CreateRebaseOptionsMenu),
-			Handler:           opts.Guards.NoPopupPanel(self.c.Helpers().MergeAndRebase.CreateRebaseOptionsMenu),
-			Description:       self.c.Tr.ViewMergeRebaseOptions,
+			Key:               opts.GetKey(opts.Config.Universal.RebaseContinue),
+			Handler:           opts.Guards.NoPopupPanel(self.c.Helpers().MergeAndRebase.ContinueRebase),
+			Description:       self.c.Tr.ContinueRebaseChord,
 			Tooltip:           self.c.Tr.ViewMergeRebaseOptionsTooltip,
-			OpensMenu:         true,
-			GetDisabledReason: self.canShowRebaseOptions,
+			GetDisabledReason: self.notMergingOrRebasing,
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Universal.RebaseAbort),
+			Handler:           self.c.Helpers().MergeAndRebase.AbortRebase,
+			Description:       self.c.Tr.AbortRebaseChord,
+			Tooltip:           self.c.Tr.ViewMergeRebaseOptionsTooltip,
+			GetDisabledReason: self.notMergingOrRebasing,
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Universal.RebaseSkip),
+			Handler:           self.c.Helpers().MergeAndRebase.SkipRebase,
+			Description:       self.c.Tr.SkipRebaseChord,
+			Tooltip:           self.c.Tr.ViewMergeRebaseOptionsTooltip,
+			GetDisabledReason: self.cannotSkipRebase,
 		},
 		{
 			Key:         opts.GetKey(opts.Config.Universal.Refresh),
@@ -247,10 +267,22 @@ func (self *GlobalController) toggleWhitespace() error {
 	return (&ToggleWhitespaceAction{c: self.c}).Call()
 }
 
-func (self *GlobalController) canShowRebaseOptions() *types.DisabledReason {
+func (self *GlobalController) notMergingOrRebasing() *types.DisabledReason {
 	if self.c.Model().WorkingTreeStateAtLastCommitRefresh.None() {
 		return &types.DisabledReason{
 			Text: self.c.Tr.NotMergingOrRebasing,
+		}
+	}
+	return nil
+}
+
+func (self *GlobalController) cannotSkipRebase() *types.DisabledReason {
+	if r := self.notMergingOrRebasing(); r != nil {
+		return r
+	}
+	if !self.c.Model().WorkingTreeStateAtLastCommitRefresh.CanSkip() {
+		return &types.DisabledReason{
+			Text: self.c.Tr.SkipNotApplicable,
 		}
 	}
 	return nil

@@ -298,6 +298,20 @@ func (self *RefsHelper) CreateGitResetMenu(name string, ref string) error {
 	})
 }
 
+// strength is "mixed" / "soft" / "hard". A "hard" reset prompts for
+// confirmation when the working tree is dirty (excluding submodules).
+func (self *RefsHelper) PerformGitReset(ref string, strength string) error {
+	return self.c.ConfirmIf(strength == "hard" && IsWorkingTreeDirtyExceptSubmodules(self.c.Model().Files, self.c.Model().Submodules),
+		types.ConfirmOpts{
+			Title:  self.c.Tr.Actions.HardReset,
+			Prompt: self.c.Tr.ResetHardConfirmation,
+			HandleConfirm: func() error {
+				self.c.LogAction("Reset")
+				return self.ResetToRef(ref, strength, []string{})
+			},
+		})
+}
+
 func (self *RefsHelper) CreateCheckoutMenu(commit *models.Commit) error {
 	branches := lo.Filter(self.c.Model().Branches, func(branch *models.Branch, _ int) bool {
 		return commit.Hash() == branch.CommitHash && branch.Name != self.c.Model().CheckedOutBranch

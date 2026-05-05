@@ -71,6 +71,14 @@ func (self *MergeAndRebaseHelper) ContinueRebase() error {
 	return self.genericMergeCommand(REBASE_OPTION_CONTINUE)
 }
 
+func (self *MergeAndRebaseHelper) AbortRebase() error {
+	return self.genericMergeCommand(REBASE_OPTION_ABORT)
+}
+
+func (self *MergeAndRebaseHelper) SkipRebase() error {
+	return self.genericMergeCommand(REBASE_OPTION_SKIP)
+}
+
 func (self *MergeAndRebaseHelper) genericMergeCommand(command string) error {
 	status := self.c.Git().Status.WorkingTreeState()
 
@@ -262,6 +270,249 @@ func (self *MergeAndRebaseHelper) PromptToContinueRebase() error {
 	return nil
 }
 
+type RebaseVariant string
+
+const (
+	RebaseVariantSimple      RebaseVariant = "simple"
+	RebaseVariantInteractive RebaseVariant = "interactive"
+	RebaseVariantOntoBase    RebaseVariant = "onto-base"
+)
+
+// For RebaseVariantOntoBase, ref is ignored and the base branch is
+// resolved internally.
+func (self *MergeAndRebaseHelper) PerformRebaseOntoRef(ref string, variant RebaseVariant) error {
+	checkedOutBranch := self.c.Model().Branches[0]
+
+	if variant == RebaseVariantOntoBase {
+		baseBranch, err := self.c.Git().Loaders.BranchLoader.GetBaseBranch(checkedOutBranch, self.c.Model().MainBranches)
+		if err != nil {
+			return err
+		}
+		if baseBranch == "" {
+			return errors.New(self.c.Tr.CouldNotDetermineBaseBranch)
+		}
+		ref = baseBranch
+	}
+
+	if variant == RebaseVariantInteractive {
+		self.c.LogAction(self.c.Tr.Actions.RebaseBranch)
+		baseCommit := self.c.Modes().MarkedBaseCommit.GetHash()
+		var err error
+		if baseCommit != "" {
+			err = self.c.Git().Rebase.EditRebaseFromBaseCommit(ref, baseCommit)
+		} else {
+			err = self.c.Git().Rebase.EditRebase(ref)
+		}
+		if err = self.CheckMergeOrRebase(err); err != nil {
+			return err
+		}
+		if err = self.ResetMarkedBaseCommit(); err != nil {
+			return err
+		}
+		self.c.Context().Push(self.c.Contexts().LocalCommits, types.OnFocusOpts{})
+		return nil
+	}
+
+	// Simple and OntoBase variants share the same body.
+	self.c.LogAction(self.c.Tr.Actions.RebaseBranch)
+	return self.c.WithWaitingStatus(self.c.Tr.RebasingStatus, func(task gocui.Task) error {
+		baseCommit := self.c.Modes().MarkedBaseCommit.GetHash()
+		var err error
+		if baseCommit != "" {
+			err = self.c.Git().Rebase.RebaseBranchFromBaseCommit(ref, baseCommit)
+		} else {
+			err = self.c.Git().Rebase.RebaseBranch(ref)
+		}
+		err = self.CheckMergeOrRebase(err)
+		if err == nil {
+			return self.ResetMarkedBaseCommit()
+		}
+		return err
+	})
+}
+
+func (self *MergeAndRebaseHelper) RebaseOntoBaseBranchName() (string, *types.DisabledReason) {
+	if self.c.Git() == nil {
+		return "", nil
+	}
+	checkedOutBranch := self.c.Model().Branches[0]
+	baseBranch, err := self.c.Git().Loaders.BranchLoader.GetBaseBranch(checkedOutBranch, self.c.Model().MainBranches)
+	if err != nil || baseBranch == "" {
+		return "", &types.DisabledReason{Text: self.c.Tr.CouldNotDetermineBaseBranch}
+	}
+	return baseBranch, nil
+}
+
+func (self *MergeAndRebaseHelper) PerformMerge(refName string, variant git_commands.MergeVariant) error {
+	if self.c.Git().Branch.IsHeadDetached() {
+		return errors.New("Cannot merge branch in detached head state. You might have checked out a commit directly or a remote branch, in which case you should checkout the local branch you want to be on")
+	}
+	checkedOutBranchName := self.c.Model().Branches[0].Name
+	if checkedOutBranchName == refName {
+		return errors.New(self.c.Tr.CantMergeBranchIntoItself)
+	}
+	if variant == git_commands.MERGE_VARIANT_FAST_FORWARD && !self.c.Git().Branch.CanDoFastForwardMerge(refName) {
+		// Surface the friendly error before letting git fail with its
+		// own message.
+		return errors.New(utils.ResolvePlaceholderString(
+			self.c.Tr.CannotFastForwardMerge,
+			map[string]string{
+				"checkedOutBranch": checkedOutBranchName,
+				"selectedBranch":   refName,
+			},
+		))
+	}
+	return self.RegularMerge(refName, variant)()
+}
+
+func (self *MergeAndRebaseHelper) PerformSquashMerge(refName string) error {
+	if self.c.Git().Branch.IsHeadDetached() {
+		return errors.New("Cannot merge branch in detached head state. You might have checked out a commit directly or a remote branch, in which case you should checkout the local branch you want to be on")
+	}
+	checkedOutBranchName := self.c.Model().Branches[0].Name
+	if checkedOutBranchName == refName {
+		return errors.New(self.c.Tr.CantMergeBranchIntoItself)
+	}
+	return self.SquashMergeUncommitted(refName)()
+}
+
+// PerformSquashMergeCommitted runs a squash merge AND commits it.
+func (self *MergeAndRebaseHelper) PerformSquashMergeCommitted(refName string) error {
+	if self.c.Git().Branch.IsHeadDetached() {
+		return errors.New("Cannot merge branch in detached head state. You might have checked out a commit directly or a remote branch, in which case you should checkout the local branch you want to be on")
+	}
+	checkedOutBranchName := self.c.Model().Branches[0].Name
+	if checkedOutBranchName == refName {
+		return errors.New(self.c.Tr.CantMergeBranchIntoItself)
+	}
+	return self.SquashMergeCommitted(refName, checkedOutBranchName)()
+}
+
+func (self *MergeAndRebaseHelper) MergeIntoSelfDisabledReason(selectedRefName string) *types.DisabledReason {
+	if self.c.Git() == nil {
+		return nil
+	}
+	if self.c.Git().Branch.IsHeadDetached() {
+		return &types.DisabledReason{Text: self.c.Tr.CannotMergeDetached}
+	}
+	if len(self.c.Model().Branches) == 0 {
+		return nil
+	}
+	if self.c.Model().Branches[0].Name == selectedRefName {
+		return &types.DisabledReason{Text: self.c.Tr.CantMergeBranchIntoItself}
+	}
+	return nil
+}
+
+func (self *MergeAndRebaseHelper) RegularMerge(refName string, variant git_commands.MergeVariant) func() error {
+	return func() error {
+		self.c.LogAction(self.c.Tr.Actions.Merge)
+		err := self.c.Git().Branch.Merge(refName, variant)
+		return self.CheckMergeOrRebase(err)
+	}
+}
+
+func (self *MergeAndRebaseHelper) SquashMergeUncommitted(refName string) func() error {
+	return func() error {
+		self.c.LogAction(self.c.Tr.Actions.SquashMerge)
+		err := self.c.Git().Branch.Merge(refName, git_commands.MERGE_VARIANT_SQUASH)
+		return self.CheckMergeOrRebase(err)
+	}
+}
+
+func (self *MergeAndRebaseHelper) SquashMergeCommitted(refName, checkedOutBranchName string) func() error {
+	return func() error {
+		self.c.LogAction(self.c.Tr.Actions.SquashMerge)
+		err := self.c.Git().Branch.Merge(refName, git_commands.MERGE_VARIANT_SQUASH)
+		if err = self.CheckMergeOrRebase(err); err != nil {
+			return err
+		}
+		message := utils.ResolvePlaceholderString(self.c.UserConfig().Git.Merging.SquashMergeMessage, map[string]string{
+			"selectedRef":   refName,
+			"currentBranch": checkedOutBranchName,
+		})
+		err = self.c.Git().Commit.CommitCmdObj(message, "", false).Run()
+		if err != nil {
+			return err
+		}
+		self.c.Refresh(types.RefreshOptions{Mode: types.ASYNC})
+		return nil
+	}
+}
+
+// Returns wantsFastForward, wantsNonFastForward. These will never both be true, but they can both be false.
+func (self *MergeAndRebaseHelper) FastForwardMergeUserPreference() (bool, bool) {
+	// Check user config first, because it takes precedence over git config
+	mergingArgs := self.c.UserConfig().Git.Merging.Args
+	if strings.Contains(mergingArgs, "--ff") { // also covers "--ff-only"
+		return true, false
+	}
+
+	if strings.Contains(mergingArgs, "--no-ff") {
+		return false, true
+	}
+
+	// Then check git config
+	mergeFfConfig := self.c.Git().Config.GetMergeFF()
+	if mergeFfConfig == "true" || mergeFfConfig == "only" {
+		return true, false
+	}
+
+	if mergeFfConfig == "false" {
+		return false, true
+	}
+
+	return false, false
+}
+
+// Disabled when the regular merge already creates a merge commit — i.e.
+// the user's config prevents fast-forward or the branches aren't
+// fast-forwardable. (Adding --no-ff would be redundant.)
+func (self *MergeAndRebaseHelper) NonFastForwardMergeDisabledReason(refName string) *types.DisabledReason {
+	if self.c.Git() == nil {
+		return nil
+	}
+	wantFF, wantNFF := self.FastForwardMergeUserPreference()
+	canFF := self.c.Git().Branch.CanDoFastForwardMerge(refName)
+	if wantNFF || (!wantFF && !canFF) {
+		return &types.DisabledReason{Text: self.c.Tr.MergeNonFastForwardNotApplicable}
+	}
+	return nil
+}
+
+func (self *MergeAndRebaseHelper) FastForwardOnlyMergeDisabledReason(refName string) *types.DisabledReason {
+	if self.c.Git() == nil {
+		return nil
+	}
+	wantFF, wantNFF := self.FastForwardMergeUserPreference()
+	canFF := self.c.Git().Branch.CanDoFastForwardMerge(refName)
+	if !wantNFF && (wantFF || canFF) {
+		return &types.DisabledReason{Text: self.c.Tr.MergeFastForwardNotApplicable}
+	}
+	if !canFF {
+		checkedOutBranch := ""
+		if len(self.c.Model().Branches) > 0 {
+			checkedOutBranch = self.c.Model().Branches[0].Name
+		}
+		return &types.DisabledReason{
+			Text: utils.ResolvePlaceholderString(
+				self.c.Tr.CannotFastForwardMerge,
+				map[string]string{
+					"checkedOutBranch": checkedOutBranch,
+					"selectedBranch":   refName,
+				},
+			),
+			ShowErrorInPanel: true,
+		}
+	}
+	return nil
+}
+
+func (self *MergeAndRebaseHelper) ResetMarkedBaseCommit() error {
+	self.c.Modes().MarkedBaseCommit.Reset()
+	self.c.PostRefreshUpdate(self.c.Contexts().LocalCommits)
+	return nil
+}
 func (self *MergeAndRebaseHelper) RebaseOntoRef(ref string) error {
 	checkedOutBranch := self.c.Model().Branches[0]
 	checkedOutBranchName := checkedOutBranch.Name
@@ -371,7 +622,6 @@ func (self *MergeAndRebaseHelper) RebaseOntoRef(ref string) error {
 		Items: menuItems,
 	})
 }
-
 func (self *MergeAndRebaseHelper) MergeRefIntoCheckedOutBranch(refName string) error {
 	if self.c.Git().Branch.IsHeadDetached() {
 		return errors.New("Cannot merge branch in detached head state. You might have checked out a commit directly or a remote branch, in which case you should checkout the local branch you want to be on")
@@ -487,44 +737,6 @@ func (self *MergeAndRebaseHelper) MergeRefIntoCheckedOutBranch(refName string) e
 		},
 	})
 }
-
-func (self *MergeAndRebaseHelper) RegularMerge(refName string, variant git_commands.MergeVariant) func() error {
-	return func() error {
-		self.c.LogAction(self.c.Tr.Actions.Merge)
-		err := self.c.Git().Branch.Merge(refName, variant)
-		return self.CheckMergeOrRebase(err)
-	}
-}
-
-func (self *MergeAndRebaseHelper) SquashMergeUncommitted(refName string) func() error {
-	return func() error {
-		self.c.LogAction(self.c.Tr.Actions.SquashMerge)
-		err := self.c.Git().Branch.Merge(refName, git_commands.MERGE_VARIANT_SQUASH)
-		return self.CheckMergeOrRebase(err)
-	}
-}
-
-func (self *MergeAndRebaseHelper) SquashMergeCommitted(refName, checkedOutBranchName string) func() error {
-	return func() error {
-		self.c.LogAction(self.c.Tr.Actions.SquashMerge)
-		err := self.c.Git().Branch.Merge(refName, git_commands.MERGE_VARIANT_SQUASH)
-		if err = self.CheckMergeOrRebase(err); err != nil {
-			return err
-		}
-		message := utils.ResolvePlaceholderString(self.c.UserConfig().Git.Merging.SquashMergeMessage, map[string]string{
-			"selectedRef":   refName,
-			"currentBranch": checkedOutBranchName,
-		})
-		err = self.c.Git().Commit.CommitCmdObj(message, "", false).Run()
-		if err != nil {
-			return err
-		}
-		self.c.Refresh(types.RefreshOptions{Mode: types.ASYNC})
-		return nil
-	}
-}
-
-// Returns wantsFastForward, wantsNonFastForward. These will never both be true, but they can both be false.
 func (self *MergeAndRebaseHelper) fastForwardMergeUserPreference() (bool, bool) {
 	// Check user config first, because it takes precedence over git config
 	mergingArgs := self.c.UserConfig().Git.Merging.Args
@@ -547,10 +759,4 @@ func (self *MergeAndRebaseHelper) fastForwardMergeUserPreference() (bool, bool) 
 	}
 
 	return false, false
-}
-
-func (self *MergeAndRebaseHelper) ResetMarkedBaseCommit() error {
-	self.c.Modes().MarkedBaseCommit.Reset()
-	self.c.PostRefreshUpdate(self.c.Contexts().LocalCommits)
-	return nil
 }
