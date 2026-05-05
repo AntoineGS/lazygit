@@ -18,23 +18,40 @@ type Modifier tcell.ModMask
 // Keybindings are used to link a given key-press event with a handler.
 type keybinding struct {
 	viewName string
-	key      Key
 	handler  func(*Gui, *View) error
+
+	// keys is the full key sequence. For single-key bindings, len(keys) == 1.
+	keys []Key
 }
 
 // newKeybinding returns a new Keybinding object.
 func newKeybinding(viewname string, key Key, handler func(*Gui, *View) error) (kb *keybinding) {
 	kb = &keybinding{
 		viewName: viewname,
-		key:      key,
 		handler:  handler,
+		keys:     []Key{key},
 	}
 	return kb
 }
 
-// matchKeypress returns if the keybinding matches the keypress.
+// Caller must pass len(keys) >= 2.
+func newChordKeybinding(viewname string, keys []Key, handler func(*Gui, *View) error) (kb *keybinding) {
+	kb = &keybinding{
+		viewName: viewname,
+		handler:  handler,
+		keys:     keys,
+	}
+	return kb
+}
+
+// For chord bindings this returns true only if key equals the first
+// key of the sequence; full chord matching happens in execKeybindings.
 func (kb *keybinding) matchKeypress(key Key) bool {
-	return kb.key.Equals(key)
+	return kb.keys[0].Equals(key)
+}
+
+func (kb *keybinding) isChord() bool {
+	return len(kb.keys) >= 2
 }
 
 // Special keys.
