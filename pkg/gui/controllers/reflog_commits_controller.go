@@ -3,6 +3,7 @@ package controllers
 import (
 	"github.com/jesseduffield/lazygit/pkg/commands/models"
 	"github.com/jesseduffield/lazygit/pkg/gui/context"
+	"github.com/jesseduffield/lazygit/pkg/gui/controllers/helpers"
 	"github.com/jesseduffield/lazygit/pkg/gui/types"
 )
 
@@ -17,7 +18,7 @@ var _ types.IController = &ReflogCommitsController{}
 func NewReflogCommitsController(
 	c *ControllerCommon,
 ) *ReflogCommitsController {
-	return &ReflogCommitsController{
+	ctrl := &ReflogCommitsController{
 		baseController: baseController{},
 		ListControllerTrait: NewListControllerTrait(
 			c,
@@ -27,6 +28,17 @@ func NewReflogCommitsController(
 		),
 		c: c,
 	}
+
+	chord := c.Helpers().ChordMenu
+	chord.RegisterTitleFunc("reflogCommits", "g", helpers.ResetToRefTitle(c.HelperCommon, c.Tr.ViewResetOptions, func() (string, bool) {
+		sel := ctrl.context().GetSelected()
+		if sel == nil {
+			return "", false
+		}
+		return sel.ShortHash(), true
+	}))
+
+	return ctrl
 }
 
 func (self *ReflogCommitsController) Context() types.Context {

@@ -24,7 +24,7 @@ var _ types.IController = &TagsController{}
 func NewTagsController(
 	c *ControllerCommon,
 ) *TagsController {
-	return &TagsController{
+	ctrl := &TagsController{
 		baseController: baseController{},
 		ListControllerTrait: NewListControllerTrait(
 			c,
@@ -34,6 +34,29 @@ func NewTagsController(
 		),
 		c: c,
 	}
+
+	chord := c.Helpers().ChordMenu
+
+	chord.RegisterTitleFunc("tags", "d", func() string {
+		sel := ctrl.context().GetSelected()
+		if sel == nil {
+			return ""
+		}
+		return utils.ResolvePlaceholderString(
+			c.Tr.DeleteTagTitle,
+			map[string]string{"tagName": sel.Name},
+		)
+	})
+
+	chord.RegisterTitleFunc("tags", "g", func() string {
+		sel := ctrl.context().GetSelected()
+		if sel == nil {
+			return c.Tr.ViewResetOptions
+		}
+		return c.Tr.ResetTo + " " + sel.Name
+	})
+
+	return ctrl
 }
 
 func (self *TagsController) GetKeybindings(opts types.KeybindingsOpts) []*types.Binding {
@@ -54,13 +77,25 @@ func (self *TagsController) GetKeybindings(opts types.KeybindingsOpts) []*types.
 			DisplayOnScreen: true,
 		},
 		{
-			Key:               opts.GetKey(opts.Config.Universal.Remove),
-			Handler:           self.withItem(self.delete),
-			Description:       self.c.Tr.Delete,
+			Key:               opts.GetKey(opts.Config.Branches.DeleteLocalTag),
+			Handler:           self.withItem(self.localDelete),
+			Description:       self.c.Tr.DeleteLocalTag,
 			GetDisabledReason: self.require(self.singleItemSelected()),
-			Tooltip:           self.c.Tr.TagDeleteTooltip,
-			OpensMenu:         true,
-			DisplayOnScreen:   true,
+			Tooltip:           self.c.Tr.DeleteLocalTagTooltip,
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Branches.DeleteRemoteTag),
+			Handler:           self.withItem(self.remoteDelete),
+			Description:       self.c.Tr.DeleteRemoteTag,
+			GetDisabledReason: self.require(self.singleItemSelected()),
+			Tooltip:           self.c.Tr.DeleteRemoteTagTooltip,
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Branches.DeleteLocalAndRemoteTag),
+			Handler:           self.withItem(self.localAndRemoteDelete),
+			Description:       self.c.Tr.DeleteLocalAndRemoteTag,
+			GetDisabledReason: self.require(self.singleItemSelected()),
+			Tooltip:           self.c.Tr.DeleteLocalAndRemoteTagTooltip,
 		},
 		{
 			Key:               opts.GetKey(opts.Config.Branches.PushTag),
@@ -71,13 +106,28 @@ func (self *TagsController) GetKeybindings(opts types.KeybindingsOpts) []*types.
 			DisplayOnScreen:   true,
 		},
 		{
-			Key:               opts.GetKey(opts.Config.Commits.ViewResetOptions),
-			Handler:           self.withItem(self.createResetMenu),
+			Key:               opts.GetKey(opts.Config.Commits.MixedResetToRef),
+			Handler:           self.withItem(self.gitMixedResetToRef),
 			GetDisabledReason: self.require(self.singleItemSelected()),
-			Description:       self.c.Tr.Reset,
-			Tooltip:           self.c.Tr.ResetTooltip,
-			DisplayOnScreen:   true,
-			OpensMenu:         true,
+			Description:       "Mixed reset",
+			Tooltip:           self.c.Tr.ResetMixedTooltip,
+			ChordPopupExtra:   self.gitResetPreview(style.FgRed, "mixed"),
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Commits.SoftResetToRef),
+			Handler:           self.withItem(self.gitSoftResetToRef),
+			GetDisabledReason: self.require(self.singleItemSelected()),
+			Description:       self.c.Tr.SoftReset,
+			Tooltip:           self.c.Tr.ResetSoftTooltip,
+			ChordPopupExtra:   self.gitResetPreview(style.FgRed, "soft"),
+		},
+		{
+			Key:               opts.GetKey(opts.Config.Commits.HardResetToRef),
+			Handler:           self.withItem(self.gitHardResetToRef),
+			GetDisabledReason: self.require(self.singleItemSelected()),
+			Description:       self.c.Tr.HardReset,
+			Tooltip:           self.c.Tr.ResetHardTooltip,
+			ChordPopupExtra:   self.gitResetPreview(style.FgRed, "hard"),
 		},
 		{
 			Key: opts.GetKey(opts.Config.Universal.OpenDiffTool),
@@ -271,46 +321,6 @@ func (self *TagsController) localAndRemoteDelete(tag *models.Tag) error {
 	return nil
 }
 
-func (self *TagsController) delete(tag *models.Tag) error {
-	menuTitle := utils.ResolvePlaceholderString(
-		self.c.Tr.DeleteTagTitle,
-		map[string]string{
-			"tagName": tag.Name,
-		},
-	)
-
-	menuItems := []*types.MenuItem{
-		{
-			Label: self.c.Tr.DeleteLocalTag,
-			Key:   gocui.NewKeyRune('c'),
-			OnPress: func() error {
-				return self.localDelete(tag)
-			},
-		},
-		{
-			Label:     self.c.Tr.DeleteRemoteTag,
-			Key:       gocui.NewKeyRune('r'),
-			OpensMenu: true,
-			OnPress: func() error {
-				return self.remoteDelete(tag)
-			},
-		},
-		{
-			Label:     self.c.Tr.DeleteLocalAndRemoteTag,
-			Key:       gocui.NewKeyRune('b'),
-			OpensMenu: true,
-			OnPress: func() error {
-				return self.localAndRemoteDelete(tag)
-			},
-		},
-	}
-
-	return self.c.Menu(types.CreateMenuOptions{
-		Title: menuTitle,
-		Items: menuItems,
-	})
-}
-
 func (self *TagsController) push(tag *models.Tag) error {
 	title := utils.ResolvePlaceholderString(
 		self.c.Tr.PushTagTitle,
@@ -342,8 +352,27 @@ func (self *TagsController) push(tag *models.Tag) error {
 	return nil
 }
 
-func (self *TagsController) createResetMenu(tag *models.Tag) error {
-	return self.c.Helpers().Refs.CreateGitResetMenu(tag.Name, tag.FullRefName())
+func (self *TagsController) gitMixedResetToRef(tag *models.Tag) error {
+	return self.c.Helpers().Refs.PerformGitReset(tag.FullRefName(), "mixed")
+}
+
+func (self *TagsController) gitSoftResetToRef(tag *models.Tag) error {
+	return self.c.Helpers().Refs.PerformGitReset(tag.FullRefName(), "soft")
+}
+
+func (self *TagsController) gitHardResetToRef(tag *models.Tag) error {
+	return self.c.Helpers().Refs.PerformGitReset(tag.FullRefName(), "hard")
+}
+
+func (self *TagsController) gitResetPreview(s style.TextStyle, strength string) string {
+	if self.c.Git() == nil {
+		return ""
+	}
+	tag := self.context().GetSelected()
+	if tag == nil {
+		return ""
+	}
+	return s.Sprintf("reset --%s %s", strength, tag.Name)
 }
 
 func (self *TagsController) create() error {

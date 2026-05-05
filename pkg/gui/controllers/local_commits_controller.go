@@ -38,7 +38,7 @@ func NewLocalCommitsController(
 	c *ControllerCommon,
 	pullFiles PullFilesFn,
 ) *LocalCommitsController {
-	return &LocalCommitsController{
+	ctrl := &LocalCommitsController{
 		baseController: baseController{},
 		c:              c,
 		pullFiles:      pullFiles,
@@ -49,6 +49,26 @@ func NewLocalCommitsController(
 			c.Contexts().LocalCommits.GetSelectedItems,
 		),
 	}
+
+	chord := c.Helpers().ChordMenu
+
+	chord.RegisterTitleFunc("commits", "b", func() string {
+		return c.Tr.Bisect.BisectMenuTitle
+	})
+
+	chord.RegisterTitleFunc("commits", "f", func() string {
+		return c.Tr.Fixup
+	})
+
+	chord.RegisterTitleFunc("commits", "g", helpers.ResetToRefTitle(c.HelperCommon, c.Tr.ViewResetOptions, func() (string, bool) {
+		sel := ctrl.context().GetSelected()
+		if sel == nil {
+			return "", false
+		}
+		return sel.ShortHash(), true
+	}))
+
+	return ctrl
 }
 
 func (self *LocalCommitsController) GetKeybindings(opts types.KeybindingsOpts) []*types.Binding {
@@ -77,9 +97,19 @@ func (self *LocalCommitsController) GetKeybindings(opts types.KeybindingsOpts) [
 					self.canSquashOrFixup,
 				),
 			),
-			Description:     self.c.Tr.Fixup,
-			Tooltip:         self.c.Tr.FixupTooltip,
-			DisplayOnScreen: true,
+			Description: self.c.Tr.Fixup,
+			Tooltip:     self.c.Tr.FixupTooltip,
+		},
+		{
+			Key:     opts.GetKey(opts.Config.Commits.FixupCommitKeepMessage),
+			Handler: opts.Guards.OutsideFilterMode(self.withItemsRange(self.fixupKeepMessage)),
+			GetDisabledReason: self.require(
+				self.itemRangeSelected(
+					self.canFixupKeepMessage,
+				),
+			),
+			Description: self.c.Tr.FixupKeepMessage,
+			Tooltip:     self.c.Tr.FixupKeepMessageTooltip,
 		},
 		{
 			Key:     opts.GetKey(opts.Config.Commits.SetFixupMessage),
@@ -356,32 +386,23 @@ func (self *LocalCommitsController) fixup(selectedCommits []*models.Commit, star
 		return self.updateTodos(todo.Fixup, selectedCommits)
 	}
 
-	return self.c.Menu(types.CreateMenuOptions{
-		Title: self.c.Tr.Fixup,
-		Items: []*types.MenuItem{
-			{
-				Label: self.c.Tr.Fixup,
-				Key:   gocui.NewKeyRune('f'),
-				OnPress: func() error {
-					return self.c.WithWaitingStatus(self.c.Tr.FixingStatus, func(gocui.Task) error {
-						self.c.LogAction(self.c.Tr.Actions.FixupCommit)
-						return self.interactiveRebase(todo.Fixup, startIdx, endIdx)
-					})
-				},
-				Tooltip: self.c.Tr.FixupTooltip,
-			},
-			{
-				Label: self.c.Tr.FixupKeepMessage,
-				Key:   gocui.NewKeyRune('c'),
-				OnPress: func() error {
-					return self.c.WithWaitingStatus(self.c.Tr.FixingStatus, func(gocui.Task) error {
-						self.c.LogAction(self.c.Tr.Actions.FixupCommitKeepMessage)
-						return self.interactiveRebaseWithFlag(todo.Fixup, startIdx, endIdx, "-C")
-					})
-				},
-				Tooltip: self.c.Tr.FixupKeepMessageTooltip,
-			},
-		},
+	return self.c.WithWaitingStatus(self.c.Tr.FixingStatus, func(gocui.Task) error {
+		self.c.LogAction(self.c.Tr.Actions.FixupCommit)
+		return self.interactiveRebase(todo.Fixup, startIdx, endIdx)
+	})
+}
+
+func (self *LocalCommitsController) canFixupKeepMessage(selectedCommits []*models.Commit, startIdx int, endIdx int) *types.DisabledReason {
+	if self.isRebasing() {
+		return &types.DisabledReason{Text: self.c.Tr.AlreadyRebasing}
+	}
+	return self.canSquashOrFixup(selectedCommits, startIdx, endIdx)
+}
+
+func (self *LocalCommitsController) fixupKeepMessage(selectedCommits []*models.Commit, startIdx int, endIdx int) error {
+	return self.c.WithWaitingStatus(self.c.Tr.FixingStatus, func(gocui.Task) error {
+		self.c.LogAction(self.c.Tr.Actions.FixupCommitKeepMessage)
+		return self.interactiveRebaseWithFlag(todo.Fixup, startIdx, endIdx, "-C")
 	})
 }
 
