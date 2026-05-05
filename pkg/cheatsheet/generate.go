@@ -22,6 +22,7 @@ import (
 	"github.com/jesseduffield/lazycore/pkg/utils"
 	"github.com/jesseduffield/lazygit/pkg/app"
 	"github.com/jesseduffield/lazygit/pkg/config"
+	"github.com/jesseduffield/lazygit/pkg/gocui"
 	"github.com/jesseduffield/lazygit/pkg/gui/types"
 	"github.com/jesseduffield/lazygit/pkg/i18n"
 	"github.com/samber/lo"
@@ -77,7 +78,11 @@ func generateAtDir(cheatsheetDir string) {
 		}
 
 		bindings := mApp.Gui.GetCheatsheetKeybindings()
-		bindingSections := getBindingSections(bindings, mApp.Tr)
+		resolver := chordGroupResolver{
+			groups: mConfig.GetUserConfig().KeybindingGroups,
+			meta:   defaultGroupMeta(mApp.Tr),
+		}
+		bindingSections := getBindingSections(bindings, mApp.Tr, resolver)
 		content := formatSections(mApp.Tr, bindingSections)
 		content = fmt.Sprintf("_This file is auto-generated. To update, make the changes in the "+
 			"pkg/i18n directory and then run `%s` from the project root._\n\n%s", CommandToRun(), content)
@@ -138,7 +143,58 @@ func localisedTitle(tr *i18n.TranslationSet, str string) string {
 	return title
 }
 
-func getBindingSections(bindings []*types.Binding, tr *i18n.TranslationSet) []*bindingSection {
+// groupMeta is sourced from translation strings so the cheatsheet text
+// matches the pre-chord menu-opener bindings in the user's language.
+// Falls back to KeybindingGroupConfig.Name when no builtin entry exists.
+type groupMeta struct {
+	description string
+	tooltip     string
+}
+
+// chordGroupResolver merges per-context KeybindingGroups (user config)
+// with per-i18n groupMeta (translated defaults), applying the standard
+// "context first, then global" fallback to both lookups.
+type chordGroupResolver struct {
+	groups map[string]map[string]config.KeybindingGroupConfig
+	meta   map[string]map[string]groupMeta
+}
+
+// Resolve returns (description, tooltip, true) when a group is
+// registered for (viewName, prefixLabel). Description/tooltip
+// precedence: user override (KeybindingGroupConfig fields) → translated
+// default (groupMeta) → KeybindingGroupConfig.Name as a last-resort
+// description.
+func (r chordGroupResolver) Resolve(viewName, prefixLabel string) (string, string, bool) {
+	g, ok := config.LookupGroup(r.groups, viewName, prefixLabel)
+	if !ok {
+		return "", "", false
+	}
+	description, tooltip := g.Description, g.Tooltip
+	if description == "" || tooltip == "" {
+		m, hasMeta := r.meta[viewName][prefixLabel]
+		if !hasMeta {
+			m, hasMeta = r.meta["global"][prefixLabel]
+		}
+		if hasMeta {
+			if description == "" {
+				description = m.description
+			}
+			if tooltip == "" {
+				tooltip = m.tooltip
+			}
+		}
+	}
+	if description == "" {
+		description = g.Name
+	}
+	return description, tooltip, true
+}
+
+func getBindingSections(
+	bindings []*types.Binding,
+	tr *i18n.TranslationSet,
+	resolver chordGroupResolver,
+) []*bindingSection {
 	excludedViews := []string{"stagingSecondary", "patchBuildingSecondary"}
 	bindingsToDisplay := lo.Filter(bindings, func(binding *types.Binding, _ int) bool {
 		if lo.Contains(excludedViews, binding.ViewName) {
@@ -156,12 +212,12 @@ func getBindingSections(bindings []*types.Binding, tr *i18n.TranslationSet) []*b
 		bindingsByHeader,
 		func(header header, hBindings []*types.Binding) headerWithBindings {
 			uniqBindings := lo.UniqBy(hBindings, func(binding *types.Binding) string {
-				return binding.Description + config.LabelForKey(binding.Key)
+				return binding.Description + config.LabelForKeySequence(binding.Key.Sequence())
 			})
 
 			return headerWithBindings{
 				header:   header,
-				bindings: uniqBindings,
+				bindings: insertChordGroupHeaders(uniqBindings, resolver),
 			}
 		},
 	)
@@ -179,6 +235,104 @@ func getBindingSections(bindings []*types.Binding, tr *i18n.TranslationSet) []*b
 			bindings: hb.bindings,
 		}
 	})
+}
+
+// insertChordGroupHeaders inserts synthetic header rows in front of
+// each chord prefix configured in UserConfig.KeybindingGroups. If a
+// real binding already occupies the same key, no synthetic row is
+// emitted (avoids duplicate keys in the cheatsheet).
+func insertChordGroupHeaders(bindings []*types.Binding, resolver chordGroupResolver) []*types.Binding {
+	if len(resolver.groups) == 0 {
+		return bindings
+	}
+
+	existing := map[string]struct{}{}
+	for _, b := range bindings {
+		existing[b.ViewName+"|"+config.LabelForKeySequence(b.Key.Sequence())] = struct{}{}
+	}
+
+	result := make([]*types.Binding, 0, len(bindings))
+	emitted := map[string]struct{}{}
+
+	for _, b := range bindings {
+		seq := b.Key.Sequence()
+		if len(seq) >= 2 {
+			// Walk every proper prefix length so nested groups (e.g.
+			// "u" then "ug") each get their own header row.
+			for prefixLen := 1; prefixLen < len(seq); prefixLen++ {
+				prefixLabel := config.LabelForKeySequence(seq[:prefixLen])
+				marker := b.ViewName + "|" + prefixLabel
+				if _, already := emitted[marker]; already {
+					continue
+				}
+				if _, conflict := existing[marker]; conflict {
+					emitted[marker] = struct{}{}
+					continue
+				}
+				description, tooltip, ok := resolver.Resolve(b.ViewName, prefixLabel)
+				if !ok {
+					continue
+				}
+				emitted[marker] = struct{}{}
+
+				result = append(result, &types.Binding{
+					ViewName:    b.ViewName,
+					Key:         buildPrefixKey(seq[:prefixLen]),
+					Description: description,
+					Tooltip:     tooltip,
+					Tag:         b.Tag,
+				})
+			}
+		}
+		result = append(result, b)
+	}
+
+	return result
+}
+
+// defaultGroupMeta returns cheatsheet meta inherited from the pre-chord
+// menu-opener bindings, keyed by (viewName, prefix label).
+func defaultGroupMeta(tr *i18n.TranslationSet) map[string]map[string]groupMeta {
+	return map[string]map[string]groupMeta{
+		"global": {
+			"m": {description: tr.ViewMergeRebaseOptions, tooltip: tr.ViewMergeRebaseOptionsTooltip},
+		},
+		"files": {
+			"i":        {description: tr.Actions.IgnoreExcludeFile},
+			"S":        {description: tr.ViewStashOptions, tooltip: tr.ViewStashOptionsTooltip},
+			"D":        {description: tr.Reset, tooltip: tr.FileResetOptionsTooltip},
+			"<ctrl+b>": {description: tr.FileFilter},
+			"y":        {description: tr.CopyToClipboardMenu},
+		},
+		"localBranches": {
+			"d": {description: tr.Delete, tooltip: tr.BranchDeleteTooltip},
+			"r": {description: tr.RebaseBranch, tooltip: tr.RebaseBranchTooltip},
+			"M": {description: tr.Merge, tooltip: tr.MergeBranchTooltip},
+			"i": {description: tr.GitFlowOptions},
+			"u": {description: tr.ViewBranchUpstreamOptions, tooltip: tr.ViewBranchUpstreamOptionsTooltip},
+		},
+		"remoteBranches": {
+			"d": {description: tr.Delete, tooltip: tr.DeleteRemoteBranchTooltip},
+		},
+		"tags": {
+			"d": {description: tr.Delete, tooltip: tr.TagDeleteTooltip},
+		},
+		"commits": {
+			"b": {description: tr.ViewBisectOptions},
+			"f": {description: tr.Fixup, tooltip: tr.FixupTooltip},
+			"g": {description: tr.ViewResetOptions, tooltip: tr.ResetTooltip},
+		},
+		"submodules": {
+			"b": {description: tr.ViewBulkSubmoduleOptions},
+		},
+	}
+}
+
+func buildPrefixKey(seq []gocui.Key) gocui.Key {
+	if len(seq) == 1 {
+		return seq[0]
+	}
+	return seq[0].WithRest(seq[1:])
 }
 
 func getHeader(binding *types.Binding, tr *i18n.TranslationSet) header {
@@ -214,7 +368,7 @@ func formatTitle(title string) string {
 }
 
 func formatBinding(binding *types.Binding) string {
-	action := config.LabelForKey(binding.Key)
+	action := config.LabelForKeySequence(binding.Key.Sequence())
 	description := binding.Description
 	if binding.Alternative != "" {
 		action += fmt.Sprintf(" (%s)", binding.Alternative)

@@ -19,6 +19,9 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` : `` | Execute shell command | Bring up a prompt where you can enter a shell command to execute. |
 | `` <ctrl+p> `` | 檢視自訂補丁選項 |  |
 | `` m `` | 查看合併/變基選項 | View options to abort/continue/skip the current merge/rebase. |
+| `` mc `` | Continue rebase / merge | View options to abort/continue/skip the current merge/rebase. |
+| `` ma `` | Abort rebase / merge | View options to abort/continue/skip the current merge/rebase. |
+| `` ms `` | Skip current rebase commit | View options to abort/continue/skip the current merge/rebase. |
 | `` R `` | 重新整理 | Refresh the git state (i.e. run `git status`, `git branch`, etc in background to update the contents of panels). This does not run `git fetch`. |
 | `` + `` | 下一個螢幕模式（常規/半螢幕/全螢幕） |  |
 | `` _ `` | 上一個螢幕模式 |  |
@@ -140,7 +143,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` o `` | 在瀏覽器中開啟提交 |  |
 | `` n `` | 從提交建立新分支 |  |
 | `` N `` | Move commits to new branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
-| `` g `` | 檢視重設選項 | View reset options (soft/mixed/hard) for resetting onto selected item. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | 軟重設 | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | 強制重設 | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` C `` | 複製提交 (揀選) | Mark commit as copied. Then, within the local commits view, you can press `V` to paste (cherry-pick) the copied commit(s) into your checked out branch. At any time you can press `<esc>` to cancel the selection. |
 | `` <ctrl+r> `` | 重設選定的揀選 (複製) 提交 |  |
 | `` <ctrl+t> `` | 開啟外部差異工具 (git difftool) |  |
@@ -162,6 +168,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` e `` | 更新子模組 URL |  |
 | `` i `` | Initialize | 初始化子模組 |
 | `` b `` | 查看批量子模組選項 |  |
+| `` bi `` | 批量初始化子模組 |  |
+| `` bu `` | 批量更新子模組 |  |
+| `` br `` | Bulk init and update submodules recursively |  |
+| `` bd `` | 批量解除子模組初始化 |  |
 | `` / `` | 搜尋 |  |
 
 ## 工作目錄
@@ -181,8 +191,18 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | Copy abbreviated commit hash to clipboard |  |
 | `` <ctrl+r> `` | 重設選定的揀選 (複製) 提交 |  |
 | `` b `` | 查看二分選項 |  |
+| `` bb `` | Mark commit as bad |  |
+| `` bg `` | Mark commit as good |  |
+| `` bs `` | Skip current bisect commit |  |
+| `` bS `` | Skip selected commit |  |
+| `` br `` | 重設二分查找 |  |
+| `` bb `` | Mark commit as bad (start bisect) |  |
+| `` bg `` | Mark commit as good (start bisect) |  |
+| `` bt `` | Choose bisect terms |  |
 | `` s `` | 壓縮 (Squash) | Squash the selected commit into the commit below it. The selected commit's message will be appended to the commit below it. |
 | `` f `` | 修復 (Fixup) | Meld the selected commit into the commit below it. Similar to squash, but the selected commit's message will be discarded. |
+| `` ff `` | 修復 (Fixup) | Meld the selected commit into the commit below it. Similar to squash, but the selected commit's message will be discarded. |
+| `` fc `` | Fixup and use this commit's message | Squash the selected commit into the commit below, using this commit's message, discarding the message of the commit below. |
 | `` c `` | Set fixup message | Set the message option for the fixup commit. The -C option means to use this commit's message instead of the target commit's message. |
 | `` r `` | 改寫提交 | 改寫選中的提交訊息 |
 | `` R `` | 使用編輯器改寫提交 |  |
@@ -208,6 +228,9 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` n `` | 從提交建立新分支 |  |
 | `` N `` | Move commits to new branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
 | `` g `` | 檢視重設選項 | View reset options (soft/mixed/hard) for resetting onto selected item. |
+| `` gm `` | Mixed reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | 軟重設 | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | 強制重設 | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` C `` | 複製提交 (揀選) | Mark commit as copied. Then, within the local commits view, you can press `V` to paste (cherry-pick) the copied commit(s) into your checked out branch. At any time you can press `<esc>` to cancel the selection. |
 | `` <ctrl+t> `` | 開啟外部差異工具 (git difftool) |  |
 | `` * `` | Select commits of current branch |  |
@@ -228,7 +251,13 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | Key | Action | Info |
 |-----|--------|-------------|
 | `` <ctrl+o> `` | 複製檔案名稱到剪貼簿 |  |
-| `` y `` | 複製到剪貼簿 |  |
+| `` y `` | Copy to clipboard |  |
+| `` yn `` | 檔案名稱 |  |
+| `` yp `` | Relative path |  |
+| `` yP `` | Absolute path |  |
+| `` ys `` | 所選檔案的差異 |  |
+| `` ya `` | 所有檔案的差異 |  |
+| `` yc `` | Content of selected file |  |
 | `` c `` | 檢出 | 檢出檔案 |
 | `` d `` | 捨棄 | Discard this commit's changes to this file. This runs an interactive rebase in the background, so you may get a merge conflict if a later commit also changes this file. |
 | `` o `` | 開啟檔案 | 使用預設軟體開啟 |
@@ -267,7 +296,10 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` o `` | 在瀏覽器中開啟提交 |  |
 | `` n `` | 從提交建立新分支 |  |
 | `` N `` | Move commits to new branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
-| `` g `` | 檢視重設選項 | View reset options (soft/mixed/hard) for resetting onto selected item. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | 軟重設 | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | 強制重設 | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` C `` | 複製提交 (揀選) | Mark commit as copied. Then, within the local commits view, you can press `V` to paste (cherry-pick) the copied commit(s) into your checked out branch. At any time you can press `<esc>` to cancel the selection. |
 | `` <ctrl+r> `` | 重設選定的揀選 (複製) 提交 |  |
 | `` <ctrl+t> `` | 開啟外部差異工具 (git difftool) |  |
@@ -283,6 +315,11 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 |-----|--------|-------------|
 | `` <ctrl+o> `` | 複製分支名稱到剪貼簿 |  |
 | `` i `` | 顯示 git-flow 選項 |  |
+| `` iF `` | Finish git-flow branch |  |
+| `` if `` | Start git-flow feature |  |
+| `` ih `` | Start git-flow hotfix |  |
+| `` ib `` | Start git-flow bugfix |  |
+| `` ir `` | Start git-flow release |  |
 | `` <space> `` | 檢出 | 檢出選定的項目。 |
 | `` n `` | 新分支 |  |
 | `` N `` | Move commits to new branch | Create a new branch and move the unpushed commits of the current branch to it. Useful if you meant to start new work and forgot to create a new branch first.<br><br>Note that this disregards the selection, the new branch is always created either from the main branch or stacked on top of the current branch (you get to choose which). |
@@ -294,14 +331,38 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` - `` | Checkout previous branch |  |
 | `` F `` | 強制檢出 | Force checkout selected branch. This will discard all local changes in your working directory before checking out the selected branch. |
 | `` d `` | 刪除 | View delete options for local/remote branch. |
+| `` dc `` | Delete local branch | View delete options for local/remote branch. |
+| `` dr `` | 刪除遠端分支 | Delete the remote branch from the remote. |
+| `` db `` | Delete local and remote branch | View delete options for local/remote branch. |
 | `` r `` | 將已檢出的分支變基至此分支 | Rebase the checked-out branch onto the selected branch. |
+| `` rs `` | Simple rebase | Rebase the checked-out branch onto the selected branch. |
+| `` ri `` | Interactive rebase | 開始一個互動變基，以中斷開始，這樣你可以在繼續之前更新TODO提交 |
+| `` rb `` | Rebase onto base branch | Rebase the checked out branch onto its base branch (i.e. the closest main branch). |
 | `` M `` | 合併到當前檢出的分支 | View options for merging the selected item into the current branch (regular merge, squash merge) |
+| `` Mm `` | 合併到當前檢出的分支 | View options for merging the selected item into the current branch (regular merge, squash merge) |
+| `` Mn `` | Regular merge (with merge commit) | Merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}', creating a merge commit. |
+| `` Mf `` | Regular merge (fast-forward) | Fast-forward '{{.checkedOutBranch}}' to '{{.selectedBranch}}' without creating a merge commit. |
+| `` Ms `` | Squash merge (uncommitted) | Squash merge '{{.selectedBranch}}' into the working tree. |
+| `` MS `` | Squash merge (committed) | Squash merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}' as a single commit. |
 | `` f `` | 從上游快進此分支 | 從遠端快進所選的分支 |
 | `` T `` | 建立標籤 |  |
 | `` s `` | 排序規則 |  |
-| `` g `` | 檢視重設選項 |  |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | 軟重設 | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | 強制重設 | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` R `` | 重新命名分支 |  |
 | `` u `` | 檢視遠端設定 | 檢視有關遠端分支的設定（例如重設至遠端） |
+| `` ud `` | 檢視與遠端的差異 | 檢視有關遠端分支的設定（例如重設至遠端） |
+| `` uD `` | View divergence from base branch |  |
+| `` us `` | 設定選定分支的遠端分支 |  |
+| `` uu `` | 重置選定分支的遠端 |  |
+| `` ugm `` | Mixed reset to upstream | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` ugs `` | Soft reset to upstream | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` ugh `` | Hard reset to upstream | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
+| `` urs `` | Simple rebase onto upstream |  |
+| `` uri `` | Interactive rebase onto upstream | 開始一個互動變基，以中斷開始，這樣你可以在繼續之前更新TODO提交 |
+| `` urb `` | Rebase onto base branch | Rebase the checked out branch onto its base branch (i.e. the closest main branch). |
 | `` <ctrl+t> `` | 開啟外部差異工具 (git difftool) |  |
 | `` 0 `` | Focus main view |  |
 | `` <enter> `` | 檢視提交 |  |
@@ -315,9 +376,15 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | Copy tag to clipboard |  |
 | `` <space> `` | 檢出 | Checkout the selected tag as a detached HEAD. |
 | `` n `` | 建立標籤 | Create new tag from current commit. You'll be prompted to enter a tag name and optional description. |
-| `` d `` | 刪除 | View delete options for local/remote tag. |
+| `` d `` | 刪除 |  |
+| `` dc `` | 刪除本地標籤 | View delete options for local/remote tag. |
+| `` dr `` | Delete remote tag | View delete options for local/remote tag. |
+| `` db `` | Delete local and remote tag | View delete options for local/remote tag. |
 | `` P `` | 推送標籤 | Push the selected tag to a remote. You'll be prompted to select a remote. |
-| `` g `` | 重設 | View reset options (soft/mixed/hard) for resetting onto selected item. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | 軟重設 | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | 強制重設 | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` <ctrl+t> `` | 開啟外部差異工具 (git difftool) |  |
 | `` 0 `` | Focus main view |  |
 | `` <enter> `` | 檢視提交 |  |
@@ -331,7 +398,17 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | 複製檔案名稱到剪貼簿 |  |
 | `` <space> `` | 切換預存 | Toggle staged for selected file. |
 | `` <ctrl+b> `` | 篩選檔案 (預存/未預存) |  |
+| `` <ctrl+b>s `` | 僅顯示預存的檔案 |  |
+| `` <ctrl+b>u `` | 僅顯示未預存的檔案 |  |
+| `` <ctrl+b>t `` | Show only tracked files |  |
+| `` <ctrl+b>T `` | Show only untracked files |  |
+| `` <ctrl+b>r `` | No filter |  |
 | `` y `` | 複製到剪貼簿 |  |
+| `` yn `` | 檔案名稱 |  |
+| `` yp `` | Relative path |  |
+| `` yP `` | Absolute path |  |
+| `` ys `` | 所選檔案的差異 | 如果有已預存的項目，此指令只考慮它們。否則，它將考慮所有未暫存的項目。 |
+| `` ya `` | 所有檔案的差異 | 如果有已預存的項目，此指令只考慮它們。否則，它將考慮所有未暫存的項目。 |
 | `` c `` | 提交變更 | 提交暫存區變更 |
 | `` w `` | 沒有預提交 hook 就提交更改 |  |
 | `` A `` | 修改上次提交 |  |
@@ -340,14 +417,32 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` e `` | 編輯 | 使用外部編輯器開啟 |
 | `` o `` | 開啟檔案 | 使用預設軟體開啟 |
 | `` i `` | 忽略或排除檔案 |  |
+| `` ii `` | 添加到 .gitignore |  |
+| `` ie `` | 添加到 .git/info/exclude |  |
 | `` r `` | 重新整理檔案 |  |
-| `` s `` | 收藏 | Stash all changes. For other variations of stashing, use the view stash options keybinding. |
+| `` s `` | 收藏 | Stash all changes. Press capital S for variations (keep index, include untracked, staged only, unstaged only). |
 | `` S `` | 檢視收藏選項 | View stash options (e.g. stash all, stash staged, stash unstaged). |
+| `` Si `` | 收藏所有變更並保留預存區 |  |
+| `` SU `` | 收藏所有變更，包括未追蹤檔案 |  |
+| `` Ss `` | 收藏已預存變更 |  |
+| `` Su `` | 收藏未預存變更 |  |
 | `` a `` | 全部預存/取消預存 | Toggle staged/unstaged for all files in working tree. |
 | `` <enter> `` | 選擇檔案中的單個程式碼塊/行，或展開/折疊目錄 | If the selected item is a file, focus the staging view so you can stage individual hunks/lines. If the selected item is a directory, collapse/expand it. |
-| `` d `` | 捨棄 | 檢視選中變動進行捨棄復原 |
-| `` g `` | 檢視遠端重設選項 |  |
+| `` d `` | Discard changes |  |
+| `` dc `` | 捨棄 | 檢視選中變動進行捨棄復原 |
+| `` du `` | 刪除未預存變更 |  |
+| `` g `` | Reset to upstream |  |
+| `` gm `` | Mixed reset to upstream | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | Soft reset to upstream | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | Hard reset to upstream | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` D `` | 重設 | View reset options for working tree (e.g. nuking the working tree). |
+| `` Dx `` | 刪除工作目錄 | 如果你想讓所有工作樹上的變更消失，這就是正確的選項。如果有未提交的子模組變更，它們將被收藏在子模組中。 |
+| `` Du `` | 刪除未預存變更 |  |
+| `` Dc `` | 刪除未追蹤檔案 |  |
+| `` DS `` | 刪除已預存變更 | 這將創建一個新的存儲條目，其中只包含預存檔案，然後如果存儲條目不需要，將其刪除，因此工作樹僅保留未預存的變更。 |
+| `` Ds `` | 軟重設 |  |
+| `` Dm `` | mixed reset |  |
+| `` Dh `` | 強制重設 |  |
 | `` ` `` | 顯示檔案樹狀視圖 | Toggle file view between flat and tree layout. Flat layout shows all file paths in a single list, tree layout groups files by directory.<br><br>The default can be changed in the config file with the key 'gui.showFileTree'. |
 | `` <ctrl+t> `` | 開啟外部差異工具 (git difftool) |  |
 | `` M `` | View merge conflict options | View options for resolving merge conflicts. |
@@ -404,12 +499,23 @@ _This file is auto-generated. To update, make the changes in the pkg/i18n direct
 | `` <ctrl+o> `` | 複製分支名稱到剪貼簿 |  |
 | `` <space> `` | 檢出 | Checkout a new local branch based on the selected remote branch, or the remote branch as a detached head. |
 | `` n `` | 新分支 |  |
-| `` M `` | 合併到當前檢出的分支 | View options for merging the selected item into the current branch (regular merge, squash merge) |
-| `` r `` | 將已檢出的分支變基至此分支 | Rebase the checked-out branch onto the selected branch. |
+| `` M `` | Merge |  |
+| `` Mm `` | 合併到當前檢出的分支 | View options for merging the selected item into the current branch (regular merge, squash merge) |
+| `` Mn `` | Non-fast-forward merge | Merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}', creating a merge commit. |
+| `` Mf `` | Fast-forward only merge | Fast-forward '{{.checkedOutBranch}}' to '{{.selectedBranch}}' without creating a merge commit. |
+| `` Ms `` | Squash merge (uncommitted) | Squash merge '{{.selectedBranch}}' into the working tree. |
+| `` MS `` | Squash merge (committed) | Squash merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}' as a single commit. |
+| `` r `` | Rebase options |  |
+| `` rs `` | 將已檢出的分支變基至此分支 | Rebase the checked-out branch onto the selected branch. |
+| `` ri `` | Interactive rebase | 開始一個互動變基，以中斷開始，這樣你可以在繼續之前更新TODO提交 |
+| `` rb `` | Rebase onto base branch | Rebase the checked out branch onto its base branch (i.e. the closest main branch). |
 | `` d `` | 刪除 | Delete the remote branch from the remote. |
-| `` u `` | 設置為遠端 | 將此分支設為當前分支之遠端 |
+| `` us `` | 設置為遠端 | 將此分支設為當前分支之遠端 |
 | `` s `` | 排序規則 |  |
-| `` g `` | 檢視重設選項 | View reset options (soft/mixed/hard) for resetting onto selected item. |
+| `` g `` | Reset to ref |  |
+| `` gm `` | Mixed reset | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as unstaged changes. |
+| `` gs `` | 軟重設 | Reset HEAD to the chosen commit, and keep the changes between the current and chosen commit as staged changes. |
+| `` gh `` | 強制重設 | Reset HEAD to the chosen commit, and discard all changes between the current and chosen commit, as well as all current modifications in the working tree. |
 | `` <ctrl+t> `` | 開啟外部差異工具 (git difftool) |  |
 | `` 0 `` | Focus main view |  |
 | `` <enter> `` | 檢視提交 |  |
