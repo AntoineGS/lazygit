@@ -8,6 +8,7 @@ import (
 	"github.com/jesseduffield/lazygit/pkg/gui/style"
 	"github.com/jesseduffield/lazygit/pkg/gui/types"
 	"github.com/jesseduffield/lazygit/pkg/i18n"
+	"github.com/jesseduffield/lazygit/pkg/theme"
 	"github.com/jesseduffield/lazygit/pkg/utils"
 	"github.com/samber/lo"
 )
@@ -73,7 +74,7 @@ func NewMenuViewModel(c *ContextCommon) *MenuViewModel {
 		func() []*types.MenuItem { return self.menuItems },
 		func(item *types.MenuItem) []string {
 			if filterKeybindings {
-				return []string{config.LabelForKey(item.Key)}
+				return []string{config.LabelForKeySequence(item.Key.Sequence())}
 			}
 
 			return item.LabelColumns
@@ -134,12 +135,12 @@ func (self *MenuViewModel) GetDisplayStrings(_ int, _ int) [][]string {
 	return lo.Map(menuItems, func(item *types.MenuItem, _ int) []string {
 		displayStrings := item.LabelColumns
 		if item.DisabledReason != nil {
-			displayStrings[0] = style.FgDefault.SetStrikethrough().Sprint(displayStrings[0])
+			displayStrings = renderDisabledColumns(displayStrings)
 		}
 
 		keyLabel := ""
 		if item.Key.IsSet() {
-			keyLabel = style.FgCyan.Sprint(config.LabelForKey(item.Key))
+			keyLabel = style.FgCyan.Sprint(config.LabelForKeySequence(item.Key.Sequence()))
 		}
 
 		checkMark := ""
@@ -250,11 +251,10 @@ func (self *MenuContext) OnMenuPress(selectedItem *types.MenuItem) error {
 		return nil
 	}
 
-	if err := selectedItem.OnPress(); err != nil {
-		return err
+	if selectedItem.OnPress == nil {
+		return nil
 	}
-
-	return nil
+	return selectedItem.OnPress()
 }
 
 // There is currently no need to use range-select in a menu so we're disabling it.
@@ -268,4 +268,15 @@ func (self *MenuContext) FilterPrefix(tr *i18n.TranslationSet) string {
 	}
 
 	return self.FilteredListViewModel.FilterPrefix(tr)
+}
+
+// renderDisabledColumns applies DisabledTextStyle + strikethrough to each
+// column of a disabled menu row, so the whole row visibly dims (label and
+// chord-popup tooltip column alike).
+func renderDisabledColumns(cols []string) []string {
+	styled := make([]string, len(cols))
+	for i, col := range cols {
+		styled[i] = theme.DisabledTextStyle.SetStrikethrough().Sprint(col)
+	}
+	return styled
 }

@@ -39,6 +39,22 @@ type Binding struct {
 
 	// to be displayed if the keybinding is highlighted from within a menu
 	Tooltip string
+	// TooltipFunc is used instead of Tooltip if non-nil, and is useful for dynamic
+	// tooltips that change depending on context. Important: this must not be an expensive call.
+	// Note that you should still provide a generic, non-dynamic tooltip in the Tooltip field,
+	// as this is used in the cheatsheet.
+	TooltipFunc func() string
+
+	// Replaces Tooltip in the chord popup. Use this for previews that
+	// need ANSI styling or that depend on runtime state unsafe to
+	// evaluate during cheatsheet generation (which reads Tooltip only).
+	ChordPopupExtra string
+
+	// HiddenInChordPopup hides this binding's row from chord-popup menus.
+	// Use when a binding exists for direct dispatch but is redundant in
+	// the menu (e.g. an explicit non-fast-forward merge variant when the
+	// regular merge already produces a non-FF commit by user config).
+	HiddenInChordPopup func() bool
 
 	// Function to decide whether the command is enabled, and why. If this
 	// returns an empty string, it is; if it returns a non-empty string, it is
@@ -57,6 +73,17 @@ func (b *Binding) GetDescription() string {
 		return b.DescriptionFunc()
 	}
 	return b.Description
+}
+
+func (b *Binding) GetTooltip() string {
+	if b.TooltipFunc != nil {
+		return b.TooltipFunc()
+	}
+	return b.Tooltip
+}
+
+func (b *Binding) IsHiddenInChordPopup() bool {
+	return b.HiddenInChordPopup != nil && b.HiddenInChordPopup()
 }
 
 func (b *Binding) GetShortDescription() string {

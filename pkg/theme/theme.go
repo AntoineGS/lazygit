@@ -42,6 +42,11 @@ var (
 
 	OptionsFgColor = style.New()
 
+	// DisabledTextStyle is the foreground style used for disabled menu rows.
+	// Users see this on items that exist but cannot be invoked in the
+	// current context.
+	DisabledTextStyle = style.FgBlackLighter
+
 	DiffTerminalColor = style.FgMagenta
 
 	UnstagedChangesColor = style.New()

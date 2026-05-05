@@ -161,6 +161,10 @@ func (self *guiCommon) ResetKeybindings() error {
 	return self.gui.resetKeybindings()
 }
 
+func (self *guiCommon) RefreshMenuKeybindings() error {
+	return self.gui.refreshMenuKeybindings()
+}
+
 func (self *guiCommon) IsAnyModeActive() bool {
 	return self.gui.helpers.Mode.IsAnyModeActive()
 }

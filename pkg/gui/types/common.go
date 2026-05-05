@@ -110,6 +110,12 @@ type IGuiCommon interface {
 
 	ResetKeybindings() error
 
+	// RefreshMenuKeybindings re-registers only the menu view's
+	// keybindings — cheaper than ResetKeybindings when only the
+	// menu's items have changed (e.g. chord-continuation popup
+	// refresh on each prefix keystroke).
+	RefreshMenuKeybindings() error
+
 	// hopefully we can remove this once we've moved all our keybinding stuff out of the gui god struct.
 	GetInitialKeybindingsWithCustomCommands() ([]*Binding, []*gocui.ViewMouseBinding)
 

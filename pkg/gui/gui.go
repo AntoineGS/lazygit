@@ -139,8 +139,9 @@ type Gui struct {
 
 	Updating bool
 
-	c       *helpers.HelperCommon
-	helpers *helpers.Helpers
+	c             *helpers.HelperCommon
+	helpers       *helpers.Helpers
+	optionsMapMgr *OptionsMapMgr
 
 	previousLanguageConfig string
 
@@ -920,6 +921,14 @@ func (gui *Gui) Run(startArgs appTypes.StartArgs) error {
 	deadlock.Opts.Disable = !gui.Debug || os.Getenv(components.WAIT_FOR_DEBUGGER_ENV_VAR) != ""
 
 	gui.g.OnSearchEscape = func() error { gui.helpers.Search.Cancel(); return nil }
+
+	gui.optionsMapMgr = &OptionsMapMgr{c: gui.c}
+	gui.g.SetAllowChordStartsCallback(func(*gocui.View) bool {
+		popupKeys := lo.Map(gui.c.Context().CurrentPopup(), func(ctx types.Context, _ int) types.ContextKey {
+			return ctx.GetKey()
+		})
+		return chordStartsEnabled(popupKeys)
+	})
 
 	gui.g.SetManager(gocui.ManagerFunc(gui.layout))
 

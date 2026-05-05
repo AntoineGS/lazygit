@@ -41,6 +41,10 @@ func (self *ContextMgr) Replace(c types.Context) {
 		return
 	}
 
+	// Cancel any pending chord: the prefix was scoped to the previous
+	// view and must not bleed into the new one.
+	self.gui.g.ClearPendingChord()
+
 	self.Lock()
 
 	if len(self.ContextStack) == 0 {
@@ -60,6 +64,14 @@ func (self *ContextMgr) Push(c types.Context, opts types.OnFocusOpts) {
 		return
 	}
 
+	// Cancel any pending chord: the prefix was scoped to the prior view
+	// and must not reinterpret input in the new context.
+	self.gui.g.ClearPendingChord()
+
+	self.pushAndActivate(c, opts)
+}
+
+func (self *ContextMgr) pushAndActivate(c types.Context, opts types.OnFocusOpts) {
 	contextsToDeactivate, contextToActivate := self.pushToContextStack(c)
 
 	for _, contextToDeactivate := range contextsToDeactivate {

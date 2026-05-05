@@ -2,6 +2,7 @@ package gui
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/jesseduffield/generics/set"
@@ -25,8 +26,7 @@ func (gui *Gui) renderContextOptionsMap() {
 	if gui.integrationTest != nil && gui.integrationTest.IsDemo() {
 		return
 	}
-	mgr := OptionsMapMgr{c: gui.c}
-	mgr.renderContextOptionsMap()
+	gui.optionsMapMgr.renderContextOptionsMap()
 }
 
 // Render the options available for the current context at the bottom of the screen
@@ -49,22 +49,52 @@ func (self *OptionsMapMgr) renderContextOptionsMap() {
 		return !currentContextKeys.Includes(b.Key)
 	})...)
 
-	bindingsToDisplay := lo.Filter(allBindings, func(binding *types.Binding, _ int) bool {
-		return binding.DisplayOnScreen && !binding.IsDisabled()
-	})
+	chordPrefixes := self.chordGroupOptions(string(currentContext.GetKey()))
+	prefixByKey := make(map[string]bindingInfo, len(chordPrefixes))
+	for _, p := range chordPrefixes {
+		prefixByKey[p.key] = p
+	}
 
-	optionsMap := lo.Map(bindingsToDisplay, func(binding *types.Binding, _ int) bindingInfo {
+	// Walk allBindings in declaration order so each chord prefix is
+	// emitted at the position of its first leaf — regardless of whether
+	// that leaf has DisplayOnScreen set. This restores the original bar
+	// order, in which the old menu-opener (now replaced by the prefix)
+	// appeared exactly where it was declared in the controller.
+	optionsMap := make([]bindingInfo, 0, len(allBindings)+len(chordPrefixes))
+	emittedPrefix := map[string]struct{}{}
+	for _, binding := range allBindings {
+		var firstKeyLabel string
+		if seq := binding.Key.Sequence(); len(seq) > 0 {
+			firstKeyLabel = config.LabelForKey(seq[0])
+		}
+		if pfxInfo, ok := prefixByKey[firstKeyLabel]; ok {
+			if _, done := emittedPrefix[firstKeyLabel]; !done {
+				optionsMap = append(optionsMap, pfxInfo)
+				emittedPrefix[firstKeyLabel] = struct{}{}
+			}
+			continue
+		}
+		if !binding.DisplayOnScreen || binding.IsDisabled() {
+			continue
+		}
 		displayStyle := theme.OptionsFgColor
 		if binding.DisplayStyle != nil {
 			displayStyle = *binding.DisplayStyle
 		}
-
-		return bindingInfo{
-			key:         config.LabelForKey(binding.Key),
+		optionsMap = append(optionsMap, bindingInfo{
+			key:         config.LabelForKeySequence(binding.Key.Sequence()),
 			description: binding.GetShortDescription(),
 			style:       displayStyle,
+		})
+	}
+	// Any prefix that didn't match a leaf goes at the end. Shouldn't
+	// happen with the default config, but kept defensively for custom
+	// configs that register a prefix without leaves.
+	for _, p := range chordPrefixes {
+		if _, done := emittedPrefix[p.key]; !done {
+			optionsMap = append(optionsMap, p)
 		}
-	})
+	}
 
 	// Mode-specific local keybindings
 	if currentContext.GetKey() == context.LOCAL_COMMITS_CONTEXT_KEY {
@@ -77,21 +107,25 @@ func (self *OptionsMapMgr) renderContextOptionsMap() {
 		}
 
 		if self.c.Model().BisectInfo.Started() {
-			optionsMap = utils.Prepend(optionsMap, bindingInfo{
-				key:         self.c.KeybindingsOpts().Config.Commits.ViewBisectOptions,
-				description: self.c.Tr.ViewBisectOptions,
-				style:       style.FgGreen,
-			})
+			if key := self.c.UserConfig().Keybinding.ChordPrefix.Get(string(currentContext.GetKey()), config.ChordIDBisectOptions); key != "" {
+				optionsMap = utils.Prepend(optionsMap, bindingInfo{
+					key:         key,
+					description: self.c.Tr.ViewBisectOptions,
+					style:       style.FgGreen,
+				})
+			}
 		}
 	}
 
 	// Mode-specific global keybindings
 	if state := self.c.Model().WorkingTreeStateAtLastCommitRefresh; state.Any() {
-		optionsMap = utils.Prepend(optionsMap, bindingInfo{
-			key:         self.c.KeybindingsOpts().Config.Universal.CreateRebaseOptionsMenu,
-			description: state.OptionsMapTitle(self.c.Tr),
-			style:       style.FgYellow,
-		})
+		if key := self.c.UserConfig().Keybinding.ChordPrefix.Get(string(currentContext.GetKey()), config.ChordIDRebaseOptions); key != "" {
+			optionsMap = utils.Prepend(optionsMap, bindingInfo{
+				key:         key,
+				description: state.OptionsMapTitle(self.c.Tr),
+				style:       style.FgYellow,
+			})
+		}
 	}
 
 	if self.c.Git().Patch.PatchBuilder.Active() {
@@ -103,6 +137,52 @@ func (self *OptionsMapMgr) renderContextOptionsMap() {
 	}
 
 	self.renderOptions(self.formatBindingInfos(optionsMap))
+}
+
+// Iterates current context first, then "global", deduplicating by
+// canonical prefix label so a context override shadows the global entry.
+// Inner iteration is sorted to keep bar order stable across renders.
+func (self *OptionsMapMgr) chordGroupOptions(currentContextName string) []bindingInfo {
+	groups := self.c.UserConfig().KeybindingGroups
+	if len(groups) == 0 {
+		return nil
+	}
+
+	seen := map[string]struct{}{}
+	var result []bindingInfo
+
+	collect := func(contextGroups map[string]config.KeybindingGroupConfig) {
+		labels := make([]string, 0, len(contextGroups))
+		for label := range contextGroups {
+			labels = append(labels, label)
+		}
+		sort.Strings(labels)
+		for _, label := range labels {
+			group := contextGroups[label]
+			if !group.DisplayOnScreen {
+				continue
+			}
+			canonical := config.CanonicalizePrefixLabel(label)
+			if _, dup := seen[canonical]; dup {
+				continue
+			}
+			seen[canonical] = struct{}{}
+
+			description := group.ShortName
+			if description == "" {
+				description = group.Name
+			}
+			result = append(result, bindingInfo{
+				key:         canonical,
+				description: description,
+				style:       theme.OptionsFgColor,
+			})
+		}
+	}
+
+	collect(groups[currentContextName])
+	collect(groups["global"])
+	return result
 }
 
 func (self *OptionsMapMgr) formatBindingInfos(bindingInfos []bindingInfo) string {

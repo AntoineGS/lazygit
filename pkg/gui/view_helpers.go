@@ -58,6 +58,9 @@ func (gui *Gui) currentViewName() string {
 }
 
 func (gui *Gui) onViewTabClick(windowName string, tabIndex int) error {
+	// Cancel any pending chord: prefix was scoped to the prior tab.
+	gui.g.ClearPendingChord()
+
 	tabs := gui.viewTabMap()[windowName]
 	if len(tabs) == 0 {
 		return nil

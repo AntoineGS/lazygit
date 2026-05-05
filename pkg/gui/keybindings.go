@@ -412,6 +412,24 @@ func (gui *Gui) GetInitialKeybindingsWithCustomCommands() ([]*types.Binding, []*
 	return bindings, mouseBindings
 }
 
+// refreshMenuKeybindings re-registers only the menu view's
+// keybindings without rebuilding every controller's bindings. Used by
+// ChordMenuHelper.refreshMenu where only the menu's items change
+// between chord-prefix keystrokes.
+func (gui *Gui) refreshMenuKeybindings() error {
+	menuCtx := gui.State.Contexts.Menu
+	viewName := menuCtx.GetViewName()
+	gui.g.DeleteViewKeybindings(viewName)
+
+	for _, binding := range menuCtx.GetKeybindings(gui.c.KeybindingsOpts()) {
+		binding.ViewName = viewName
+		if err := gui.SetKeybinding(binding); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (gui *Gui) resetKeybindings() error {
 	gui.g.DeleteAllKeybindings()
 
@@ -448,6 +466,10 @@ func (gui *Gui) resetKeybindings() error {
 func (gui *Gui) SetKeybinding(binding *types.Binding) error {
 	handler := func(g *gocui.Gui, v *gocui.View) error {
 		return gui.callKeybindingHandler(binding)
+	}
+
+	if binding.Key.HasRest() {
+		return gui.g.SetKeybindingKeys(binding.ViewName, binding.Key.Sequence(), handler)
 	}
 
 	return gui.g.SetKeybinding(binding.ViewName, binding.Key, handler)
