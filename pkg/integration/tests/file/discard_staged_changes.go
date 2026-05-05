@@ -39,7 +39,10 @@ var DiscardStagedChanges = NewIntegrationTest(NewIntegrationTestArgs{
 			).
 			Press(keys.Files.ViewResetOptions)
 
-		t.ExpectPopup().Menu().Title(Equals("")).Select(Contains("Discard staged changes")).Confirm()
+		t.ExpectPopup().Menu().
+			Title(Equals("Discard / reset options")).
+			Select(Contains("Discard staged changes")).
+			Confirm()
 
 		// staged file has been removed
 		t.Views().Files().

@@ -1,6 +1,10 @@
 package components
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/jesseduffield/lazygit/pkg/config"
+)
 
 // for running common actions
 type Common struct {
@@ -8,11 +12,11 @@ type Common struct {
 }
 
 func (self *Common) ContinueMerge() {
-	self.t.GlobalPress(self.t.keys.Universal.CreateRebaseOptionsMenu)
+	self.t.GlobalPress(self.t.keys.ChordPrefix.Get("global", config.ChordIDRebaseOptions))
 
 	self.t.ExpectPopup().Menu().
 		Title(Equals("Rebase options")).
-		Select(Contains("continue")).
+		Select(Contains("Continue")).
 		Confirm()
 }
 
@@ -21,20 +25,20 @@ func (self *Common) ContinueRebase() {
 }
 
 func (self *Common) AbortRebase() {
-	self.t.GlobalPress(self.t.keys.Universal.CreateRebaseOptionsMenu)
+	self.t.GlobalPress(self.t.keys.ChordPrefix.Get("global", config.ChordIDRebaseOptions))
 
 	self.t.ExpectPopup().Menu().
 		Title(Equals("Rebase options")).
-		Select(Contains("abort")).
+		Select(Contains("Abort")).
 		Confirm()
 }
 
 func (self *Common) AbortMerge() {
-	self.t.GlobalPress(self.t.keys.Universal.CreateRebaseOptionsMenu)
+	self.t.GlobalPress(self.t.keys.ChordPrefix.Get("global", config.ChordIDRebaseOptions))
 
 	self.t.ExpectPopup().Menu().
-		Title(Equals("Merge options")).
-		Select(Contains("abort")).
+		Title(Equals("Rebase options")).
+		Select(Contains("Abort")).
 		Confirm()
 }
 
@@ -68,7 +72,7 @@ func (self *Common) SelectPatchOption(matcher *TextMatcher) {
 func (self *Common) ResetBisect() {
 	self.t.Views().Commits().
 		Focus().
-		Press(self.t.keys.Commits.ViewBisectOptions).
+		Press(self.t.keys.ChordPrefix.Get("commits", config.ChordIDBisectOptions)).
 		Tap(func() {
 			self.t.ExpectPopup().Menu().
 				Title(Equals("Bisect")).

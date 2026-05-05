@@ -62,14 +62,12 @@ var Delete = NewIntegrationTest(NewIntegrationTestArgs{
 			Tap(func() {
 				t.ExpectPopup().
 					Menu().
-					Tooltip(Contains("You cannot delete the checked out branch!")).
 					Title(Equals("Delete branch 'current-head'?")).
 					Select(Contains("Delete local branch")).
-					Confirm().
-					Tap(func() {
-						t.ExpectToast(Contains("You cannot delete the checked out branch!"))
-					}).
-					Cancel()
+					Confirm()
+
+				t.ExpectToast(Contains("You cannot delete the checked out branch"))
+				t.Views().Menu().PressEscape()
 			}).
 
 			// Delete branch-four. This is the only branch that is not fully merged, so we get
@@ -144,8 +142,6 @@ var Delete = NewIntegrationTest(NewIntegrationTestArgs{
 					Title(Equals("Delete branch 'branch-one'?")).
 					Select(Contains("Delete remote branch")).
 					Confirm()
-			}).
-			Tap(func() {
 				t.ExpectPopup().
 					Confirmation().
 					Title(Equals("Delete branch 'branch-one'?")).

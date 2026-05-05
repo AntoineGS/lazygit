@@ -68,7 +68,7 @@ var ModeSpecificKeybindingSuggestions = NewIntegrationTest(NewIntegrationTestArg
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Bisect")).
-					Select(MatchesRegexp("Mark.* as bad")).
+					Select(MatchesRegexp(`Mark .* as bad`)).
 					Confirm()
 
 				t.Views().Options().Content(Contains(bisectSuggestion))
@@ -101,9 +101,11 @@ var ModeSpecificKeybindingSuggestions = NewIntegrationTest(NewIntegrationTestArg
 			NavigateToLine(Contains("second-change-branch")).
 			Press(keys.Branches.MergeIntoCurrentBranch).
 			Tap(func() {
+				// Pick plain "Merge"; the label is dynamic (fast-forward or
+				// merge-commit) depending on git config and branch state.
 				t.ExpectPopup().Menu().
 					Title(Equals("Merge")).
-					Select(Contains("Regular merge (with merge commit)")).
+					Select(MatchesRegexp(`^m\s+Regular merge`)).
 					Confirm()
 
 				t.Common().AcknowledgeConflicts()

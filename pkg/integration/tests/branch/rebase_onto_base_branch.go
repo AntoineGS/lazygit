@@ -39,7 +39,7 @@ var RebaseOntoBaseBranch = NewIntegrationTest(NewIntegrationTestArgs{
 
 		t.ExpectPopup().Menu().
 			Title(Equals("Rebase 'feature'")).
-			Select(Contains("Rebase onto base branch (master)")).
+			Select(Contains("Rebase onto base branch")).
 			Confirm()
 
 		t.Views().Commits().Lines(

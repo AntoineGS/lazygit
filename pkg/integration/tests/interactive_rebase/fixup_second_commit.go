@@ -25,10 +25,11 @@ var FixupSecondCommit = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("First Commit"),
 			).
 			NavigateToLine(Contains("Fixup Commit Message")).
-			Press(keys.Commits.MarkCommitAsFixup).
+			Press(keys.ChordPrefix.Get("commits", config.ChordIDFixupCommitOptions)).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Fixup")).
+					Select(Contains("Fixup").DoesNotContain("message")).
 					Confirm()
 			}).
 			Lines(

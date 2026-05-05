@@ -51,7 +51,7 @@ var DiscardAllDirChangesWhenFiltering = NewIntegrationTest(NewIntegrationTestArg
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Discard changes")).
-					Select(Contains("Discard all changes")).
+					Select(Contains("Discard").DoesNotContain("unstaged")).
 					Confirm()
 			}).
 			Press(keys.Universal.Return). // Cancel filtering

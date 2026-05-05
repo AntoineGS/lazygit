@@ -36,9 +36,12 @@ var ShowDivergenceFromUpstream = NewIntegrationTest(NewIntegrationTestArgs{
 		t.Views().Branches().
 			Focus().
 			Lines(Contains("master")).
-			Press(keys.Branches.SetUpstream)
+			Press(keys.ChordPrefix.Get("localBranches", config.ChordIDBranchUpstreamOptions))
 
-		t.ExpectPopup().Menu().Title(Contains("Upstream")).Select(Contains("View divergence from upstream")).Confirm()
+		t.ExpectPopup().Menu().
+			Title(Equals("Upstream options")).
+			Select(Contains("View divergence from upstream")).
+			Confirm()
 
 		t.Views().SubCommits().
 			IsFocused().

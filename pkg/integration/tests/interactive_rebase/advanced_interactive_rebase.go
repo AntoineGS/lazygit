@@ -36,12 +36,13 @@ var AdvancedInteractiveRebase = NewIntegrationTest(NewIntegrationTestArgs{
 		t.Views().Branches().
 			Focus().
 			NavigateToLine(Contains(BASE_BRANCH)).
-			Press(keys.Branches.RebaseBranch)
-
-		t.ExpectPopup().Menu().
-			Title(Equals(fmt.Sprintf("Rebase '%s'", TOP_BRANCH))).
-			Select(Contains("Interactive rebase")).
-			Confirm()
+			Press(keys.Branches.RebaseBranch).
+			Tap(func() {
+				t.ExpectPopup().Menu().
+					Title(Equals(fmt.Sprintf("Rebase '%s'", TOP_BRANCH))).
+					Select(Contains("Interactive rebase")).
+					Confirm()
+			})
 		t.Views().Commits().
 			IsFocused().
 			Lines(

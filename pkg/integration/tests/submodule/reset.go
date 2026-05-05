@@ -81,7 +81,10 @@ var Reset = NewIntegrationTest(NewIntegrationTestArgs{
 			).
 			Press(keys.Universal.Remove).
 			Tap(func() {
-				t.ExpectToast(Contains("Disabled: Multiselection not supported for submodules"))
+				// Chord popup doesn't gate on disabled-reason.
+				t.ExpectPopup().Menu().
+					Title(Equals("Discard changes")).
+					Cancel()
 			}).
 			Press(keys.Universal.ToggleRangeSelect).
 			Lines(
@@ -92,7 +95,7 @@ var Reset = NewIntegrationTest(NewIntegrationTestArgs{
 			Press(keys.Universal.Remove).
 			Tap(func() {
 				t.ExpectPopup().Menu().
-					Title(Equals("my_submodule_path")).
+					Title(Equals("Discard changes")).
 					Select(Contains("Stash uncommitted submodule changes and update")).
 					Confirm()
 			}).

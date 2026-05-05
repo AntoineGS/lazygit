@@ -63,14 +63,11 @@ var DeleteMultiple = NewIntegrationTest(NewIntegrationTestArgs{
 			Tap(func() {
 				t.ExpectPopup().
 					Menu().
-					Tooltip(Contains("You cannot delete the checked out branch!")).
 					Title(Equals("Delete selected branches?")).
-					Select(Contains("Delete local branches")).
-					Confirm().
-					Tap(func() {
-						t.ExpectToast(Contains("You cannot delete the checked out branch!"))
-					}).
-					Cancel()
+					Select(Contains("Delete local branch")).
+					Confirm()
+				t.ExpectToast(Contains("You cannot delete the checked out branch"))
+				t.Views().Menu().PressEscape()
 			}).
 
 			// Delete branch-03 and branch-04. 04 is not fully merged, so we get
@@ -82,7 +79,7 @@ var DeleteMultiple = NewIntegrationTest(NewIntegrationTestArgs{
 				t.ExpectPopup().
 					Menu().
 					Title(Equals("Delete selected branches?")).
-					Select(Contains("Delete local branches")).
+					Select(Contains("Delete local branch")).
 					Confirm()
 				t.ExpectPopup().
 					Confirmation().
@@ -107,10 +104,8 @@ var DeleteMultiple = NewIntegrationTest(NewIntegrationTestArgs{
 				t.ExpectPopup().
 					Menu().
 					Title(Equals("Delete selected branches?")).
-					Select(Contains("Delete remote branches")).
+					Select(Contains("Delete remote branch")).
 					Confirm()
-			}).
-			Tap(func() {
 				t.ExpectPopup().
 					Confirmation().
 					Title(Equals("Delete selected branches?")).
@@ -143,12 +138,10 @@ var DeleteMultiple = NewIntegrationTest(NewIntegrationTestArgs{
 				t.ExpectPopup().
 					Menu().
 					Title(Equals("Delete selected branches?")).
-					Select(Contains("Delete local and remote branches")).
-					Confirm().
-					Tap(func() {
-						t.ExpectToast(Contains("Some of the selected branches have no upstream (or the upstream is not stored locally)"))
-					}).
-					Cancel()
+					Select(Contains("Delete local and remote branch")).
+					Confirm()
+				t.ExpectToast(Contains("Some of the selected branches have no upstream"))
+				t.Views().Menu().PressEscape()
 			}).
 
 			// Delete both local and remote branches of branch-01 and branch-02. We get
@@ -160,7 +153,7 @@ var DeleteMultiple = NewIntegrationTest(NewIntegrationTestArgs{
 				t.ExpectPopup().
 					Menu().
 					Title(Equals("Delete selected branches?")).
-					Select(Contains("Delete local and remote branches")).
+					Select(Contains("Delete local and remote branch")).
 					Confirm()
 				t.ExpectPopup().
 					Confirmation().

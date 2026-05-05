@@ -51,7 +51,7 @@ var DiscardUnstagedDirChangesWhenFiltering = NewIntegrationTest(NewIntegrationTe
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Discard changes")).
-					Select(Contains("Discard unstaged changes")).
+					Select(Contains("Discard unstaged")).
 					Confirm()
 			}).
 			Press(keys.Universal.Return). // Cancel filtering

@@ -75,10 +75,11 @@ var OutsideRebaseRangeSelect = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("commit 05").IsSelected(),
 				Contains("commit 04"),
 			).
-			Press(keys.Commits.MarkCommitAsFixup).
+			Press(keys.ChordPrefix.Get("commits", config.ChordIDFixupCommitOptions)).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Fixup")).
+					Select(Contains("Fixup").DoesNotContain("message")).
 					Confirm()
 			}).
 			TopLines(

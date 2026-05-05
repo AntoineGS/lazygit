@@ -36,7 +36,13 @@ var FixupKeepMessageRebase = NewIntegrationTest(NewIntegrationTestArgs{
 			).
 			// Mark second commit as fixup
 			NavigateToLine(Contains("Second Commit")).
-			Press(keys.Commits.MarkCommitAsFixup).
+			Press(keys.ChordPrefix.Get("commits", config.ChordIDFixupCommitOptions)).
+			Tap(func() {
+				t.ExpectPopup().Menu().
+					Title(Equals("Fixup")).
+					Select(Contains("Fixup").DoesNotContain("message")).
+					Confirm()
+			}).
 			Lines(
 				Contains("--- Pending rebase todos ---"),
 				Contains("pick  CI Third Commit"),

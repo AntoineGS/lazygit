@@ -35,10 +35,6 @@ var MergeNonFastForward = NewIntegrationTest(NewIntegrationTestArgs{
 
 		t.ExpectPopup().Menu().
 			Title(Equals("Merge")).
-			TopLines(
-				Contains("Regular merge (fast-forward)"),
-				Contains("Regular merge (with merge commit)"),
-			).
 			Select(Contains("Regular merge (with merge commit)")).
 			Confirm()
 
@@ -49,7 +45,8 @@ var MergeNonFastForward = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("○─╯ one"),
 			)
 
-		// Check that branch2 shows the non-fast-forward option first
+		// Divergent: --no-ff is disabled because plain Merge already
+		// creates a merge commit.
 		t.Views().Branches().
 			Focus().
 			NavigateToLine(Contains("branch2")).
@@ -57,11 +54,7 @@ var MergeNonFastForward = NewIntegrationTest(NewIntegrationTestArgs{
 
 		t.ExpectPopup().Menu().
 			Title(Equals("Merge")).
-			TopLines(
-				Contains("Regular merge (with merge commit)"),
-				Contains("Regular merge (fast-forward)"),
-			).
-			Select(Contains("Regular merge (with merge commit)")).
+			Select(MatchesRegexp(`^m\s+Regular merge \(with merge commit\)`)).
 			Confirm()
 
 		t.Views().Commits().

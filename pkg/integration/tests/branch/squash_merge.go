@@ -39,7 +39,7 @@ var SquashMerge = NewIntegrationTest(NewIntegrationTestArgs{
 
 		t.ExpectPopup().Menu().
 			Title(Equals("Merge")).
-			Select(Contains("Squash merge and commit")).
+			Select(Contains("Squash merge (committed)")).
 			Confirm()
 
 		t.Views().Commits().TopLines(
@@ -54,7 +54,7 @@ var SquashMerge = NewIntegrationTest(NewIntegrationTestArgs{
 
 		t.ExpectPopup().Menu().
 			Title(Equals("Merge")).
-			Select(Contains("Squash merge and leave uncommitted")).
+			Select(Contains("Squash merge (uncommitted)")).
 			Confirm()
 
 		t.Views().Files().Focus().Lines(

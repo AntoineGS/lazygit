@@ -18,6 +18,7 @@ import (
 	"github.com/jesseduffield/lazygit/pkg/integration/tests/filter_by_author"
 	"github.com/jesseduffield/lazygit/pkg/integration/tests/filter_by_path"
 	"github.com/jesseduffield/lazygit/pkg/integration/tests/interactive_rebase"
+	"github.com/jesseduffield/lazygit/pkg/integration/tests/keybindings"
 	"github.com/jesseduffield/lazygit/pkg/integration/tests/misc"
 	"github.com/jesseduffield/lazygit/pkg/integration/tests/patch_building"
 	"github.com/jesseduffield/lazygit/pkg/integration/tests/reflog"
@@ -37,11 +38,14 @@ import (
 var tests = []*components.IntegrationTest{
 	bisect.Basic,
 	bisect.ChooseTerms,
+	bisect.ChordBisectMidPopup,
 	bisect.FromOtherBranch,
 	bisect.Skip,
 	branch.CheckoutAutostash,
 	branch.CheckoutByName,
 	branch.CheckoutPreviousBranch,
+	branch.ChordGitResetPopup,
+	branch.ChordUpstreamRebasePopup,
 	branch.CreateTag,
 	branch.Delete,
 	branch.DeleteMultiple,
@@ -215,6 +219,8 @@ var tests = []*components.IntegrationTest{
 	diff.DiffNonStickyRange,
 	diff.IgnoreWhitespace,
 	diff.RenameSimilarityThresholdChange,
+	file.ChordCopyMenuPopup,
+	file.ChordStatusFilterPopup,
 	file.ClickArrowToCollapse,
 	file.CollapseExpand,
 	file.CopyMenu,
@@ -330,6 +336,22 @@ var tests = []*components.IntegrationTest{
 	interactive_rebase.SwapInRebaseWithConflictAndEdit,
 	interactive_rebase.SwapWithConflict,
 	interactive_rebase.ViewFilesOfTodoEntries,
+	keybindings.ChordBasic,
+	keybindings.ChordDeep,
+	keybindings.ChordEscCancels,
+	keybindings.ChordGroupCollapsesPopup,
+	keybindings.ChordLabelInKeybindingsMenu,
+	keybindings.ChordMenuCancelRow,
+	keybindings.ChordMenuNavigable,
+	keybindings.ChordPopupBasic,
+	keybindings.ChordPopupDisabled,
+	keybindings.ChordPopupDisabledRowToast,
+	keybindings.ChordPopupDistinctChordsShareHead,
+	keybindings.ChordPopupNestedRefresh,
+	keybindings.ChordPrefixInOptionsBar,
+	keybindings.ChordShadowsSingleKey,
+	keybindings.ChordUnboundCancels,
+	keybindings.ChordViewSwitchCancels,
 	misc.ConfirmOnQuit,
 	misc.CopyConfirmationMessageToClipboard,
 	misc.CopyToClipboard,
@@ -395,6 +417,7 @@ var tests = []*components.IntegrationTest{
 	staging.StageRanges,
 	stash.Apply,
 	stash.ApplyPatch,
+	stash.ChordStashOptionsPopup,
 	stash.CreateBranch,
 	stash.Drop,
 	stash.DropMultiple,
@@ -405,7 +428,6 @@ var tests = []*components.IntegrationTest{
 	stash.Rename,
 	stash.ShowWithBranchNamedStash,
 	stash.Stash,
-	stash.StashAll,
 	stash.StashAndKeepIndex,
 	stash.StashIncludingUntrackedFiles,
 	stash.StashStaged,

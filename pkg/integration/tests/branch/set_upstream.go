@@ -21,11 +21,11 @@ var SetUpstream = NewIntegrationTest(NewIntegrationTestArgs{
 			Lines(
 				Contains("master").DoesNotContain("origin master").IsSelected(),
 			).
-			Press(keys.Branches.SetUpstream).
+			Press(keys.ChordPrefix.Get("localBranches", config.ChordIDBranchUpstreamOptions)).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Upstream options")).
-					Select(Contains(" Set upstream of selected branch")). // using leading space to disambiguate from the 'reset' option
+					Select(Contains("Set upstream of selected branch")).
 					Confirm()
 
 				t.ExpectPopup().Prompt().

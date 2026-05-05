@@ -33,11 +33,16 @@ var NukeWorkingTree = NewIntegrationTest(NewIntegrationTestArgs{
 			Wait(1000).
 			Press(keys.Files.ViewResetOptions).
 			Tap(func() {
+				t.ExpectPopup().Menu().
+					Title(Equals("Discard / reset options")).
+					Select(Contains("Nuke working tree")).
+					Confirm()
+
 				t.Wait(1000)
 
-				t.ExpectPopup().Menu().
-					Title(Equals("")).
-					Select(Contains("Nuke working tree")).
+				t.ExpectPopup().Confirmation().
+					Title(Equals("Nuke working tree")).
+					Content(Contains("Are you sure you want to nuke the working tree?")).
 					Confirm()
 			})
 	},

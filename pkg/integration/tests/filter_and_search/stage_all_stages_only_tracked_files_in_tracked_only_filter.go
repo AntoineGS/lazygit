@@ -9,8 +9,7 @@ var StageAllStagesOnlyTrackedFilesInTrackedOnlyFilter = NewIntegrationTest(NewIn
 	Description:  "Staging all files in tracked only view should stage only tracked files",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig: func(config *config.AppConfig) {
-	},
+	SetupConfig:  func(config *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		shell.CreateFileAndAdd("file-tracked", "foo")
 
@@ -31,7 +30,7 @@ var StageAllStagesOnlyTrackedFilesInTrackedOnlyFilter = NewIntegrationTest(NewIn
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Filtering")).
-					Select(Contains("Show only tracked files")).
+					Select(Contains("Show only tracked")).
 					Confirm()
 			}).
 			Lines(

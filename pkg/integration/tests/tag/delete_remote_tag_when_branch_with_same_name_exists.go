@@ -25,8 +25,7 @@ var DeleteRemoteTagWhenBranchWithSameNameExists = NewIntegrationTest(NewIntegrat
 			).
 			Press(keys.Universal.Remove)
 
-		t.ExpectPopup().
-			Menu().
+		t.ExpectPopup().Menu().
 			Title(Equals("Delete tag 'xyz'?")).
 			Select(Contains("Delete remote tag")).
 			Confirm()

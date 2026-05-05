@@ -9,8 +9,7 @@ var StagingFolderStagesOnlyTrackedFilesInTrackedOnlyFilter = NewIntegrationTest(
 	Description:  "Staging entire folder in tracked only view, should stage only tracked files",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig: func(config *config.AppConfig) {
-	},
+	SetupConfig:  func(config *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		shell.CreateDir("test")
 		shell.CreateFileAndAdd("test/file-tracked", "foo")
@@ -32,7 +31,7 @@ var StagingFolderStagesOnlyTrackedFilesInTrackedOnlyFilter = NewIntegrationTest(
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Filtering")).
-					Select(Contains("Show only tracked files")).
+					Select(Contains("Show only tracked")).
 					Confirm()
 			}).
 			Lines(

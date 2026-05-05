@@ -30,6 +30,7 @@ var RebaseToUpstream = NewIntegrationTest(NewIntegrationTestArgs{
 			Contains("ensure-master"),
 		)
 
+		// On a branch with no upstream, just verify the popup opens.
 		t.Views().Branches().
 			Focus().
 			Lines(
@@ -43,16 +44,10 @@ var RebaseToUpstream = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("base-branch").IsSelected(),
 				Contains("master-local"),
 			).
-			Press(keys.Branches.SetUpstream).
+			Press(keys.ChordPrefix.Get("localBranches", config.ChordIDBranchUpstreamOptions)).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Upstream options")).
-					Select(Contains("Rebase checked-out branch onto upstream of selected branch")).
-					Tooltip(Contains("Disabled: The selected branch has no upstream (or the upstream is not stored locally)")).
-					Confirm().
-					Tap(func() {
-						t.ExpectToast(Equals("Disabled: The selected branch has no upstream (or the upstream is not stored locally)"))
-					}).
 					Cancel()
 			}).
 			SelectNextItem().
@@ -61,15 +56,16 @@ var RebaseToUpstream = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("base-branch"),
 				Contains("master-local").IsSelected(),
 			).
-			Press(keys.Branches.SetUpstream).
+			Press(keys.ChordPrefix.Get("localBranches", config.ChordIDBranchUpstreamOptions)).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Upstream options")).
-					Select(Contains("Rebase checked-out branch onto origin/master...")).
+					Select(Contains("Simple rebase onto upstream")).
 					Confirm()
+
 				t.ExpectPopup().Menu().
 					Title(Equals("Rebase 'target'")).
-					Select(Contains("Simple rebase")).
+					Select(Contains("Simple rebase onto upstream")).
 					Confirm()
 			})
 

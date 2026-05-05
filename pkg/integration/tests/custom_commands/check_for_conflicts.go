@@ -16,7 +16,10 @@ var CheckForConflicts = NewIntegrationTest(NewIntegrationTestArgs{
 	SetupConfig: func(cfg *config.AppConfig) {
 		cfg.GetUserConfig().CustomCommands = []config.CustomCommand{
 			{
-				Key:     "m",
+				// 'm' is a global chord prefix (rebase options). Use a
+				// key that isn't reserved by chord groups so the custom
+				// command fires directly.
+				Key:     "X",
 				Context: "localBranches",
 				Command: "git merge {{ .SelectedLocalBranch.Name | quote }}",
 				After: &config.CustomCommandAfterHook{
@@ -35,7 +38,7 @@ var CheckForConflicts = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("second-change-branch"),
 			).
 			NavigateToLine(Contains("second-change-branch")).
-			Press("m")
+			Press("X")
 
 		t.Common().AcknowledgeConflicts()
 	},

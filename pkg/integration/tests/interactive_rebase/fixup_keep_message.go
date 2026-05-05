@@ -25,7 +25,7 @@ var FixupKeepMessage = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("First Commit"),
 			).
 			NavigateToLine(Contains("Second Commit")).
-			Press(keys.Commits.MarkCommitAsFixup).
+			Press(keys.ChordPrefix.Get("commits", config.ChordIDFixupCommitOptions)).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Fixup")).

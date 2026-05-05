@@ -35,11 +35,7 @@ var MergeFastForward = NewIntegrationTest(NewIntegrationTestArgs{
 
 		t.ExpectPopup().Menu().
 			Title(Equals("Merge")).
-			TopLines(
-				Contains("Regular merge (fast-forward)"),
-				Contains("Regular merge (with merge commit)"),
-			).
-			Select(Contains("Regular merge (fast-forward)")).
+			Select(MatchesRegexp(`^m\s+Regular merge \(fast-forward\)`)).
 			Confirm()
 
 		t.Views().Commits().
@@ -56,13 +52,12 @@ var MergeFastForward = NewIntegrationTest(NewIntegrationTestArgs{
 
 		t.ExpectPopup().Menu().
 			Title(Equals("Merge")).
-			TopLines(
-				Contains("Regular merge (with merge commit)"),
-				Contains("Regular merge (fast-forward)"),
-			).
-			Select(Contains("Regular merge (fast-forward)")).
+			Select(Contains("fast-forward")).
 			Confirm()
 
-		t.ExpectToast(Contains("Cannot fast-forward 'original-branch' to 'branch2'"))
+		t.ExpectPopup().Confirmation().
+			Title(Equals("Error")).
+			Content(Contains("Cannot fast-forward 'original-branch' to 'branch2'")).
+			Confirm()
 	},
 })

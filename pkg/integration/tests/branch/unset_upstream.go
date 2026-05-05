@@ -28,7 +28,7 @@ var UnsetUpstream = NewIntegrationTest(NewIntegrationTestArgs{
 			SelectedLines(
 				Contains("master").Contains("origin master"),
 			).
-			Press(keys.Branches.SetUpstream).
+			Press(keys.ChordPrefix.Get("localBranches", config.ChordIDBranchUpstreamOptions)).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Upstream options")).
@@ -45,7 +45,7 @@ var UnsetUpstream = NewIntegrationTest(NewIntegrationTestArgs{
 			SelectedLines(
 				Contains("branch_to_remove").Contains("origin branch_to_remove").Contains("upstream gone"),
 			).
-			Press(keys.Branches.SetUpstream).
+			Press(keys.ChordPrefix.Get("localBranches", config.ChordIDBranchUpstreamOptions)).
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Upstream options")).

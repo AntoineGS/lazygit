@@ -36,7 +36,7 @@ var DiscardVariousChanges = NewIntegrationTest(NewIntegrationTestArgs{
 
 				t.ExpectPopup().Menu().
 					Title(Equals("Discard changes")).
-					Select(Contains("Discard all changes")).
+					Select(Contains("Discard").DoesNotContain("unstaged")).
 					Confirm()
 			}
 		}

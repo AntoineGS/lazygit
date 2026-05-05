@@ -44,13 +44,10 @@ var DeleteLocalAndRemote = NewIntegrationTest(NewIntegrationTestArgs{
 			}).
 			Press(keys.Universal.Remove).
 			Tap(func() {
-				t.ExpectPopup().
-					Menu().
+				t.ExpectPopup().Menu().
 					Title(Equals("Delete tag 'new-tag'?")).
 					Select(Contains("Delete local and remote tag")).
 					Confirm()
-			}).
-			Tap(func() {
 				t.ExpectPopup().Prompt().
 					Title(Equals("Remote from which to remove tag 'new-tag':")).
 					InitialText(Equals("origin")).

@@ -9,7 +9,7 @@ var InteractiveRebaseWithConflictForEditCommand = NewIntegrationTest(NewIntegrat
 	Description:  "Rebase a branch interactively, and edit a commit that will conflict",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
-	SetupConfig:  func(cfg *config.AppConfig) {},
+	SetupConfig:  func(config *config.AppConfig) {},
 	SetupRepo: func(shell *Shell) {
 		shell.EmptyCommit("initial commit")
 		shell.CreateFileAndAdd("file.txt", "master content")
@@ -33,12 +33,7 @@ var InteractiveRebaseWithConflictForEditCommand = NewIntegrationTest(NewIntegrat
 		t.Views().Branches().
 			Focus().
 			NavigateToLine(Contains("master")).
-			Press(keys.Branches.RebaseBranch)
-
-		t.ExpectPopup().Menu().
-			Title(Equals("Rebase 'branch'")).
-			Select(Contains("Interactive rebase")).
-			Confirm()
+			Press(keys.Branches.RebaseBranchInteractive)
 
 		t.Views().Commits().
 			IsFocused().

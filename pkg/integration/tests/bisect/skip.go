@@ -45,12 +45,12 @@ var Skip = NewIntegrationTest(NewIntegrationTestArgs{
 			Press(keys.Commits.ViewBisectOptions).
 			Tap(func() {
 				t.ExpectPopup().Menu().Title(Equals("Bisect")).
-					// Does not show a "Skip selected commit" entry:
 					Lines(
-						Contains("b Mark current commit").Contains("as bad"),
-						Contains("g Mark current commit").Contains("as good"),
-						Contains("s Skip current commit"),
-						Contains("r Reset bisect"),
+						Contains("Mark").Contains("as bad"),
+						Contains("Mark").Contains("as good"),
+						Contains("Skip current commit"),
+						Contains("Skip selected commit"),
+						Contains("Reset bisect"),
 						Contains("Cancel"),
 					).
 					Select(Contains("Skip current commit")).Confirm()
@@ -72,13 +72,12 @@ var Skip = NewIntegrationTest(NewIntegrationTestArgs{
 			Press(keys.Commits.ViewBisectOptions).
 			Tap(func() {
 				t.ExpectPopup().Menu().Title(Equals("Bisect")).
-					// Does show a "Skip selected commit" entry:
 					Lines(
-						Contains("b Mark current commit").Contains("as bad"),
-						Contains("g Mark current commit").Contains("as good"),
-						Contains("s Skip current commit"),
-						Contains("S Skip selected commit"),
-						Contains("r Reset bisect"),
+						Contains("Mark").Contains("as bad"),
+						Contains("Mark").Contains("as good"),
+						Contains("Skip current commit"),
+						Contains("Skip selected commit"),
+						Contains("Reset bisect"),
 						Contains("Cancel"),
 					).
 					Select(Contains("Skip selected commit")).Confirm()

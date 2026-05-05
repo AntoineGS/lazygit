@@ -89,20 +89,15 @@ var DiscardAllDirChanges = NewIntegrationTest(NewIntegrationTestArgs{
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Discard changes")).
-					Select(Contains("Discard all changes")).
+					Select(Contains("Discard").DoesNotContain("unstaged")).
 					Confirm()
-			}).
-			Tap(func() {
+
 				t.Common().ContinueOnConflictsResolved("merge")
 				t.ExpectPopup().Confirmation().
 					Title(Equals("Continue")).
 					Content(Contains("Files have been modified since conflicts were resolved. Auto-stage them and continue?")).
 					Cancel()
-				t.GlobalPress(keys.Universal.CreateRebaseOptionsMenu)
-				t.ExpectPopup().Menu().
-					Title(Equals("Merge options")).
-					Select(Contains("continue")).
-					Confirm()
+				t.Common().ContinueRebase()
 			}).
 			Lines(
 				Contains("dir").IsSelected(),
@@ -118,7 +113,7 @@ var DiscardAllDirChanges = NewIntegrationTest(NewIntegrationTestArgs{
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Discard changes")).
-					Select(Contains("Discard all changes")).
+					Select(Contains("Discard").DoesNotContain("unstaged")).
 					Confirm()
 			}).
 			IsEmpty()

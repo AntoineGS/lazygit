@@ -35,7 +35,7 @@ var DiscardVariousChangesRangeSelect = NewIntegrationTest(NewIntegrationTestArgs
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Discard changes")).
-					Select(Contains("Discard all changes")).
+					Select(Contains("Discard").DoesNotContain("unstaged")).
 					Confirm()
 
 				t.ExpectPopup().Confirmation().
@@ -59,13 +59,12 @@ var DiscardVariousChangesRangeSelect = NewIntegrationTest(NewIntegrationTestArgs
 			).
 			Press(keys.Universal.ToggleRangeSelect).
 			NavigateToLine(Contains("renamed.txt")).
-			Press(keys.Universal.Remove).
-			Tap(func() {
-				t.ExpectPopup().Menu().
-					Title(Equals("Discard changes")).
-					Select(Contains("Discard all changes")).
-					Confirm()
-			})
+			Press(keys.Universal.Remove)
+
+		t.ExpectPopup().Menu().
+			Title(Equals("Discard changes")).
+			Select(Contains("Discard").DoesNotContain("unstaged")).
+			Confirm()
 
 		t.Views().Files().IsEmpty()
 	},

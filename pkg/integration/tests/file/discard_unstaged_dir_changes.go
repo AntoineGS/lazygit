@@ -43,7 +43,7 @@ var DiscardUnstagedDirChanges = NewIntegrationTest(NewIntegrationTestArgs{
 			Tap(func() {
 				t.ExpectPopup().Menu().
 					Title(Equals("Discard changes")).
-					Select(Contains("Discard unstaged changes")).
+					Select(Contains("Discard unstaged")).
 					Confirm()
 			}).
 			Lines(
