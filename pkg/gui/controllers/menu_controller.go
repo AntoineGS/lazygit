@@ -68,6 +68,12 @@ func (self *MenuController) GetOnFocus() func(types.OnFocusOpts) {
 	}
 }
 
+func (self *MenuController) GetOnFocusLost() func(types.OnFocusLostOpts) {
+	return func(types.OnFocusLostOpts) {
+		self.c.Helpers().ChordMenu.NotifyMenuClosed()
+	}
+}
+
 func (self *MenuController) press(selectedItem *types.MenuItem) error {
 	return self.context().OnMenuPress(selectedItem)
 }

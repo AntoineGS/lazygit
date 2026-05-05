@@ -130,6 +130,7 @@ type TranslationSet struct {
 	RebaseBranchTooltip                   string
 	CantRebaseOntoSelf                    string
 	CantMergeBranchIntoItself             string
+	CannotMergeDetached                   string
 	ForceCheckout                         string
 	ForceCheckoutTooltip                  string
 	CheckoutByName                        string
@@ -270,8 +271,10 @@ type TranslationSet struct {
 	RegularMergeFastForward               string
 	RegularMergeFastForwardTooltip        string
 	CannotFastForwardMerge                string
+	MergeFastForwardNotApplicable         string
 	RegularMergeNonFastForward            string
 	RegularMergeNonFastForwardTooltip     string
+	MergeNonFastForwardNotApplicable      string
 	SquashMergeUncommitted                string
 	SquashMergeUncommittedTooltip         string
 	SquashMergeCommitted                  string
@@ -320,11 +323,15 @@ type TranslationSet struct {
 	PickAllHunks                          string
 	ViewMergeRebaseOptions                string
 	ViewMergeRebaseOptionsTooltip         string
+	ContinueRebaseChord                   string
+	AbortRebaseChord                      string
+	SkipRebaseChord                       string
 	ViewMergeOptions                      string
 	ViewRebaseOptions                     string
 	ViewCherryPickOptions                 string
 	ViewRevertOptions                     string
 	NotMergingOrRebasing                  string
+	SkipNotApplicable                     string
 	AlreadyRebasing                       string
 	NotMidRebase                          string
 	MustSelectFixupCommit                 string
@@ -471,7 +478,12 @@ type TranslationSet struct {
 	DiscardStagedChanges                  string
 	HardReset                             string
 	BranchDeleteTooltip                   string
+	DeleteLocalBranchTooltip              string
+	DeleteLocalAndRemoteBranchTooltip     string
 	TagDeleteTooltip                      string
+	DeleteLocalTagTooltip                 string
+	DeleteRemoteTagTooltip                string
+	DeleteLocalAndRemoteTagTooltip        string
 	Delete                                string
 	Reset                                 string
 	ResetTooltip                          string
@@ -503,8 +515,6 @@ type TranslationSet struct {
 	ResetHardTooltip                      string
 	ResetHardConfirmation                 string
 	PressEnterToReturn                    string
-	ViewStashOptions                      string
-	ViewStashOptionsTooltip               string
 	Stash                                 string
 	StashTooltip                          string
 	StashAllChanges                       string
@@ -512,6 +522,8 @@ type TranslationSet struct {
 	StashAllChangesKeepIndex              string
 	StashUnstagedChanges                  string
 	StashIncludeUntrackedChanges          string
+	ViewStashOptions                      string
+	ViewStashOptionsTooltip               string
 	StashOptions                          string
 	NotARepository                        string
 	WorkingDirectoryDoesNotExist          string
@@ -814,6 +826,12 @@ type TranslationSet struct {
 	CantChangeContextSizeError               string
 	OpenCommitInBrowser                      string
 	ViewBisectOptions                        string
+	BisectMarkBad                            string
+	BisectMarkGood                           string
+	BisectSkipCurrent                        string
+	BisectSkipSelected                       string
+	BisectStartMarkBad                       string
+	BisectStartMarkGood                      string
 	ConfirmRevertCommit                      string
 	ConfirmRevertCommitRange                 string
 	RewordInEditorTitle                      string
@@ -947,6 +965,7 @@ type Bisect struct {
 	Mark                        string
 	SkipCurrent                 string
 	SkipSelected                string
+	SkipSelectedAlreadyCurrent  string
 	CompleteTitle               string
 	CompletePrompt              string
 	CompletePromptIndeterminate string
@@ -1025,10 +1044,11 @@ type Actions struct {
 	NotEnoughContextToDiscard        string
 	NotEnoughContextToRemoveLines    string
 	NotEnoughContextForCustomPatch   string
-	IgnoreExcludeFile                string
+	IgnoreFile                       string
 	IgnoreFileErr                    string
 	ExcludeFile                      string
 	ExcludeGitIgnoreErr              string
+	IgnoreExcludeFile                string
 	Commit                           string
 	Push                             string
 	Pull                             string
@@ -1248,6 +1268,7 @@ func EnglishTranslationSet() *TranslationSet {
 		RebaseBranchTooltip:                  "Rebase the checked-out branch onto the selected branch.",
 		CantRebaseOntoSelf:                   "You cannot rebase a branch onto itself",
 		CantMergeBranchIntoItself:            "You cannot merge a branch into itself",
+		CannotMergeDetached:                  "Cannot merge while in detached HEAD state",
 		ForceCheckout:                        "Force checkout",
 		ForceCheckoutTooltip:                 "Force checkout selected branch. This will discard all local changes in your working directory before checking out the selected branch.",
 		CheckoutByName:                       "Checkout by name",
@@ -1389,8 +1410,10 @@ func EnglishTranslationSet() *TranslationSet {
 		RegularMergeFastForward:              "Regular merge (fast-forward)",
 		RegularMergeFastForwardTooltip:       "Fast-forward '{{.checkedOutBranch}}' to '{{.selectedBranch}}' without creating a merge commit.",
 		CannotFastForwardMerge:               "Cannot fast-forward '{{.checkedOutBranch}}' to '{{.selectedBranch}}'",
+		MergeFastForwardNotApplicable:        "Not applicable: regular merge already fast-forwards when possible with your config",
 		RegularMergeNonFastForward:           "Regular merge (with merge commit)",
 		RegularMergeNonFastForwardTooltip:    "Merge '{{.selectedBranch}}' into '{{.checkedOutBranch}}', creating a merge commit.",
+		MergeNonFastForwardNotApplicable:     "Not applicable: regular merge already creates a merge commit with your config",
 		SquashMergeUncommitted:               "Squash merge and leave uncommitted",
 		SquashMergeUncommittedTooltip:        "Squash merge '{{.selectedBranch}}' into the working tree.",
 		SquashMergeCommitted:                 "Squash merge and commit",
@@ -1440,11 +1463,15 @@ func EnglishTranslationSet() *TranslationSet {
 		AbortMenuItem:                        "Abort the %s",
 		ViewMergeRebaseOptions:               "View merge/rebase options",
 		ViewMergeRebaseOptionsTooltip:        "View options to abort/continue/skip the current merge/rebase.",
+		ContinueRebaseChord:                  "Continue rebase / merge",
+		AbortRebaseChord:                     "Abort rebase / merge",
+		SkipRebaseChord:                      "Skip current rebase commit",
 		ViewMergeOptions:                     "View merge options",
 		ViewRebaseOptions:                    "View rebase options",
 		ViewCherryPickOptions:                "View cherry-pick options",
 		ViewRevertOptions:                    "View revert options",
 		NotMergingOrRebasing:                 "You are currently neither rebasing nor merging",
+		SkipNotApplicable:                    "Skip is not applicable in the current state",
 		AlreadyRebasing:                      "Can't perform this action during a rebase",
 		NotMidRebase:                         "This action only works during an interactive rebase",
 		MustSelectFixupCommit:                "This action only works on fixup commits",
@@ -1596,7 +1623,12 @@ func EnglishTranslationSet() *TranslationSet {
 		DiscardStagedChanges:                 "Discard staged changes",
 		HardReset:                            "Hard reset",
 		BranchDeleteTooltip:                  "View delete options for local/remote branch.",
+		DeleteLocalBranchTooltip:             "Delete the local branch.",
+		DeleteLocalAndRemoteBranchTooltip:    "Delete the local branch from your machine and the remote branch from its remote.",
 		TagDeleteTooltip:                     "View delete options for local/remote tag.",
+		DeleteLocalTagTooltip:                "Delete the tag locally.",
+		DeleteRemoteTagTooltip:               "Delete the tag from its remote.",
+		DeleteLocalAndRemoteTagTooltip:       "Delete the tag locally and from its remote.",
 		Delete:                               "Delete",
 		Reset:                                "Reset",
 		ResetTooltip:                         "View reset options (soft/mixed/hard) for resetting onto selected item.",
@@ -1629,15 +1661,15 @@ func EnglishTranslationSet() *TranslationSet {
 		CommitChangesWithoutHook:             "Commit changes without pre-commit hook",
 		ResetTo:                              `Reset to`,
 		PressEnterToReturn:                   "Press enter to return to lazygit",
-		ViewStashOptions:                     "View stash options",
-		ViewStashOptionsTooltip:              "View stash options (e.g. stash all, stash staged, stash unstaged).",
 		Stash:                                "Stash",
-		StashTooltip:                         "Stash all changes. For other variations of stashing, use the view stash options keybinding.",
+		StashTooltip:                         "Stash all changes. Press capital S for variations (keep index, include untracked, staged only, unstaged only).",
 		StashAllChanges:                      "Stash all changes",
 		StashStagedChanges:                   "Stash staged changes",
 		StashAllChangesKeepIndex:             "Stash all changes and keep index",
 		StashUnstagedChanges:                 "Stash unstaged changes",
 		StashIncludeUntrackedChanges:         "Stash all changes including untracked files",
+		ViewStashOptions:                     "View stash options",
+		ViewStashOptionsTooltip:              "View stash options (e.g. stash all, stash staged, stash unstaged).",
 		StashOptions:                         "Stash options",
 		NotARepository:                       "Error: must be run inside a git repository",
 		WorkingDirectoryDoesNotExist:         "Error: the current working directory does not exist",
@@ -1935,6 +1967,12 @@ func EnglishTranslationSet() *TranslationSet {
 		CantChangeContextSizeError:               "Cannot change context while in patch building mode because we were too lazy to support it when releasing the feature. If you really want it, please let us know!",
 		OpenCommitInBrowser:                      "Open commit in browser",
 		ViewBisectOptions:                        "View bisect options",
+		BisectMarkBad:                            "Mark commit as bad",
+		BisectMarkGood:                           "Mark commit as good",
+		BisectSkipCurrent:                        "Skip current bisect commit",
+		BisectSkipSelected:                       "Skip selected commit",
+		BisectStartMarkBad:                       "Mark commit as bad (start bisect)",
+		BisectStartMarkGood:                      "Mark commit as good (start bisect)",
 		ConfirmRevertCommit:                      "Are you sure you want to revert {{.selectedCommit}}?",
 		ConfirmRevertCommitRange:                 "Are you sure you want to revert the selected commits?",
 		RewordInEditorTitle:                      "Reword in editor",
@@ -2105,10 +2143,11 @@ func EnglishTranslationSet() *TranslationSet {
 			NotEnoughContextToDiscard:        "Discarding changes is not possible with a diff context size of 0. Increase the context using '%s'.",
 			NotEnoughContextToRemoveLines:    "Removing lines from a commit is not possible with a diff context size of 0. Increase the context using '%s'.",
 			NotEnoughContextForCustomPatch:   "Creating custom patches is not possible with a diff context size of 0. Increase the context using '%s'.",
-			IgnoreExcludeFile:                "Ignore or exclude file",
+			IgnoreFile:                       "Ignore file",
 			IgnoreFileErr:                    "Cannot ignore .gitignore",
 			ExcludeFile:                      "Exclude file",
 			ExcludeGitIgnoreErr:              "Cannot exclude .gitignore",
+			IgnoreExcludeFile:                "Ignore or exclude file",
 			Commit:                           "Commit",
 			Push:                             "Push",
 			Pull:                             "Pull",
@@ -2177,6 +2216,7 @@ func EnglishTranslationSet() *TranslationSet {
 			MarkStart:                   "Mark %s as %s (start bisect)",
 			SkipCurrent:                 "Skip current commit (%s)",
 			SkipSelected:                "Skip selected commit (%s)",
+			SkipSelectedAlreadyCurrent:  "Selected commit is the current bisect commit; use 'skip current' instead",
 			ResetTitle:                  "Reset 'git bisect'",
 			ResetPrompt:                 "Are you sure you want to reset 'git bisect'?",
 			ResetOption:                 "Reset bisect",

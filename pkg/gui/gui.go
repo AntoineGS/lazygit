@@ -923,6 +923,10 @@ func (gui *Gui) Run(startArgs appTypes.StartArgs) error {
 	gui.g.OnSearchEscape = func() error { gui.helpers.Search.Cancel(); return nil }
 
 	gui.optionsMapMgr = &OptionsMapMgr{c: gui.c}
+	gui.g.SetChordStateCallback(func(prefix []gocui.Key) {
+		gui.helpers.ChordMenu.OnChordStateChange(prefix)
+		gui.onUIThread(func() error { return nil })
+	})
 	gui.g.SetAllowChordStartsCallback(func(*gocui.View) bool {
 		popupKeys := lo.Map(gui.c.Context().CurrentPopup(), func(ctx types.Context, _ int) types.ContextKey {
 			return ctx.GetKey()
