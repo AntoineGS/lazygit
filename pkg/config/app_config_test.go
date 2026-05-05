@@ -893,7 +893,6 @@ keybinding:
     ignoreFile: i
     refreshFiles: r
     stashAllChanges: s
-    viewStashOptions: S
     toggleStagedAll: a
     viewResetOptions: D
     fetch: f

@@ -74,7 +74,36 @@ func customReflect(v *config.UserConfig) *jsonschema.Schema {
 		setDefaultVals(schema, subSchema, defaultValue.FieldByName(fieldName).Interface())
 	}
 
+	applyKeybindingGroupsOneOf(schema, userConfigSchema)
+
 	return schema
+}
+
+// applyKeybindingGroupsOneOf rewrites the keybindingGroups schema so it
+// validates both the nested shape (context → prefix → group) and the
+// legacy flat shape (prefix → group) that UnmarshalYAML migrates under
+// "global". Without this, editors validating against the schema flag
+// the flat shape as invalid even though it's accepted at runtime.
+func applyKeybindingGroupsOneOf(rootSchema, userConfigSchema *jsonschema.Schema) {
+	groupsSchema, ok := userConfigSchema.Properties.Get("keybindingGroups")
+	if !ok {
+		return
+	}
+	groupRef := &jsonschema.Schema{Ref: "#/$defs/KeybindingGroupConfig"}
+	nestedShape := &jsonschema.Schema{
+		Type: "object",
+		AdditionalProperties: &jsonschema.Schema{
+			Type:                 "object",
+			AdditionalProperties: groupRef,
+		},
+	}
+	flatShape := &jsonschema.Schema{
+		Type:                 "object",
+		AdditionalProperties: groupRef,
+	}
+	groupsSchema.AdditionalProperties = nil
+	groupsSchema.Type = "object"
+	groupsSchema.OneOf = []*jsonschema.Schema{nestedShape, flatShape}
 }
 
 func filterOutDevComments(r *jsonschema.Reflector) {
