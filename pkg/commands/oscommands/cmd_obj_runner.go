@@ -234,9 +234,9 @@ func (self *cmdObjRunner) runAndStreamAux(
 	onRun func(*cmdHandler, io.Writer),
 ) error {
 	var cmdWriter io.Writer
-	var combinedOutput bytes.Buffer
+	combinedOutput := newTailBuffer(cmdOutputTailCap)
 	if cmdObj.ShouldSuppressOutputUnlessError() {
-		cmdWriter = &combinedOutput
+		cmdWriter = combinedOutput
 	} else {
 		cmdWriter = self.guiIO.newCmdWriterFn()
 	}
@@ -247,8 +247,8 @@ func (self *cmdObjRunner) runAndStreamAux(
 	self.log.WithField("command", cmdObj.ToString()).Debug("RunCommand")
 	cmd := cmdObj.GetCmd()
 
-	var stderr bytes.Buffer
-	cmd.Stderr = io.MultiWriter(cmdWriter, &stderr)
+	stderr := newTailBuffer(cmdOutputTailCap)
+	cmd.Stderr = io.MultiWriter(cmdWriter, stderr)
 
 	var handler *cmdHandler
 	var err error
@@ -261,8 +261,8 @@ func (self *cmdObjRunner) runAndStreamAux(
 		return err
 	}
 
-	var stdout bytes.Buffer
-	handler.stdoutPipe = io.TeeReader(handler.stdoutPipe, &stdout)
+	stdout := newTailBuffer(cmdOutputTailCap)
+	handler.stdoutPipe = io.TeeReader(handler.stdoutPipe, stdout)
 
 	defer func() {
 		if closeErr := handler.close(); closeErr != nil {
