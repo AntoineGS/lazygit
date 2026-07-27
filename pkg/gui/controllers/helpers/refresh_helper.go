@@ -58,6 +58,19 @@ type RefreshHelper struct {
 	appliedBranchLoadSeq int64
 }
 
+type branchSelectionContext interface {
+	GetItems() []*models.Branch
+	SetSelection(int)
+}
+
+func selectCheckedOutBranch(context branchSelectionContext) bool {
+	_, index, found := findCheckedOutRef(context.GetItems())
+	if found {
+		context.SetSelection(index)
+	}
+	return found
+}
+
 func NewRefreshHelper(
 	c *HelperCommon,
 	refsHelper *RefsHelper,
@@ -1153,10 +1166,12 @@ func (self *RefreshHelper) refreshBranches(captured capturedBranchState, refresh
 				}
 			}
 		case types.SelectCheckedOutBranch:
-			// The checked-out branch is always at the top of the list. Setting
-			// the selection doesn't scroll the view, so also reset the origin.
-			self.c.Contexts().Branches.SetSelectedLineIdx(0)
-			self.c.Contexts().Branches.GetView().SetOriginY(0)
+			self.searchHelper.ReApplyFilter(self.c.Contexts().Branches)
+			if selectCheckedOutBranch(self.c.Contexts().Branches) {
+				self.onUIThreadUnlessRepoChanged(env, func() {
+					self.c.Contexts().Branches.FocusLine(true)
+				})
+			}
 		}
 
 		// Need to re-render the commits view because the visualization of local

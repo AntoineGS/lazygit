@@ -439,14 +439,12 @@ func (self *BranchesHelper) AutoForwardBranches(background bool) error {
 	}
 
 	branches := self.c.Model().Branches
-	if len(branches) == 0 {
-		return nil
-	}
-
 	allBranches := self.c.UserConfig().Git.AutoForwardBranches == "allBranches"
 	updateCommands := ""
-	// The first branch is the currently checked out branch; skip it
-	for _, branch := range branches[1:] {
+	for _, branch := range branches {
+		if branch.Head {
+			continue
+		}
 		if branch.RemoteBranchStoredLocally() &&
 			!self.checkedOutByOtherWorktree(branch) &&
 			(allBranches || lo.Contains(self.c.UserConfig().Git.MainBranches, branch.Name)) {

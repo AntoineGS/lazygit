@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"text/template"
@@ -190,12 +191,15 @@ func (self *RefsHelper) CheckoutPreviousRef() error {
 	return self.CheckoutRef("-", types.CheckoutRefOptions{})
 }
 
-func (self *RefsHelper) GetCheckedOutRef() *models.Branch {
-	if len(self.c.Model().Branches) == 0 {
-		return nil
-	}
+func findCheckedOutRef(branches []*models.Branch) (*models.Branch, int, bool) {
+	return lo.FindIndexOf(branches, func(branch *models.Branch) bool {
+		return branch.Head
+	})
+}
 
-	return self.c.Model().Branches[0]
+func (self *RefsHelper) GetCheckedOutRef() *models.Branch {
+	branch, _, _ := findCheckedOutRef(self.c.Model().Branches)
+	return branch
 }
 
 func (self *RefsHelper) ResetToRef(ref string, strength string, envVars []string) error {
@@ -440,7 +444,10 @@ func (self *RefsHelper) NewBranch(from string, fromFormattedName string, suggest
 }
 
 func (self *RefsHelper) MoveCommitsToNewBranch() error {
-	currentBranch := self.c.Model().Branches[0]
+	currentBranch := self.GetCheckedOutRef()
+	if currentBranch == nil {
+		return errors.New(self.c.Tr.NoBranchesThisRepo)
+	}
 	baseBranchRef, err := self.c.Git().Loaders.BranchLoader.GetBaseBranch(currentBranch, self.c.Model().MainBranches)
 	if err != nil {
 		return err

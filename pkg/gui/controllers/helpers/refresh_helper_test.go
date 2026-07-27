@@ -5,12 +5,44 @@ import (
 
 	"github.com/jesseduffield/lazygit/pkg/commands/hosting_service"
 	"github.com/jesseduffield/lazygit/pkg/commands/models"
+	"github.com/jesseduffield/lazygit/pkg/gui/context"
 	"github.com/jesseduffield/lazygit/pkg/gui/context/traits"
 	"github.com/jesseduffield/lazygit/pkg/utils"
 	"github.com/samber/lo"
 	"github.com/stefanhaller/git-todo-parser/todo"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestSelectCheckedOutBranch(t *testing.T) {
+	branches := []*models.Branch{
+		{Name: "main"},
+		{Name: "feature", Head: true},
+	}
+	viewModel := context.NewFilteredListViewModel(
+		func() []*models.Branch { return branches },
+		func(branch *models.Branch) []string { return []string{branch.Name} },
+	)
+	viewModel.SetSelectionRangeAndMode(0, 1, traits.RangeSelectModeSticky)
+
+	found := selectCheckedOutBranch(viewModel)
+
+	assert.True(t, found)
+	assert.Equal(t, 1, viewModel.GetSelectedLineIdx())
+	_, _, mode := viewModel.GetSelectionRangeAndMode()
+	assert.Equal(t, traits.RangeSelectModeNone, mode)
+}
+
+func TestSelectCheckedOutBranchWhenFilteredOut(t *testing.T) {
+	branches := []*models.Branch{{Name: "main"}, {Name: "feature", Head: true}}
+	viewModel := context.NewFilteredListViewModel(
+		func() []*models.Branch { return branches },
+		func(branch *models.Branch) []string { return []string{branch.Name} },
+	)
+	viewModel.SetFilter("main", false)
+
+	assert.False(t, selectCheckedOutBranch(viewModel))
+	assert.Equal(t, "main", viewModel.GetSelected().Name)
+}
 
 func TestCaptureLocalCommitSelectionRange(t *testing.T) {
 	testCases := []struct {

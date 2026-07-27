@@ -57,9 +57,9 @@ const (
 	// underneath a selection the user hasn't deliberately changed.
 	KeepBranchSelectionByName BranchSelectionBehavior = iota
 
-	// Select the checked-out branch (the one at the top of the list). Used after
-	// operations that check something out - checkout, creating a branch, moving
-	// commits to a new branch - so the newly checked-out ref ends up selected.
+	// Select the branch whose Head marker is true. Used after operations that
+	// check something out - checkout, creating a branch, moving commits to a new
+	// branch - so the newly checked-out ref ends up selected.
 	SelectCheckedOutBranch
 )
 
