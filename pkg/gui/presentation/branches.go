@@ -32,6 +32,7 @@ func GetBranchListDisplayStrings(
 	prs map[string]*models.GithubPullRequest,
 	fullDescription bool,
 	diffName string,
+	isFiltering bool,
 	viewWidth int,
 	tr *i18n.TranslationSet,
 	userConfig *config.UserConfig,
@@ -39,7 +40,7 @@ func GetBranchListDisplayStrings(
 ) [][]string {
 	return lo.Map(branches, func(branch *models.Branch, _ int) []string {
 		diffed := branch.Name == diffName
-		return getBranchDisplayStrings(branch, getItemOperation(branch), fullDescription, diffed, viewWidth, tr, userConfig, worktrees, time.Now(), prs)
+		return getBranchDisplayStrings(branch, getItemOperation(branch), fullDescription, diffed, isFiltering, viewWidth, tr, userConfig, worktrees, time.Now(), prs)
 	})
 }
 
@@ -49,6 +50,7 @@ func getBranchDisplayStrings(
 	itemOperation types.ItemOperation,
 	fullDescription bool,
 	diffed bool,
+	isFiltering bool,
 	viewWidth int,
 	tr *i18n.TranslationSet,
 	userConfig *config.UserConfig,
@@ -113,6 +115,16 @@ func getBranchDisplayStrings(
 		availableWidth -= utils.StringWidth(worktreeIcon) + 1
 	}
 
+	nameWidth := utils.StringWidth(displayName)
+	minimumNameWidth := nameWidth
+	if nameWidth > 3 {
+		minimumNameWidth = 4
+	}
+	depth := lo.Ternary(isFiltering, 0, b.HierarchyDepth)
+	visibleDepth := min(depth, max(availableWidth-minimumNameWidth, 0))
+	prefix := strings.Repeat("-", visibleDepth)
+	availableWidth -= visibleDepth
+
 	nameTextStyle := GetBranchTextStyle(b.Name)
 	if diffed {
 		nameTextStyle = theme.DiffTerminalColor
@@ -124,7 +136,7 @@ func getBranchDisplayStrings(
 		len := max(availableWidth, 4)
 		displayName = utils.TruncateWithEllipsis(displayName, len)
 	}
-	coloredName := nameTextStyle.Sprint(displayName)
+	coloredName := style.FgDefault.Sprint(prefix) + nameTextStyle.Sprint(displayName)
 	if checkedOutByWorkTree {
 		coloredName = fmt.Sprintf("%s %s", coloredName, style.FgDefault.Sprint(worktreeIcon))
 	}

@@ -66,6 +66,7 @@ func TestUserConfigValidate_enums(t *testing.T) {
 				{value: "date", valid: true},
 				{value: "recency", valid: true},
 				{value: "alphabetical", valid: true},
+				{value: "hierarchy", valid: true},
 				{value: "", valid: false},
 				{value: "invalid_value", valid: false},
 			},

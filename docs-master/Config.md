@@ -517,7 +517,7 @@ git:
     showWholeGraph: false
 
   # How branches are sorted in the local branches view.
-  # One of: 'date' (default) | 'recency' | 'alphabetical'
+  # One of: 'date' (default) | 'recency' | 'alphabetical' | 'hierarchy'
   # Can be changed from within Lazygit with the Sort Order menu (`s`) in the
   # branches panel.
   localBranchSortOrder: date

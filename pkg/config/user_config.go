@@ -347,9 +347,9 @@ type GitConfig struct {
 	// Config for showing the log in the commits view
 	Log LogConfig `yaml:"log"`
 	// How branches are sorted in the local branches view.
-	// One of: 'date' (default) | 'recency' | 'alphabetical'
+	// One of: 'date' (default) | 'recency' | 'alphabetical' | 'hierarchy'
 	// Can be changed from within Lazygit with the Sort Order menu (`s`) in the branches panel.
-	LocalBranchSortOrder string `yaml:"localBranchSortOrder" jsonschema:"enum=date,enum=recency,enum=alphabetical"`
+	LocalBranchSortOrder string `yaml:"localBranchSortOrder" jsonschema:"enum=date,enum=recency,enum=alphabetical,enum=hierarchy"`
 	// How branches are sorted in the remote branches view.
 	// One of: 'date' (default) | 'alphabetical'
 	// Can be changed from within Lazygit with the Sort Order menu (`s`) in the remote branches panel.

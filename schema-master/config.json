@@ -460,9 +460,10 @@
           "enum": [
             "date",
             "recency",
-            "alphabetical"
+            "alphabetical",
+            "hierarchy"
           ],
-          "description": "How branches are sorted in the local branches view.\nOne of: 'date' (default) | 'recency' | 'alphabetical'\nCan be changed from within Lazygit with the Sort Order menu (`s`) in the branches panel.",
+          "description": "How branches are sorted in the local branches view.\nOne of: 'date' (default) | 'recency' | 'alphabetical' | 'hierarchy'\nCan be changed from within Lazygit with the Sort Order menu (`s`) in the branches panel.",
           "default": "date"
         },
         "remoteBranchSortOrder": {

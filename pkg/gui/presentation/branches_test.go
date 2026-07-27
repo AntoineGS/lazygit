@@ -10,6 +10,7 @@ import (
 	"github.com/jesseduffield/lazygit/pkg/commands/models"
 	"github.com/jesseduffield/lazygit/pkg/common"
 	"github.com/jesseduffield/lazygit/pkg/gui/presentation/icons"
+	"github.com/jesseduffield/lazygit/pkg/gui/style"
 	"github.com/jesseduffield/lazygit/pkg/gui/types"
 	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
@@ -31,6 +32,7 @@ func Test_getBranchDisplayStrings(t *testing.T) {
 		useIcons             bool
 		checkedOutByWorktree bool
 		showDivergenceCfg    string
+		isFiltering          bool
 		expected             []string
 	}{
 		// First some tests for when the view is wide enough so that everything fits:
@@ -43,6 +45,43 @@ func Test_getBranchDisplayStrings(t *testing.T) {
 			checkedOutByWorktree: false,
 			showDivergenceCfg:    "none",
 			expected:             []string{"1m", "", "branch_name"},
+		},
+		{
+			branch:            &models.Branch{Name: "branch_name", Recency: "1m", HierarchyDepth: 1},
+			viewWidth:         100,
+			showDivergenceCfg: "none",
+			expected:          []string{"1m", "", "-branch_name"},
+		},
+		{
+			branch:            &models.Branch{Name: "branch_name", Recency: "1m", HierarchyDepth: 3},
+			viewWidth:         100,
+			showDivergenceCfg: "none",
+			expected:          []string{"1m", "", "---branch_name"},
+		},
+		{
+			branch:            &models.Branch{Name: "branch_name", Recency: "1m", HierarchyDepth: 3},
+			viewWidth:         100,
+			showDivergenceCfg: "none",
+			isFiltering:       true,
+			expected:          []string{"1m", "", "branch_name"},
+		},
+		{
+			branch:            &models.Branch{Name: "branch_name", Recency: "1m", HierarchyDepth: 2},
+			viewWidth:         14,
+			showDivergenceCfg: "none",
+			expected:          []string{"1m", "", "--branch_…"},
+		},
+		{
+			branch:            &models.Branch{Name: "branch_name", Recency: "1m", HierarchyDepth: 10},
+			viewWidth:         8,
+			showDivergenceCfg: "none",
+			expected:          []string{"1m", "", "bra…"},
+		},
+		{
+			branch:            &models.Branch{Name: "abc", Recency: "1m", HierarchyDepth: 10},
+			viewWidth:         8,
+			showDivergenceCfg: "none",
+			expected:          []string{"1m", "", "-abc"},
 		},
 		{
 			branch:               &models.Branch{Name: "🍉_special_char", Recency: "1m"},
@@ -351,8 +390,62 @@ func Test_getBranchDisplayStrings(t *testing.T) {
 		}
 
 		t.Run(fmt.Sprintf("getBranchDisplayStrings_%d", i), func(t *testing.T) {
-			strings := getBranchDisplayStrings(s.branch, s.itemOperation, s.fullDescription, false, s.viewWidth, c.Tr, c.UserConfig(), worktrees, time.Time{}, map[string]*models.GithubPullRequest{})
+			strings := getBranchDisplayStrings(s.branch, s.itemOperation, s.fullDescription, false, s.isFiltering, s.viewWidth, c.Tr, c.UserConfig(), worktrees, time.Time{}, map[string]*models.GithubPullRequest{})
 			assert.Equal(t, s.expected, strings)
 		})
 	}
+}
+
+func Test_GetBranchListDisplayStrings_FilteringPreservesRelevanceOrder(t *testing.T) {
+	oldColorLevel := color.ForceSetColorLevel(terminfo.ColorLevelNone)
+	defer color.ForceSetColorLevel(oldColorLevel)
+	c := common.NewDummyCommon()
+	SetCustomBranches(c.UserConfig().Gui.BranchColorPatterns, true)
+	branches := []*models.Branch{
+		{Name: "beta", HierarchyDepth: 2},
+		{Name: "alpha", HierarchyDepth: 1},
+	}
+
+	displayStrings := GetBranchListDisplayStrings(
+		branches,
+		func(types.HasUrn) types.ItemOperation { return types.ItemOperationNone },
+		nil,
+		false,
+		"",
+		true,
+		100,
+		c.Tr,
+		c.UserConfig(),
+		nil,
+	)
+
+	assert.Equal(t, "beta", displayStrings[0][2])
+	assert.Equal(t, "alpha", displayStrings[1][2])
+}
+
+func Test_getBranchDisplayStrings_LeavesHierarchyPrefixOutsideBranchStyle(t *testing.T) {
+	oldColorLevel := color.ForceSetColorLevel(terminfo.ColorLevelMillions)
+	defer color.ForceSetColorLevel(oldColorLevel)
+	c := common.NewDummyCommon()
+	SetCustomBranches(map[string]string{"branch_name": "red"}, true)
+	branch := &models.Branch{Name: "branch_name", HierarchyDepth: 2}
+
+	actualNameColumn := getBranchDisplayStrings(
+		branch,
+		types.ItemOperationNone,
+		false,
+		false,
+		false,
+		100,
+		c.Tr,
+		c.UserConfig(),
+		nil,
+		time.Time{},
+		nil,
+	)[2]
+
+	assert.Equal(t,
+		style.FgDefault.Sprint("--")+GetBranchTextStyle("branch_name").Sprint("branch_name"),
+		actualNameColumn,
+	)
 }

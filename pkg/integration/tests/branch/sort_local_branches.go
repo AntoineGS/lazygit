@@ -6,7 +6,7 @@ import (
 )
 
 var SortLocalBranches = NewIntegrationTest(NewIntegrationTestArgs{
-	Description:  "Sort local branches by recency, date or alphabetically",
+	Description:  "Sort local branches by recency, date, alphabetically, or hierarchy.",
 	ExtraCmdArgs: []string{},
 	Skip:         false,
 	SetupConfig:  func(config *config.AppConfig) {},
@@ -41,6 +41,7 @@ var SortLocalBranches = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("r ( ) Recency").IsSelected(),
 				Contains("a ( ) Alphabetical"),
 				Contains("d (•) Date"),
+				Contains("h ( ) Hierarchy"),
 				Contains("      Cancel"),
 			).
 			Select(Contains("Recency")).
@@ -63,6 +64,7 @@ var SortLocalBranches = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("r (•) Recency").IsSelected(),
 				Contains("a ( ) Alphabetical"),
 				Contains("d ( ) Date"),
+				Contains("h ( ) Hierarchy"),
 				Contains("      Cancel"),
 			).
 			Select(Contains("refname")).
@@ -75,6 +77,29 @@ var SortLocalBranches = NewIntegrationTest(NewIntegrationTestArgs{
 				Contains("first"),
 				Contains("second"),
 				Contains("third"),
+			)
+
+		t.Views().Branches().
+			Press(keys.Branches.SortOrder)
+
+		t.ExpectPopup().Menu().Title(Equals("Sort order")).
+			ContainsLines(
+				Contains("r ( ) Recency").IsSelected(),
+				Contains("a (•) Alphabetical"),
+				Contains("d ( ) Date"),
+				Contains("h ( ) Hierarchy"),
+				Contains("      Cancel"),
+			).
+			Select(Contains("Hierarchy")).
+			Confirm()
+
+		t.Views().Branches().
+			IsFocused().
+			Lines(
+				Contains("master").IsSelected(),
+				Contains("-first"),
+				Contains("--second"),
+				Contains("---third"),
 			)
 	},
 })

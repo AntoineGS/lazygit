@@ -31,6 +31,7 @@ func NewBranchesContext(c *ContextCommon) *BranchesContext {
 			c.Model().PullRequestsMap,
 			c.State().GetRepoState().GetScreenMode() != types.SCREEN_NORMAL,
 			c.Modes().Diffing.Ref,
+			viewModel.IsFiltering(),
 			c.Views().Branches.InnerWidth()+c.Views().Branches.OriginX(),
 			c.Tr,
 			c.UserConfig(),

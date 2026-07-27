@@ -102,11 +102,14 @@ func (self *BranchLoader) Load(reflogCommits []*models.Commit,
 	}
 
 	foundHead := false
+	isHierarchySort := self.UserConfig().Git.LocalBranchSortOrder == "hierarchy"
 	for i, branch := range branches {
 		if branch.Head {
 			foundHead = true
 			branch.Recency = "  *"
-			branches = utils.Move(branches, i, 0)
+			if !isHierarchySort {
+				branches = utils.Move(branches, i, 0)
+			}
 			break
 		}
 	}
@@ -134,6 +137,9 @@ func (self *BranchLoader) Load(reflogCommits []*models.Commit,
 		}); found {
 			branch.BehindBaseBranch.Store(oldBranch.BehindBaseBranch.Load())
 		}
+	}
+	if isHierarchySort {
+		branches = self.applyBranchHierarchy(branches)
 	}
 
 	if loadBehindCounts && self.UserConfig().Gui.ShowDivergenceFromBaseBranch != "none" {
@@ -311,7 +317,7 @@ func (self *BranchLoader) getRawBranches() (string, error) {
 
 	var sortOrder string
 	switch strings.ToLower(self.UserConfig().Git.LocalBranchSortOrder) {
-	case "recency", "date":
+	case "recency", "date", "hierarchy":
 		sortOrder = "-committerdate"
 	case "alphabetical":
 		sortOrder = "refname"
@@ -348,30 +354,29 @@ func obtainBranch(split []string, storeCommitDateAsRecency bool) *models.Branch 
 	pushTrack := split[4]
 	subject := split[5]
 	commitHash := split[6]
-	commitDate := split[7]
+	commitUnixTimestamp, timestampErr := strconv.ParseInt(split[7], 10, 64)
 
 	name := strings.TrimPrefix(fullName, "heads/")
 	aheadForPull, behindForPull, gone := parseUpstreamInfo(upstreamName, track)
 	aheadForPush, behindForPush, _ := parseUpstreamInfo(upstreamName, pushTrack)
 
 	recency := ""
-	if storeCommitDateAsRecency {
-		if unixTimestamp, err := strconv.ParseInt(commitDate, 10, 64); err == nil {
-			recency = utils.UnixToTimeAgo(unixTimestamp)
-		}
+	if storeCommitDateAsRecency && timestampErr == nil {
+		recency = utils.UnixToTimeAgo(commitUnixTimestamp)
 	}
 
 	return &models.Branch{
-		Name:          name,
-		Recency:       recency,
-		AheadForPull:  aheadForPull,
-		BehindForPull: behindForPull,
-		AheadForPush:  aheadForPush,
-		BehindForPush: behindForPush,
-		UpstreamGone:  gone,
-		Head:          headMarker == "*",
-		Subject:       subject,
-		CommitHash:    commitHash,
+		Name:                name,
+		Recency:             recency,
+		AheadForPull:        aheadForPull,
+		BehindForPull:       behindForPull,
+		AheadForPush:        aheadForPush,
+		BehindForPush:       behindForPush,
+		UpstreamGone:        gone,
+		Head:                headMarker == "*",
+		Subject:             subject,
+		CommitHash:          commitHash,
+		CommitUnixTimestamp: commitUnixTimestamp,
 	}
 }
 

@@ -2,12 +2,15 @@ package git_commands
 
 // "*|feat/detect-purge|origin/feat/detect-purge|[ahead 1]"
 import (
+	"errors"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/jesseduffield/lazygit/pkg/commands/models"
 	"github.com/jesseduffield/lazygit/pkg/commands/oscommands"
+	"github.com/jesseduffield/lazygit/pkg/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,7 +24,8 @@ func TestObtainBranch(t *testing.T) {
 
 	// Use a time stamp of 2 1/2 hours ago, resulting in a recency string of "2h"
 	now := time.Now().Unix()
-	timeStamp := strconv.Itoa(int(now - 2.5*60*60))
+	unixTimestamp := now - int64(2.5*60*60)
+	timeStamp := strconv.FormatInt(unixTimestamp, 10)
 
 	scenarios := []scenario{
 		{
@@ -29,14 +33,15 @@ func TestObtainBranch(t *testing.T) {
 			input:                    []string{"", "heads/a_branch", "", "", "", "subject", "123", timeStamp},
 			storeCommitDateAsRecency: false,
 			expectedBranch: &models.Branch{
-				Name:          "a_branch",
-				AheadForPull:  "?",
-				BehindForPull: "?",
-				AheadForPush:  "?",
-				BehindForPush: "?",
-				Head:          false,
-				Subject:       "subject",
-				CommitHash:    "123",
+				Name:                "a_branch",
+				CommitUnixTimestamp: unixTimestamp,
+				AheadForPull:        "?",
+				BehindForPull:       "?",
+				AheadForPush:        "?",
+				BehindForPush:       "?",
+				Head:                false,
+				Subject:             "subject",
+				CommitHash:          "123",
 			},
 		},
 		{
@@ -44,14 +49,15 @@ func TestObtainBranch(t *testing.T) {
 			input:                    []string{"", "a_branch", "", "", "", "subject", "123", timeStamp},
 			storeCommitDateAsRecency: false,
 			expectedBranch: &models.Branch{
-				Name:          "a_branch",
-				AheadForPull:  "?",
-				BehindForPull: "?",
-				AheadForPush:  "?",
-				BehindForPush: "?",
-				Head:          false,
-				Subject:       "subject",
-				CommitHash:    "123",
+				Name:                "a_branch",
+				CommitUnixTimestamp: unixTimestamp,
+				AheadForPull:        "?",
+				BehindForPull:       "?",
+				AheadForPush:        "?",
+				BehindForPush:       "?",
+				Head:                false,
+				Subject:             "subject",
+				CommitHash:          "123",
 			},
 		},
 		{
@@ -59,14 +65,15 @@ func TestObtainBranch(t *testing.T) {
 			input:                    []string{"*", "a_branch", "", "", "", "subject", "123", timeStamp},
 			storeCommitDateAsRecency: false,
 			expectedBranch: &models.Branch{
-				Name:          "a_branch",
-				AheadForPull:  "?",
-				BehindForPull: "?",
-				AheadForPush:  "?",
-				BehindForPush: "?",
-				Head:          true,
-				Subject:       "subject",
-				CommitHash:    "123",
+				Name:                "a_branch",
+				CommitUnixTimestamp: unixTimestamp,
+				AheadForPull:        "?",
+				BehindForPull:       "?",
+				AheadForPush:        "?",
+				BehindForPush:       "?",
+				Head:                true,
+				Subject:             "subject",
+				CommitHash:          "123",
 			},
 		},
 		{
@@ -74,14 +81,15 @@ func TestObtainBranch(t *testing.T) {
 			input:                    []string{"", "a_branch", "a_remote/a_branch", "[behind 2, ahead 3]", "[behind 2, ahead 3]", "subject", "123", timeStamp},
 			storeCommitDateAsRecency: false,
 			expectedBranch: &models.Branch{
-				Name:          "a_branch",
-				AheadForPull:  "3",
-				BehindForPull: "2",
-				AheadForPush:  "3",
-				BehindForPush: "2",
-				Head:          false,
-				Subject:       "subject",
-				CommitHash:    "123",
+				Name:                "a_branch",
+				CommitUnixTimestamp: unixTimestamp,
+				AheadForPull:        "3",
+				BehindForPull:       "2",
+				AheadForPush:        "3",
+				BehindForPush:       "2",
+				Head:                false,
+				Subject:             "subject",
+				CommitHash:          "123",
 			},
 		},
 		{
@@ -89,15 +97,16 @@ func TestObtainBranch(t *testing.T) {
 			input:                    []string{"", "a_branch", "a_remote/a_branch", "[gone]", "[gone]", "subject", "123", timeStamp},
 			storeCommitDateAsRecency: false,
 			expectedBranch: &models.Branch{
-				Name:          "a_branch",
-				UpstreamGone:  true,
-				AheadForPull:  "?",
-				BehindForPull: "?",
-				AheadForPush:  "?",
-				BehindForPush: "?",
-				Head:          false,
-				Subject:       "subject",
-				CommitHash:    "123",
+				Name:                "a_branch",
+				CommitUnixTimestamp: unixTimestamp,
+				UpstreamGone:        true,
+				AheadForPull:        "?",
+				BehindForPull:       "?",
+				AheadForPush:        "?",
+				BehindForPush:       "?",
+				Head:                false,
+				Subject:             "subject",
+				CommitHash:          "123",
 			},
 		},
 		{
@@ -105,13 +114,28 @@ func TestObtainBranch(t *testing.T) {
 			input:                    []string{"", "a_branch", "", "", "", "subject", "123", timeStamp},
 			storeCommitDateAsRecency: true,
 			expectedBranch: &models.Branch{
+				Name:                "a_branch",
+				Recency:             "2h",
+				CommitUnixTimestamp: unixTimestamp,
+				AheadForPull:        "?",
+				BehindForPull:       "?",
+				AheadForPush:        "?",
+				BehindForPush:       "?",
+				Head:                false,
+				Subject:             "subject",
+				CommitHash:          "123",
+			},
+		},
+		{
+			testName:                 "MalformedCommitDate",
+			input:                    []string{"", "a_branch", "", "", "", "subject", "123", "not-a-timestamp"},
+			storeCommitDateAsRecency: true,
+			expectedBranch: &models.Branch{
 				Name:          "a_branch",
-				Recency:       "2h",
 				AheadForPull:  "?",
 				BehindForPull: "?",
 				AheadForPush:  "?",
 				BehindForPush: "?",
-				Head:          false,
 				Subject:       "subject",
 				CommitHash:    "123",
 			},
@@ -123,6 +147,234 @@ func TestObtainBranch(t *testing.T) {
 			branch := obtainBranch(s.input, s.storeCommitDateAsRecency)
 			assert.EqualValues(t, s.expectedBranch, branch)
 		})
+	}
+}
+
+func TestObtainBranch_EpochZeroHasRecency(t *testing.T) {
+	branch := obtainBranch([]string{"", "a_branch", "", "", "", "subject", "123", "0"}, true)
+
+	assert.Zero(t, branch.CommitUnixTimestamp)
+	assert.NotEmpty(t, branch.Recency)
+}
+
+type stubBranchLoaderConfig struct{}
+
+func (stubBranchLoaderConfig) Branches(oscommands.ICmdObjBuilder) map[string]*BranchConfig {
+	return nil
+}
+
+func TestBranchLoaderHierarchy_KeepsNestedHeadInItsSubtree(t *testing.T) {
+	branchesOutput := strings.Join([]string{
+		rawBranchLine("", "main", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 1),
+		rawBranchLine("", "feature", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", 2),
+		rawBranchLine("*", "head-fix", "cccccccccccccccccccccccccccccccccccccccc", 3),
+	}, "\n")
+	revisions := []string{
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+		"cccccccccccccccccccccccccccccccccccccccc",
+	}
+	matrixOutput := "refs/heads/main\x00" + revisions[0] + "\x000 0\x000 1\x000 2\n" +
+		"refs/heads/feature\x00" + revisions[1] + "\x001 0\x000 0\x000 1\n" +
+		"refs/heads/head-fix\x00" + revisions[2] + "\x002 0\x001 0\x000 0\n"
+	runner := oscommands.NewFakeRunner(t).
+		ExpectGitArgs(rawBranchesArgs("-committerdate"), branchesOutput, nil).
+		ExpectGitArgs(buildBranchHierarchyForEachRefArgs(revisions)[1:], matrixOutput, nil)
+	loader := hierarchyBranchLoaderForLoad(t, runner, "hierarchy", func() (BranchInfo, error) {
+		return BranchInfo{}, errors.New("unexpected current branch lookup")
+	})
+
+	branches, err := loader.Load(nil, nil, nil, false, func(func() error) {}, func() {})
+
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"main:0", "feature:1", "head-fix:2"}, hierarchyShape(branches))
+	runner.CheckForMissingCalls()
+}
+
+func TestBranchLoaderHierarchy_FlatModesPromoteHead(t *testing.T) {
+	for _, test := range []struct {
+		sortOrder    string
+		gitSortOrder string
+	}{
+		{sortOrder: "date", gitSortOrder: "-committerdate"},
+		{sortOrder: "recency", gitSortOrder: "-committerdate"},
+		{sortOrder: "alphabetical", gitSortOrder: "refname"},
+	} {
+		t.Run(test.sortOrder, func(t *testing.T) {
+			runner := oscommands.NewFakeRunner(t).
+				ExpectGitArgs(rawBranchesArgs(test.gitSortOrder), strings.Join([]string{
+					rawBranchLine("", "main", "aaaa", 1),
+					rawBranchLine("*", "feature", "bbbb", 2),
+				}, "\n"), nil)
+			loader := hierarchyBranchLoaderForLoad(t, runner, test.sortOrder, func() (BranchInfo, error) {
+				return BranchInfo{}, errors.New("unexpected current branch lookup")
+			})
+
+			branches, err := loader.Load(nil, nil, nil, false, func(func() error) {}, func() {})
+
+			assert.NoError(t, err)
+			assert.Equal(t, "feature", branches[0].Name)
+			runner.CheckForMissingCalls()
+		})
+	}
+}
+
+func TestBranchLoaderHierarchy_ExcludesSyntheticHeadFromMatrixAtoms(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		info BranchInfo
+	}{
+		{name: "detached", info: BranchInfo{RefName: "detached", DisplayName: "(HEAD detached)", DetachedHead: true}},
+		{name: "unborn", info: BranchInfo{RefName: "unborn"}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			revisions := []string{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}
+			runner := oscommands.NewFakeRunner(t).
+				ExpectGitArgs(rawBranchesArgs("-committerdate"), strings.Join([]string{
+					rawBranchLine("", "main", revisions[0], 1),
+					rawBranchLine("", "feature", revisions[1], 2),
+				}, "\n"), nil).
+				ExpectGitArgs(buildBranchHierarchyForEachRefArgs(revisions)[1:], "refs/heads/main\x00"+revisions[0]+"\x000 0\x000 1\nrefs/heads/feature\x00"+revisions[1]+"\x001 0\x000 0\n", nil)
+			loader := hierarchyBranchLoaderForLoad(t, runner, "hierarchy", func() (BranchInfo, error) {
+				return test.info, nil
+			})
+
+			branches, err := loader.Load(nil, nil, nil, false, func(func() error) {}, func() {})
+
+			assert.NoError(t, err)
+			assert.Equal(t, test.info.RefName, branches[0].Name)
+			assert.Zero(t, branches[0].HierarchyDepth)
+			runner.CheckForMissingCalls()
+		})
+	}
+}
+
+func TestApplyBranchHierarchy_FallsBackToFlatTimestampOrder(t *testing.T) {
+	revisions := []string{
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+		"cccccccccccccccccccccccccccccccccccccccc",
+	}
+	runner := oscommands.NewFakeRunner(t).
+		ExpectGitArgs(buildBranchHierarchyForEachRefArgs(revisions)[1:], "", errors.New("matrix failed"))
+	loader := branchHierarchyLoader(t, runner, &GitVersion{2, 41, 0, ""})
+	branches := []*models.Branch{
+		hierarchyBranch("main", revisions[0], 1, false),
+		hierarchyBranch("feature", revisions[1], 2, false),
+		hierarchyBranch("head-fix", revisions[2], 3, true),
+	}
+	for _, branch := range branches {
+		branch.HierarchyDepth = 4
+	}
+
+	actual := loader.applyBranchHierarchy(branches)
+
+	assert.Equal(t, []string{"head-fix:0", "feature:0", "main:0"}, hierarchyShape(actual))
+	runner.CheckForMissingCalls()
+}
+
+func TestApplyBranchHierarchy_FallsBackOnStructurallyIncompleteModernOutput(t *testing.T) {
+	revisions := []string{
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+		"cccccccccccccccccccccccccccccccccccccccc",
+	}
+	runner := oscommands.NewFakeRunner(t).
+		ExpectGitArgs(
+			buildBranchHierarchyForEachRefArgs(revisions)[1:],
+			"refs/heads/main\x00"+revisions[0]+"\x000 0\x000 1\x000 2\n"+
+				"refs/heads/feature\x00"+revisions[1]+"\x001 0\x000 0\x000 1\n",
+			nil,
+		)
+	loader := branchHierarchyLoader(t, runner, &GitVersion{2, 41, 0, ""})
+	branches := []*models.Branch{
+		hierarchyBranch("main", revisions[0], 1, false),
+		hierarchyBranch("feature", revisions[1], 2, false),
+		hierarchyBranch("head-fix", revisions[2], 3, true),
+	}
+
+	actual := loader.applyBranchHierarchy(branches)
+
+	assert.Equal(t, []string{"head-fix:0", "feature:0", "main:0"}, hierarchyShape(actual))
+	runner.CheckForMissingCalls()
+}
+
+func TestApplyBranchHierarchy_DoesNotLoseBranchesWhenRefsSwap(t *testing.T) {
+	revisions := []string{
+		"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+	}
+	runner := oscommands.NewFakeRunner(t).
+		ExpectGitArgs(
+			buildBranchHierarchyForEachRefArgs(revisions)[1:],
+			"refs/heads/main\x00"+revisions[1]+"\x000 0\x001 0\n"+
+				"refs/heads/feature\x00"+revisions[0]+"\x001 0\x000 0\n",
+			nil,
+		)
+	loader := branchHierarchyLoader(t, runner, &GitVersion{2, 41, 0, ""})
+	branches := []*models.Branch{
+		hierarchyBranch("main", revisions[0], 1, false),
+		hierarchyBranch("feature", revisions[1], 2, true),
+	}
+
+	actual := loader.applyBranchHierarchy(branches)
+
+	assert.Equal(t, []string{"feature:0", "main:0"}, hierarchyShape(actual))
+	runner.CheckForMissingCalls()
+}
+
+func TestApplyBranchHierarchy_FallsBackOnMalformedConcurrentLegacyRef(t *testing.T) {
+	runner := oscommands.NewFakeRunner(t).
+		ExpectGitArgs(
+			[]string{"for-each-ref", "--merged=aaaa", "--format=%(refname)%00%(objectname)", "refs/heads"},
+			"refs/heads/bad ref\x00dddd\nrefs/heads/main\x00aaaa\n",
+			nil,
+		).
+		ExpectGitArgs([]string{"check-ref-format", "refs/heads/bad ref"}, "", errors.New("invalid ref"))
+	loader := branchHierarchyLoader(t, runner, &GitVersion{2, 40, 0, ""})
+	branches := []*models.Branch{
+		hierarchyBranch("main", "aaaa", 1, false),
+		hierarchyBranch("feature", "bbbb", 2, false),
+		hierarchyBranch("head-fix", "cccc", 3, true),
+	}
+
+	actual := loader.applyBranchHierarchy(branches)
+
+	assert.Equal(t, []string{"head-fix:0", "feature:0", "main:0"}, hierarchyShape(actual))
+	runner.CheckForMissingCalls()
+}
+
+func hierarchyBranchLoaderForLoad(
+	t *testing.T,
+	runner *oscommands.FakeCmdObjRunner,
+	sortOrder string,
+	getCurrentBranchInfo func() (BranchInfo, error),
+) *BranchLoader {
+	t.Helper()
+	userConfig := config.GetDefaultConfig()
+	userConfig.Git.LocalBranchSortOrder = sortOrder
+	gitCommon := buildGitCommon(commonDeps{
+		runner: runner, userConfig: userConfig, gitVersion: &GitVersion{2, 41, 0, ""},
+	})
+	return &BranchLoader{
+		Common:               gitCommon.Common,
+		GitCommon:            gitCommon,
+		cmd:                  gitCommon.cmd,
+		getCurrentBranchInfo: getCurrentBranchInfo,
+		config:               stubBranchLoaderConfig{},
+	}
+}
+
+func rawBranchLine(head, name, hash string, timestamp int64) string {
+	return strings.Join([]string{head, "heads/" + name, "", "", "", "subject", hash, strconv.FormatInt(timestamp, 10)}, "\x00")
+}
+
+func rawBranchesArgs(sortOrder string) []string {
+	return []string{
+		"for-each-ref",
+		"--sort=" + sortOrder,
+		"--format=%(HEAD)%00%(refname:short)%00%(upstream:short)%00%(upstream:track)%00%(push:track)%00%(subject)%00%(objectname)%00%(committerdate:unix)",
+		"refs/heads",
 	}
 }
 

@@ -31,7 +31,7 @@ func (config *UserConfig) Validate() error {
 		return err
 	}
 	if err := validateEnum("git.localBranchSortOrder", config.Git.LocalBranchSortOrder,
-		[]string{"date", "recency", "alphabetical"}); err != nil {
+		[]string{"date", "recency", "alphabetical", "hierarchy"}); err != nil {
 		return err
 	}
 	if err := validateEnum("git.remoteBranchSortOrder", config.Git.RemoteBranchSortOrder,

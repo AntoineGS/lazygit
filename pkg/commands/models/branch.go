@@ -35,6 +35,10 @@ type Branch struct {
 	Subject string
 	// commit hash
 	CommitHash string
+	// CommitUnixTimestamp is the committer date of the branch tip.
+	CommitUnixTimestamp int64
+	// HierarchyDepth is the inferred local-branch ancestry depth in hierarchy mode.
+	HierarchyDepth int
 
 	// How far we have fallen behind our base branch. 0 means either not
 	// determined yet, or up to date with base branch. (We don't need to

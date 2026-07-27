@@ -751,7 +751,7 @@ func (self *BranchesController) createTag(branch *models.Branch) error {
 
 func (self *BranchesController) createSortMenu() error {
 	return self.c.Helpers().Refs.CreateSortOrderMenu(
-		[]string{"recency", "alphabetical", "date"},
+		[]string{"recency", "alphabetical", "date", "hierarchy"},
 		self.c.Tr.SortOrderPromptLocalBranches,
 		func(sortOrder string) error {
 			if self.c.UserConfig().Git.LocalBranchSortOrder != sortOrder {

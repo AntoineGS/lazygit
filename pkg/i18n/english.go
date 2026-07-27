@@ -817,7 +817,9 @@ type TranslationSet struct {
 	SortAlphabetical                         string
 	SortByDate                               string
 	SortByRecency                            string
+	SortByHierarchy                          string
 	SortBasedOnReflog                        string
+	SortBasedOnBranchAncestry                string
 	SortOrderPrompt                          string
 	SortCommits                              string
 	SortCommitsTooltip                       string
@@ -1964,7 +1966,9 @@ func EnglishTranslationSet() *TranslationSet {
 		SortAlphabetical:                         "Alphabetical",
 		SortByDate:                               "Date",
 		SortByRecency:                            "Recency",
+		SortByHierarchy:                          "Hierarchy",
 		SortBasedOnReflog:                        "(based on reflog)",
+		SortBasedOnBranchAncestry:                "(based on branch ancestry)",
 		SortCommits:                              "Commit sort order",
 		SortCommitsTooltip:                       "Change the sort order of the commits in the commit log.\n\nThe default can be changed in the config file with the key 'git.log.sortOrder'.",
 		CantChangeContextSizeError:               "Cannot change context while in patch building mode because we were too lazy to support it when releasing the feature. If you really want it, please let us know!",

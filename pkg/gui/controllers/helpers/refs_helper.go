@@ -230,6 +230,7 @@ func (self *RefsHelper) CreateSortOrderMenu(sortOptionsOrder []string, menuPromp
 		"recency":      {label: self.c.Tr.SortByRecency, description: self.c.Tr.SortBasedOnReflog, keys: menuKey('r')},
 		"alphabetical": {label: self.c.Tr.SortAlphabetical, description: "--sort=refname", keys: menuKey('a')},
 		"date":         {label: self.c.Tr.SortByDate, description: "--sort=-committerdate", keys: menuKey('d')},
+		"hierarchy":    {label: self.c.Tr.SortByHierarchy, description: self.c.Tr.SortBasedOnBranchAncestry, keys: menuKey('h')},
 	}
 	sortOptions := make([]sortMenuOption, 0, len(sortOptionsOrder))
 	for _, key := range sortOptionsOrder {
